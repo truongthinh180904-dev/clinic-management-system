@@ -1,0 +1,25 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Frontend
+fe/node_modules/
+fe/.next/
+fe/out/
+fe/build/
+fe/dist/
+
+# Backend
+be/vendor/
+be/storage/*.key
+be/storage/logs/*
+be/storage/framework/cache/*
+be/storage/framework/sessions/*
+be/storage/framework/views/
+
+# IDE and operating system
+.DS_Store
+.idea/
+.vscode/
+*.log
