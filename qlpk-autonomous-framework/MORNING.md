@@ -1,39 +1,69 @@
-# MORNING — Daily Development & Resource Summary
+# MORNING.md — Hướng dẫn Chạy Tự Động Xuyên Đêm & Kiểm Tra Buổi Sáng (`PHASE-01`)
 
-> Báo cáo tóm tắt phiên chạy tự động; chỉ cập nhật từ bằng chứng thực thi thật trong `reports/` và `logs/orchestrator.log`.
+## 1. Lệnh chạy tự động Giai đoạn 1 (`P1-001` → `P1-030`)
 
-## Snapshot
-- Ngày: `2026-10-26`
-- Branch: `main`
-- Feature hoàn thành: `0`
-- Feature đang thực hiện: `0`
-- Feature BLOCKED: `0`
-- Task hoàn thành (`DONE`): `0`
-- Task BLOCKED: `0`
-- Automated test (Framework Self-Test): `PASS (12/12: AT-00..AT-11)`
-- Tổng vòng review thực tế: `0`
+### A. Chạy toàn bộ các Task còn lại của Giai đoạn 1 (Chạy cả ngày / xuyên đêm)
+Mở Terminal tại thư mục gốc `clinic-management-system` và chạy:
 
-## Thống kê Model & Tài nguyên Hệ thống
-- Model đã cấu hình:
-  - Planner: `claude-sonnet-5-5-high`
-  - Coder: `gemini-3.8-flash-high`
-  - Reviewer: `gemini-4-argon-high`
-  - Fallback Debug / Arch: `claude-sonnet-5-5-high` / `claude-opus-5-5-high`
-- Số lần kích hoạt Fallback: `0`
-- Số lần chờ tài nguyên (CPU/RAM throttle): `0`
-- Số lần chờ Quota Backoff (`429`): `0`
-- Tổng thời gian Cooldown giữa các task: `0s`
+```bash
+nohup env CPU_LOAD_PER_CORE_LIMIT=1.8 MAX_TASKS_PER_SESSION=30 SESSION_TIMEOUT_SECONDS=43200 \
+  ./qlpk-autonomous-framework/run-agy.sh run \
+  > qlpk-autonomous-framework/logs/overnight.out 2>&1 &
+```
 
-## Trạng thái Task & Feature
-| ID | Loại | Status | Test | Review | Vòng review | Report |
-|---|---|---|---|---|---:|---|
-| F-DEMO-001 | Feature | READY | NOT_RUN | NOT_RUN | 0/3 | `reports/framework-audit.md` |
-| T-DEMO-001 | Task | READY | NOT_RUN | NOT_RUN | 0/3 | Chưa chạy |
-| T-DEMO-002 | Task | READY | NOT_RUN | NOT_RUN | 0/3 | Chưa chạy |
-| T-DEMO-003 | Task | READY | NOT_RUN | NOT_RUN | 0/3 | `reports/workflow-dry-run.md` |
+*(Nếu chạy trên macOS muốn chống máy tự sleep khi đóng màn hình/không thao tác, thêm `caffeinate -i` phía trước)*:
 
-## Việc cần chú ý
-- [x] Xác minh `agy` CLI `1.4.7`, danh sách model và chế độ non-interactive (`--print`, `--print-timeout`).
-- [x] Kiểm thử cô lập 12 kịch bản an toàn (`AT-00` → `AT-11`) bằng mock harness.
-- [ ] Duyệt chạy task thật khi bắt đầu phát triển nghiệp vụ phòng khám.
-- [ ] Tuyệt đối không ghi secret (`be/.env`) hoặc dữ liệu bệnh nhân vào báo cáo.
+```bash
+nohup caffeinate -i env CPU_LOAD_PER_CORE_LIMIT=1.8 MAX_TASKS_PER_SESSION=30 SESSION_TIMEOUT_SECONDS=43200 \
+  ./qlpk-autonomous-framework/run-agy.sh run \
+  > qlpk-autonomous-framework/logs/overnight.out 2>&1 &
+```
+
+### B. Chạy thử từng Task cụ thể (ví dụ `P1-001`)
+```bash
+CPU_LOAD_PER_CORE_LIMIT=1.8 ./qlpk-autonomous-framework/run-agy.sh run P1-001
+```
+
+### C. Theo dõi trực tiếp tiến độ (Live Log) & Dừng an toàn
+- Xem log điều phối thời gian thực:
+  ```bash
+  tail -f qlpk-autonomous-framework/logs/orchestrator.log
+  ```
+- Đặt giờ tự động dừng vào buổi sáng (ví dụ `07` giờ sáng):
+  ```bash
+  echo "07" > qlpk-autonomous-framework/.agy-state/STOP_AT_HOUR
+  ```
+- Dừng chủ động ngay sau bước hiện tại:
+  ```bash
+  ./qlpk-autonomous-framework/run-agy.sh stop
+  ```
+- Xóa cờ dừng để chạy tiếp:
+  ```bash
+  ./qlpk-autonomous-framework/run-agy.sh clear-stop
+  ```
+
+---
+
+## 2. Checklist Kiểm Tra Buổi Sáng (5 bước)
+
+1. **Xem bảng tiến độ tổng thể:**
+   - Mở `qlpk-autonomous-framework/PROGRESS.md` để xem những Task nào đã chuyển sang `DONE` (`PASS` / `PASS`) và những Task nào đang `READY` hoặc `BLOCKED`.
+2. **Kiểm tra nhật ký điều phối (`orchestrator.log`):**
+   - Kiểm tra các dòng `TASK_DONE`, `REVIEW_PASS`, `DONE_GATE_VERIFIED`, hoặc `QUOTA_EXCEEDED` / `BLOCKED`.
+3. **Xem báo cáo bằng chứng của từng Task:**
+   - Báo cáo Coder: `qlpk-autonomous-framework/reports/tasks/P1-XXX.md`
+   - Báo cáo Test thật: `qlpk-autonomous-framework/reports/tasks/P1-XXX-test.md`
+   - Báo cáo Reviewer: `qlpk-autonomous-framework/reports/tasks/P1-XXX-review-round-1.md`
+4. **Kiểm tra tài liệu đầu ra Giai đoạn 1 (`docs/phase-1/`):**
+   - `docs/phase-1/INITIAL_AUDIT.md`
+   - `docs/phase-1/ARCHITECTURE.md`
+   - `docs/phase-1/DEVELOPMENT.md`
+   - `docs/phase-1/DATABASE_DESIGN.md`
+   - `docs/phase-1/DATABASE_RELATIONSHIPS.md`
+   - `docs/phase-1/API_DOCUMENTATION.md`
+   - `docs/phase-1/PHASE_1_REPORT.md`
+5. **Chạy nghiệm thu nhanh toàn bộ Backend & Frontend:**
+   ```bash
+   cd be && php artisan test && ./vendor/bin/pint --test
+   cd ../fe && npx tsc --noEmit && npm run build
+   ```

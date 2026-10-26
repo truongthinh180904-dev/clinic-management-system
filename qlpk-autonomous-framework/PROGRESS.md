@@ -1,38 +1,61 @@
-# PROGRESS — QLPK
+# PROGRESS — QLPK (`PHASE-01`)
 
-## Tổng quan
-- Framework status: `READY_FOR_CONTROLLED_TEST`
-- Roadmap approval: `APPROVED_FOR_SAFE_VERIFICATION`
-- Current feature: `F-DEMO-001`
-- Feature status: `READY`
-- Automated test status: `PASS (Self-Test AT-00..AT-11)`
-- Review status: `NOT_RUN`
-- Max review rounds per task: `3`
-- Configured Models (`agy 1.4.7`):
+## Tổng quan Giai đoạn 1
+- **Framework status:** `READY_FOR_PHASE_1_EXECUTION`
+- **Roadmap approval:** `APPROVED_PHASE_01`
+- **Current phase:** `PHASE-01` — Xây dựng nền tảng và nghiệp vụ khám chữa bệnh cốt lõi
+- **Total tasks in Phase 1:** `30` (`P1-001` → `P1-030`)
+- **Completed (`DONE`):** `2 / 30` (`P1-005` — Migrations 30 bảng, `P1-006` — 30 Eloquent Models & Relationships)
+- **Remaining (`READY`):** `28 / 30`
+- **Automated test status:** `PASS` (Self-Test `AT-00..AT-11` + PHPUnit 5 tests / 89 assertions + Laravel Pint)
+- **Max review rounds per task:** `3`
+- **Configured Models (`agy 1.4.7`):**
   - Planner: `claude-sonnet-5-5-high`
   - Coder: `gemini-3.8-flash-high`
   - Reviewer: `gemini-4-argon-high`
   - Debug fallback: `claude-sonnet-5-5-high`
   - Arch/Security escalation: `claude-opus-5-5-high`
-- AGY CLI verification: `VERIFIED (v1.4.7)`
-- Last evidence: `reports/framework-audit.md`, `reports/workflow-dry-run.md`
 
-## Task status
+---
 
-| Task ID | Status | Test status | Review status | Review round | Coder / Reviewer Model | Duration | Fallback | Evidence Report | Ghi chú |
-|---|---|---|---|---:|---|---|---|---|---|
-| T-DEMO-001 | READY | NOT_RUN | NOT_RUN | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | — | NONE | `reports/tasks/T-DEMO-001.md` | Kiểm kê repo, không sửa source |
-| T-DEMO-002 | READY | NOT_RUN | NOT_RUN | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | — | NONE | `reports/tasks/T-DEMO-002.md` | Xác minh AGY CLI v1.4.7 |
-| T-DEMO-003 | READY | NOT_RUN | NOT_RUN | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | — | NONE | `reports/tasks/T-DEMO-003.md` | Kiểm thử workflow & cổng an toàn |
-| T-DB-001 | DONE | PASS | PASS | 1/3 | `gemini-4-argon-medium` / `gemini-4-argon-high` | 15s | NONE | `be/tests/Feature/DatabaseSchemaTest.php` | Đã tạo & migrate đủ 30 bảng ERD lên `DBQLPK` (4 tests, 66 assertions PASS) |
-| T-DB-002 | DONE | PASS | PASS | 1/3 | `gemini-4-argon-medium` / `gemini-4-argon-high` | 20s | NONE | `be/tests/Feature/EloquentModelsRelationshipTest.php` | Đã tạo đủ 30 Eloquent Models & Relationships (5 tests, 89 assertions PASS) |
+## Bảng trạng thái 30 Task Giai đoạn 1 (`PHASE-01`)
+
+| Task ID | Nhóm | Ưu tiên | Status | Test status | Review status | Round | Coder / Reviewer Model | Evidence Report | Mô tả ngắn |
+|---|---|---|---|---|---|---:|---|---|---|
+| `P1-001` | Nhóm 1 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/INITIAL_AUDIT.md` | Kiểm tra toàn bộ repository |
+| `P1-002` | Nhóm 1 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/ARCHITECTURE.md` | Xác lập kiến trúc kỹ thuật BE/FE |
+| `P1-003` | Nhóm 1 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/DEVELOPMENT.md` | Chuẩn hóa môi trường & lệnh kiểm tra |
+| `P1-004` | Nhóm 2 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/DATABASE_DESIGN.md` | Đối chiếu & chốt mô hình dữ liệu 30 bảng |
+| `P1-005` | Nhóm 2 | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-4-argon-medium` / `gemini-4-argon-high` | `be/tests/Feature/DatabaseSchemaTest.php` | Đã tạo & migrate đủ 30 bảng lên `DBQLPK` (66 assertions PASS) |
+| `P1-006` | Nhóm 2 | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-4-argon-medium` / `gemini-4-argon-high` | `be/tests/Feature/EloquentModelsRelationshipTest.php` | Đã tạo đủ 30 Models & Relationships (89 assertions PASS) |
+| `P1-007` | Nhóm 2 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-007.md` | Seed dữ liệu nền (8 vai trò, quyền, dịch vụ mẫu) |
+| `P1-008` | Nhóm 3 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-008.md` | Xây dựng hệ thống đăng nhập API |
+| `P1-009` | Nhóm 3 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-009.md` | Xây dựng hệ thống Role & Permission (RBAC) |
+| `P1-010` | Nhóm 3 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-010.md` | Giao diện đăng nhập & bảo vệ trang quản trị |
+| `P1-011` | Nhóm 4 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-011.md` | Xây dựng API quản lý nhân viên |
+| `P1-012` | Nhóm 4 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-012.md` | Xây dựng API quản lý tài khoản & vai trò |
+| `P1-013` | Nhóm 4 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-013.md` | Xây dựng giao diện nhân sự & tài khoản |
+| `P1-014` | Nhóm 5 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-014.md` | Xây dựng API quản lý bệnh nhân (kèm cảnh báo trùng) |
+| `P1-015` | Nhóm 5 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-015.md` | Xây dựng trang danh sách & hồ sơ bệnh nhân |
+| `P1-016` | Nhóm 5 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-016.md` | Xây dựng API quản lý dịch vụ |
+| `P1-017` | Nhóm 5 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-017.md` | Xây dựng API quản lý gói dịch vụ |
+| `P1-018` | Nhóm 5 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-018.md` | Cấu hình dịch vụ thành phần trong gói |
+| `P1-019` | Nhóm 5 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-019.md` | Nghiệp vụ cấp gói dịch vụ cho bệnh nhân |
+| `P1-020` | Nhóm 6 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-020.md` | API quản lý lịch hẹn (chống trùng khung giờ) |
+| `P1-021` | Nhóm 6 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-021.md` | Giao diện quản lý lịch hẹn |
+| `P1-022` | Nhóm 6 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-022.md` | API tạo và quản lý lượt khám |
+| `P1-023` | Nhóm 6 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-023.md` | Quy tắc trừ buổi gói trong lượt khám (lock an toàn) |
+| `P1-024` | Nhóm 6 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-024.md` | Xây dựng hồ sơ bệnh án cơ bản |
+| `P1-025` | Nhóm 6 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-025.md` | Giao diện lượt khám và bệnh án |
+| `P1-026` | Nhóm 7 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-026.md` | Hoàn thiện kiểm thử Backend toàn diện |
+| `P1-027` | Nhóm 7 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-027.md` | Hoàn thiện kiểm thử Frontend & tích hợp API |
+| `P1-028` | Nhóm 7 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-028.md` | Kiểm thử tích hợp 4 luồng nghiệp vụ đầu-cuối (E2E) |
+| `P1-029` | Nhóm 8 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-029.md` | Hoàn thiện bộ tài liệu kỹ thuật Giai đoạn 1 |
+| `P1-030` | Nhóm 8 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/PHASE_1_REPORT.md` | Kiểm tra cuối giai đoạn & bàn giao (`REVIEW_REQUIRED`) |
+
+---
 
 ## Quy tắc cập nhật và Chống trạng thái DONE giả
-1. Sau mỗi task, `run-agy.sh` cập nhật trạng thái kèm `RUN_ID`, thời gian chạy, model đã dùng, lý do fallback (nếu có) và đường dẫn report.
+1. Sau mỗi task, `run-agy.sh` tự động cập nhật trạng thái kèm `RUN_ID`, thời gian chạy, model đã dùng và đường dẫn report.
 2. Không bao giờ thay `NOT_RUN` thành `PASS` hoặc `DONE` nếu chưa thực thi thật.
-3. Một task chỉ được chuyển sang `DONE` khi hàm `verify_done_gate()` xác nhận cả báo cáo kiểm thử (`exit_code == 0`) và báo cáo Reviewer (`Overall result: PASS`) đều mang cùng `RUN_ID` của phiên chạy hiện tại.
-
-## Trạng thái được phép
-- Task: `DRAFT`, `READY`, `IN_PROGRESS`, `TESTING`, `REVIEW_PENDING`, `FIXING`, `PASS`, `DONE`, `FAIL`, `BLOCKED`, `SKIPPED`
-- Automated tests: `NOT_RUN`, `PASS`, `FAIL`, `PARTIAL`, `BLOCKED`
-- Review: `NOT_RUN`, `PASS`, `FAIL`, `BLOCKED`
+3. Một task chỉ được chuyển sang `DONE` khi hàm `verify_done_gate()` xác nhận cả báo cáo kiểm thử (`exit_code == 0`) và báo cáo Reviewer (`OVERALL_REVIEW_RESULT: PASS`) đều mang cùng `RUN_ID` của phiên chạy hiện tại.

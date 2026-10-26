@@ -59,8 +59,8 @@ RESOURCE_WAIT_SECONDS="${RESOURCE_WAIT_SECONDS:-300}"
 RESOURCE_POLL_INTERVAL_SECONDS="${RESOURCE_POLL_INTERVAL_SECONDS:-15}"
 MODEL_TIMEOUT_SECONDS="${MODEL_TIMEOUT_SECONDS:-300}"
 TASK_TIMEOUT_SECONDS="${TASK_TIMEOUT_SECONDS:-900}"
-SESSION_TIMEOUT_SECONDS="${SESSION_TIMEOUT_SECONDS:-14400}"
-MAX_TASKS_PER_SESSION="${MAX_TASKS_PER_SESSION:-5}"
+SESSION_TIMEOUT_SECONDS="${SESSION_TIMEOUT_SECONDS:-43200}"
+MAX_TASKS_PER_SESSION="${MAX_TASKS_PER_SESSION:-30}"
 MAX_CONSECUTIVE_FAILURES="${MAX_CONSECUTIVE_FAILURES:-2}"
 MAX_REVIEW_ROUNDS="${MAX_REVIEW_ROUNDS:-3}"
 MAX_MODEL_RETRIES="${MAX_MODEL_RETRIES:-2}"
@@ -70,7 +70,7 @@ RETRY_BASE_SECONDS="${RETRY_BASE_SECONDS:-5}"
 # 4. GIT & SECURITY CONFIGURATION (Rule 4.D)
 # ==============================================================================
 ALLOWED_BRANCHES="${ALLOWED_BRANCHES:-main,dev}"
-ALLOW_UNTRACKED_REGEX="${ALLOW_UNTRACKED_REGEX:-^(\.DS_Store|qlpk-autonomous-framework(-v2\.zip|/.*)?)$}"
+ALLOW_UNTRACKED_REGEX="${ALLOW_UNTRACKED_REGEX:-^(\.DS_Store|qlpk-autonomous-framework(-v2\.zip|/.*)?|docs/.*|be/.*|fe/.*)$}"
 
 SESSION_START_EPOCH="$(date +%s)"
 ACTIVE_CHILD_PID=""
@@ -651,7 +651,7 @@ execute_task_lifecycle() {
   wait_for_resources || return 11
 
   local coder_out="${REPORTS_DIR}/tasks/${task_id}-coder.json"
-  local coder_prompt="ROLE=CODER TASK_ID=${task_id} RUN_ID=${run_id} GOAL=${task_goal}"
+  local coder_prompt="ROLE=CODER TASK_ID=${task_id} RUN_ID=${run_id} GOAL=${task_goal} — Read ${ROADMAP_FILE} section for ${task_id} and ${FRAMEWORK_DIR}/AGENTS.md. Implement all required deliverables within allowed_files so all mandatory test_commands pass."
   if ! invoke_agy_model "CODER" "$CODER_MODEL" "accept-edits" "$coder_prompt" "$coder_out"; then
     log "TASK_ABORTED: Coder model invocation failed for ${task_id}."
     return 12
@@ -683,7 +683,7 @@ execute_task_lifecycle() {
 
     local review_out="${REPORTS_DIR}/tasks/${task_id}-review-round-${round}.json"
     local review_md="${REPORTS_DIR}/tasks/${task_id}-review-round-${round}.md"
-    local review_prompt="ROLE=REVIEWER TASK_ID=${task_id} RUN_ID=${run_id} ROUND=${round}/${MAX_REVIEW_ROUNDS} TEST_RESULT=PASS"
+    local review_prompt="ROLE=REVIEWER TASK_ID=${task_id} RUN_ID=${run_id} ROUND=${round}/${MAX_REVIEW_ROUNDS} TEST_RESULT=PASS — Read ${ROADMAP_FILE} for ${task_id}, ${FRAMEWORK_DIR}/REVIEWER.md, and test report ${REPORTS_DIR}/tasks/${task_id}-test.md. Respond with JSON containing \"verdict\": \"PASS\" (or \"FAIL\" with findings)."
 
     if ! invoke_agy_model "REVIEWER" "$REVIEWER_MODEL" "plan" "$review_prompt" "$review_out"; then
       log "BLOCKED: Reviewer invocation failed on round ${round} for ${task_id}."
@@ -750,7 +750,7 @@ execute_task_lifecycle() {
 }
 
 # ==============================================================================
-# 12. DEMO TASK RUNNER & SEQUENTIAL SESSION ENGINE
+# 12. PHASE-1 TASK SPECIFICATIONS & SEQUENTIAL SESSION ENGINE
 # ==============================================================================
 get_demo_task_spec() {
   local task_id="$1"
@@ -772,10 +772,183 @@ get_demo_task_spec() {
       printf 'Validate orchestrator syntax and workflow dry-run report\n'
       printf 'bash -n "$FRAMEWORK_DIR/run-agy.sh"\n'
       ;;
+    P1-001)
+      printf 'Audit repository state and create docs/phase-1/INITIAL_AUDIT.md without modifying application code\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-1/INITIAL_AUDIT.md"\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan --version\n'
+      ;;
+    P1-002)
+      printf 'Establish backend/frontend technical architecture in docs/phase-1/ARCHITECTURE.md\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-1/ARCHITECTURE.md"\n'
+      ;;
+    P1-003)
+      printf 'Standardize development environment, /api/v1/health endpoint, and docs/phase-1/DEVELOPMENT.md\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-1/DEVELOPMENT.md"\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit\n'
+      ;;
+    P1-004)
+      printf 'Document 30-table database design and relationships in docs/phase-1/DATABASE_DESIGN.md and DATABASE_RELATIONSHIPS.md\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-1/DATABASE_DESIGN.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-1/DATABASE_RELATIONSHIPS.md"\n'
+      ;;
+    P1-005)
+      printf 'Verify 30-table Laravel migrations and DatabaseSchemaTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DatabaseSchemaTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan migrate:status\n'
+      ;;
+    P1-006)
+      printf 'Verify 30 Eloquent models and EloquentModelsRelationshipTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=EloquentModelsRelationshipTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-007)
+      printf 'Implement idempotent seeders for 8 roles, permissions matrix, and demo catalog with DatabaseSeederTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DatabaseSeederTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-008)
+      printf 'Implement authentication API (/api/v1/auth/login, /me, /logout) with active status check, rate limiting, and AuthApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=AuthApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-009)
+      printf 'Implement RBAC role and permission middleware, endpoints, and RbacAuthorizationTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=RbacAuthorizationTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-010)
+      printf 'Implement Next.js login page, auth API client, and protected admin layout in fe/\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P1-011)
+      printf 'Implement Employee CRUD API (/api/v1/employees) with unique code generation, search/filter, RBAC, and EmployeeApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=EmployeeApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-012)
+      printf 'Implement User Account & Role Management API (/api/v1/users) with last-admin protection and UserManagementApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=UserManagementApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-013)
+      printf 'Implement Next.js Employees and Users management UI in fe/\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P1-014)
+      printf 'Implement Patient CRUD API (/api/v1/patients) with concurrency-safe patient_code, duplicate warnings, and PatientApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=PatientApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-015)
+      printf 'Implement Next.js Patients list, create/edit form with duplicate warnings, and patient detail profile in fe/\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P1-016)
+      printf 'Implement Service catalog CRUD API (/api/v1/services) and ServiceApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ServiceApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-017)
+      printf 'Implement ServicePackage CRUD API (/api/v1/service-packages) and ServicePackageApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ServicePackageApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-018)
+      printf 'Implement PackageService composition API (/api/v1/service-packages/{package}/services) and PackageServiceConfigApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=PackageServiceConfigApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-019)
+      printf 'Implement PatientPackage assignment API (/api/v1/patients/{patient}/packages), UI for Services/Packages, and PatientPackageApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=PatientPackageApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-020)
+      printf 'Implement Appointment API (/api/v1/appointments) with employee time-slot overlap prevention and AppointmentApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=AppointmentApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-021)
+      printf 'Implement Next.js Appointments management UI with conflict error handling in fe/\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P1-022)
+      printf 'Implement Visit creation and lifecycle management API (/api/v1/visits) and VisitApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=VisitApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-023)
+      printf 'Implement concurrency-safe PatientPackage session deduction in Visit workflow and VisitPackageUsageTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=VisitPackageUsageTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-024)
+      printf 'Implement MedicalRecord API (/api/v1/visits/{visit}/medical-record) with clinical RBAC protection, audit logging, and MedicalRecordApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=MedicalRecordApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-025)
+      printf 'Implement Next.js Visits and Medical Records UI in fe/\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P1-026)
+      printf 'Complete comprehensive Backend test suite across all Phase 1 modules\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint --test\n'
+      ;;
+    P1-027)
+      printf 'Complete Frontend type-checking, linting, API integration, and production build verification\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run lint && npm run build\n'
+      ;;
+    P1-028)
+      printf 'Implement and verify end-to-end Phase 1 workflow tests in Phase1EndToEndWorkflowTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=Phase1EndToEndWorkflowTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P1-029)
+      printf 'Complete Phase 1 technical documentation (API_DOCUMENTATION.md, DATABASE_DESIGN.md, DEVELOPMENT.md, KNOWN_ISSUES.md)\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-1/API_DOCUMENTATION.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-1/DATABASE_DESIGN.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-1/DEVELOPMENT.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-1/KNOWN_ISSUES.md"\n'
+      ;;
+    P1-030)
+      printf 'Run final Phase 1 quality gates and generate docs/phase-1/PHASE_1_REPORT.md for user review\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-1/PHASE_1_REPORT.md"\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
     *)
       return 1
       ;;
   esac
+}
+
+is_task_done_in_progress() {
+  local task_id="$1"
+  if [[ -f "$PROGRESS_FILE" ]] && grep -Eq "^\|[[:space:]]*\`?${task_id}\`?[[:space:]]*\|.*\|[[:space:]]*\`?DONE\`?[[:space:]]*\|" "$PROGRESS_FILE"; then
+    return 0
+  fi
+  return 1
+}
+
+update_progress_table() {
+  local task_id="$1"
+  local new_status="$2"
+  local test_status="$3"
+  local review_status="$4"
+  if [[ ! -f "$PROGRESS_FILE" ]]; then
+    return 0
+  fi
+  local tmp_prog="${PROGRESS_FILE}.tmp.$$"
+  awk -F'|' -v OFS='|' -v tid="$task_id" -v st="$new_status" -v tst="$test_status" -v rst="$review_status" '
+    $2 ~ ("^[[:space:]]*`?" tid "`?[[:space:]]*$") {
+      $5 = " `" st "` "
+      $6 = " `" tst "` "
+      $7 = " `" rst "` "
+    }
+    { print }
+  ' "$PROGRESS_FILE" > "$tmp_prog" && mv "$tmp_prog" "$PROGRESS_FILE"
 }
 
 run_session() {
@@ -784,7 +957,21 @@ run_session() {
   if [[ -n "$requested_task" ]]; then
     tasks_to_run=("$requested_task")
   else
-    tasks_to_run=("T-DEMO-001" "T-DEMO-002" "T-DEMO-003")
+    local all_p1_tasks=(
+      "P1-001" "P1-002" "P1-003" "P1-004" "P1-005" "P1-006" "P1-007"
+      "P1-008" "P1-009" "P1-010" "P1-011" "P1-012" "P1-013" "P1-014"
+      "P1-015" "P1-016" "P1-017" "P1-018" "P1-019" "P1-020" "P1-021"
+      "P1-022" "P1-023" "P1-024" "P1-025" "P1-026" "P1-027" "P1-028"
+      "P1-029" "P1-030"
+    )
+    local t
+    for t in "${all_p1_tasks[@]}"; do
+      if is_task_done_in_progress "$t"; then
+        log "SKIP_DONE_TASK: ${t} is already marked DONE in PROGRESS.md."
+        continue
+      fi
+      tasks_to_run+=("$t")
+    done
   fi
 
   local executed_count=0
@@ -816,16 +1003,19 @@ run_session() {
     local goal="${spec_lines[0]}"
     local cmds=("${spec_lines[@]:1}")
 
+    update_progress_table "$task_id" "IN_PROGRESS" "RUNNING" "PENDING"
     local task_rc=0
     execute_task_lifecycle "$task_id" "$goal" "${cmds[@]}" || task_rc=$?
     executed_count=$(( executed_count + 1 ))
 
     if [[ "$task_rc" -eq 0 ]]; then
+      update_progress_table "$task_id" "DONE" "PASS" "PASS"
       consecutive_failures=0
       if (( idx < total_tasks )); then
         cooldown_sleep "$TASK_COOLDOWN_SECONDS" "TASK_COOLDOWN_AFTER_${task_id}" || break
       fi
     else
+      update_progress_table "$task_id" "BLOCKED" "FAIL" "FAIL"
       consecutive_failures=$(( consecutive_failures + 1 ))
       log "TASK_FAILED: task=${task_id} exit_code=${task_rc} consecutive_failures=${consecutive_failures}/${MAX_CONSECUTIVE_FAILURES}"
       if (( consecutive_failures >= MAX_CONSECUTIVE_FAILURES )); then
