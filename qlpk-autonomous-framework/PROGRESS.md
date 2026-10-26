@@ -24,6 +24,8 @@
 | T-DEMO-001 | READY | NOT_RUN | NOT_RUN | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | — | NONE | `reports/tasks/T-DEMO-001.md` | Kiểm kê repo, không sửa source |
 | T-DEMO-002 | READY | NOT_RUN | NOT_RUN | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | — | NONE | `reports/tasks/T-DEMO-002.md` | Xác minh AGY CLI v1.4.7 |
 | T-DEMO-003 | READY | NOT_RUN | NOT_RUN | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | — | NONE | `reports/tasks/T-DEMO-003.md` | Kiểm thử workflow & cổng an toàn |
+| T-DB-001 | DONE | PASS | PASS | 1/3 | `gemini-4-argon-medium` / `gemini-4-argon-high` | 15s | NONE | `be/tests/Feature/DatabaseSchemaTest.php` | Đã tạo & migrate đủ 30 bảng ERD lên `DBQLPK` (4 tests, 66 assertions PASS) |
+| T-DB-002 | DONE | PASS | PASS | 1/3 | `gemini-4-argon-medium` / `gemini-4-argon-high` | 20s | NONE | `be/tests/Feature/EloquentModelsRelationshipTest.php` | Đã tạo đủ 30 Eloquent Models & Relationships (5 tests, 89 assertions PASS) |
 
 ## Quy tắc cập nhật và Chống trạng thái DONE giả
 1. Sau mỗi task, `run-agy.sh` cập nhật trạng thái kèm `RUN_ID`, thời gian chạy, model đã dùng, lý do fallback (nếu có) và đường dẫn report.

@@ -8,16 +8,18 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     * Bảng 5: users — Tài khoản người dùng
      */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
+            $table->foreignId('employee_id')->nullable()->constrained('employees')->nullOnDelete();
+            $table->string('username', 100)->unique();
+            $table->string('email', 191)->nullable();
+            $table->string('password_hash', 255);
+            $table->string('status', 30);
+            $table->timestamp('last_login_at')->nullable();
             $table->timestamps();
         });
 
@@ -42,8 +44,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };
