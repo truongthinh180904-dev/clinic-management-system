@@ -36,8 +36,8 @@
 | `P2-002` | `F2-01` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-002.md` | Cài đặt `lucide-react`, `recharts` & bộ UI `shadcn/ui` Core Design System |
 | `P2-003` | `F2-01` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-003.md` | Nâng cấp `AdminShell.tsx` & Login UI chuyên nghiệp (`shadcn/ui` + `lucide-react`) |
 | `P2-004` | `F2-02` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-004.md` | Mở rộng `RolePermissionSeeder` & dữ liệu mẫu cho Giai đoạn 2 |
-| `P2-005` | `F2-02` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-005.md` | Xây dựng API Dashboard Tổng quan (`/api/v1/dashboard/*`) |
-| `P2-006` | `F2-02` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-006.md` | Giao diện Dashboard Tổng quan với `shadcn/ui` & biểu đồ `recharts` |
+| `P2-005` | `F2-02` | P0 | `BLOCKED` | `FAIL` | `FAIL` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-005.md` | Xây dựng API Dashboard Tổng quan (`/api/v1/dashboard/*`) |
+| `P2-006` | `F2-02` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-006.md` | Giao diện Dashboard Tổng quan với `shadcn/ui` & biểu đồ `recharts` |
 | `P2-007` | `F2-03` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-007.md` | Xây dựng API Quản lý Hóa đơn (`/api/v1/invoices`) |
 | `P2-008` | `F2-03` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-008.md` | Xây dựng API Thanh toán Hóa đơn nhiều đợt (`/api/v1/payments`) + ghi quỹ |
 | `P2-009` | `F2-03` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-009.md` | Giao diện Hóa đơn & Thu ngân nhiều đợt (`/invoices`, `/invoices/[id]`) |

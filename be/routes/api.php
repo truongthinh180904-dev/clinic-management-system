@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\MedicalRecordController;
 use App\Http\Controllers\Api\V1\PackageServiceController;
@@ -38,6 +39,21 @@ Route::prefix('v1')->group(function (): void {
     });
 
     Route::middleware(['auth:sanctum', 'active_user'])->group(function (): void {
+        // Dashboard Overview
+        Route::prefix('dashboard')->group(function (): void {
+            Route::get('/summary', [DashboardController::class, 'summary'])
+                ->name('api.v1.dashboard.summary');
+
+            Route::get('/revenue-chart', [DashboardController::class, 'revenueChart'])
+                ->name('api.v1.dashboard.revenue-chart');
+
+            Route::get('/visit-trends', [DashboardController::class, 'visitTrends'])
+                ->name('api.v1.dashboard.visit-trends');
+
+            Route::get('/top-performers', [DashboardController::class, 'topPerformers'])
+                ->name('api.v1.dashboard.top-performers');
+        });
+
         // RBAC Management
         Route::get('/roles', [RolePermissionController::class, 'roles'])
             ->middleware('permission:roles.view')

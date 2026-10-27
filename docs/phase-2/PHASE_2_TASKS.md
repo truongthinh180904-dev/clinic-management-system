@@ -178,7 +178,7 @@
 
 ### TASK `P2-006` (`F2-02-03`): Xây dựng Giao diện Dashboard Tổng quan chuyên nghiệp với `shadcn/ui` & `recharts` tại `/admin`
 - **priority:** `P0`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-005`
 - **goal:** Nâng cấp hoàn toàn trang Dashboard Quản trị (`fe/app/admin/page.tsx`) thành bảng điều khiển điều hành phòng khám chuyên nghiệp sử dụng `shadcn/ui` (`StatCard`, `Card`, `Badge`, `Tabs`, `Table`) và biểu đồ `recharts` (`AreaChart` / `BarChart` doanh thu - thu chi, `PieChart` / `BarChart` trạng thái lượt khám).
 - **scope:**
