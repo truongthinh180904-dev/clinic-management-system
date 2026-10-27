@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -23,14 +23,41 @@ const navItems: NavItem[] = [
   { name: 'Lịch hẹn', href: '/admin/appointments', icon: '📅', permission: 'appointments.view' },
   { name: 'Khám bệnh', href: '/admin/consultations', icon: '🩺', permission: 'encounters.view' },
   { name: 'Dịch vụ & Gói', href: '/admin/services', icon: '💊', permission: 'services.view' },
-  { name: 'Nhân sự', href: '/admin/employees', icon: '🧑‍⚕️', permission: 'employees.view' },
-  { name: 'Phân quyền', href: '/admin/rbac', icon: '🛡️', role: 'ADMIN' },
+  { name: 'Nhân sự', href: '/employees', icon: '🧑‍⚕️', permission: 'employees.view' },
+  { name: 'Tài khoản & Quyền', href: '/users', icon: '🛡️', permission: 'users.view', role: 'ADMIN' },
 ];
+
+function AdminNavLinks({ items }: { items: NavItem[] }) {
+  const pathname = usePathname();
+
+  return (
+    <nav className="p-4 space-y-1">
+      {items.map((item) => {
+        const isActive =
+          pathname === item.href ||
+          (item.href !== '/admin' && pathname?.startsWith(item.href));
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive
+                ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <span className="text-base">{item.icon}</span>
+            <span>{item.name}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
 
 export function AdminShell({ children }: AdminShellProps) {
   const { user, isLoading, isAuthenticated, logout, hasPermission, hasRole } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
@@ -87,25 +114,24 @@ export function AdminShell({ children }: AdminShellProps) {
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-4 space-y-1">
-            {visibleNavItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <span className="text-base">{item.icon}</span>
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
+          <Suspense
+            fallback={
+              <nav className="p-4 space-y-1">
+                {visibleNavItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white"
+                  >
+                    <span className="text-base">{item.icon}</span>
+                    <span>{item.name}</span>
+                  </Link>
+                ))}
+              </nav>
+            }
+          >
+            <AdminNavLinks items={visibleNavItems} />
+          </Suspense>
         </div>
 
         {/* Sidebar Footer: Clinic status */}

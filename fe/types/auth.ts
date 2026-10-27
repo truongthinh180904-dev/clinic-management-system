@@ -42,10 +42,20 @@ export interface LoginResponseData {
   user: User;
 }
 
+export interface PaginationMeta {
+  current_page: number;
+  from: number | null;
+  last_page: number;
+  per_page: number;
+  to: number | null;
+  total: number;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data: T;
+  meta?: PaginationMeta;
   errors?: Record<string, string[]> | null;
 }
 
