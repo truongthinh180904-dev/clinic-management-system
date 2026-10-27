@@ -86,6 +86,41 @@ class RolePermissionSeeder extends Seeder
             // Module Settings
             ['module' => 'settings', 'action' => 'view', 'permission_key' => 'settings.view', 'description' => 'Xem tham số và cấu hình hệ thống'],
             ['module' => 'settings', 'action' => 'update', 'permission_key' => 'settings.update', 'description' => 'Cập nhật cấu hình phòng khám'],
+
+            // Module Debts (Công nợ)
+            ['module' => 'debts', 'action' => 'view', 'permission_key' => 'debts.view', 'description' => 'Xem và đối soát công nợ bệnh nhân'],
+
+            // Module Cash Transactions (Sổ quỹ & Dòng tiền)
+            ['module' => 'cash_transactions', 'action' => 'view', 'permission_key' => 'cash_transactions.view', 'description' => 'Xem sổ quỹ và biến động dòng tiền'],
+            ['module' => 'cash_transactions', 'action' => 'create', 'permission_key' => 'cash_transactions.create', 'description' => 'Tạo phiếu giao dịch sổ quỹ'],
+
+            // Module Products (Thuốc & Vật tư y tế)
+            ['module' => 'products', 'action' => 'view', 'permission_key' => 'products.view', 'description' => 'Xem danh mục thuốc và vật tư y tế'],
+            ['module' => 'products', 'action' => 'create', 'permission_key' => 'products.create', 'description' => 'Thêm mới thuốc và vật tư y tế'],
+            ['module' => 'products', 'action' => 'update', 'permission_key' => 'products.update', 'description' => 'Cập nhật thuốc và vật tư y tế'],
+            ['module' => 'products', 'action' => 'delete', 'permission_key' => 'products.delete', 'description' => 'Xóa hoặc ngừng áp dụng thuốc và vật tư'],
+
+            // Module Inventory (Quản lý kho)
+            ['module' => 'inventory', 'action' => 'view', 'permission_key' => 'inventory.view', 'description' => 'Xem tồn kho và lịch sử biến động kho'],
+            ['module' => 'inventory', 'action' => 'in', 'permission_key' => 'inventory.in', 'description' => 'Lập phiếu nhập kho thuốc và vật tư'],
+            ['module' => 'inventory', 'action' => 'out', 'permission_key' => 'inventory.out', 'description' => 'Lập phiếu xuất kho thuốc và vật tư'],
+            ['module' => 'inventory', 'action' => 'adjust', 'permission_key' => 'inventory.adjust', 'description' => 'Kiểm kê và điều chỉnh số lượng tồn kho'],
+
+            // Module KPI (Chỉ tiêu nhân viên)
+            ['module' => 'kpi_targets', 'action' => 'view', 'permission_key' => 'kpi_targets.view', 'description' => 'Xem chỉ tiêu và thực đạt KPI nhân viên'],
+            ['module' => 'kpi_targets', 'action' => 'manage', 'permission_key' => 'kpi_targets.manage', 'description' => 'Thiết lập và giao chỉ tiêu KPI nhân viên'],
+
+            // Module Data Transfer (Import / Export)
+            ['module' => 'data_transfer', 'action' => 'manage', 'permission_key' => 'imports.manage', 'description' => 'Import dữ liệu danh mục hoặc giao dịch từ CSV'],
+            ['module' => 'data_transfer', 'action' => 'view', 'permission_key' => 'exports.view', 'description' => 'Xuất dữ liệu và báo cáo ra file Excel/CSV'],
+
+            // Module Notifications & Alerts (Thông báo & Quy tắc cảnh báo)
+            ['module' => 'notifications', 'action' => 'view', 'permission_key' => 'notifications.view', 'description' => 'Xem thông báo và cảnh báo hệ thống'],
+            ['module' => 'notifications', 'action' => 'manage', 'permission_key' => 'alert_rules.manage', 'description' => 'Cấu hình quy tắc cảnh báo tự động'],
+
+            // Module Approvals (Luồng phê duyệt)
+            ['module' => 'approvals', 'action' => 'view', 'permission_key' => 'approvals.view', 'description' => 'Xem danh sách yêu cầu phê duyệt'],
+            ['module' => 'approvals', 'action' => 'manage', 'permission_key' => 'approvals.manage', 'description' => 'Phê duyệt hoặc từ chối các yêu cầu'],
         ];
 
         $permissionIds = [];
@@ -142,6 +177,25 @@ class RolePermissionSeeder extends Seeder
                     'expenses.approve',
                     'reports.view',
                     'settings.view',
+                    'debts.view',
+                    'cash_transactions.view',
+                    'cash_transactions.create',
+                    'products.view',
+                    'products.create',
+                    'products.update',
+                    'products.delete',
+                    'inventory.view',
+                    'inventory.in',
+                    'inventory.out',
+                    'inventory.adjust',
+                    'kpi_targets.view',
+                    'kpi_targets.manage',
+                    'imports.manage',
+                    'exports.view',
+                    'notifications.view',
+                    'approvals.view',
+                    'approvals.manage',
+                    'alert_rules.manage',
                 ],
             ],
             'DOCTOR' => [
@@ -158,6 +212,7 @@ class RolePermissionSeeder extends Seeder
                     'medical_records.view',
                     'medical_records.create',
                     'medical_records.update',
+                    'notifications.view',
                 ],
             ],
             'RECEPTIONIST' => [
@@ -177,6 +232,7 @@ class RolePermissionSeeder extends Seeder
                     'visits.view',
                     'visits.create',
                     'visits.update',
+                    'notifications.view',
                 ],
             ],
             'CASHIER' => [
@@ -192,6 +248,9 @@ class RolePermissionSeeder extends Seeder
                     'invoices.update',
                     'payments.view',
                     'payments.create',
+                    'debts.view',
+                    'cash_transactions.view',
+                    'notifications.view',
                 ],
             ],
             'ACCOUNTANT' => [
@@ -199,10 +258,17 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'invoices.view',
                     'payments.view',
+                    'debts.view',
                     'expenses.view',
                     'expenses.create',
                     'expenses.approve',
+                    'cash_transactions.view',
+                    'cash_transactions.create',
                     'reports.view',
+                    'exports.view',
+                    'inventory.view',
+                    'products.view',
+                    'notifications.view',
                 ],
             ],
             'EMPLOYEE' => [
@@ -210,6 +276,7 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'appointments.view',
                     'visits.view',
+                    'notifications.view',
                 ],
             ],
             'VIEWER' => [
@@ -218,6 +285,14 @@ class RolePermissionSeeder extends Seeder
                     'services.view',
                     'service_packages.view',
                     'reports.view',
+                    'debts.view',
+                    'cash_transactions.view',
+                    'products.view',
+                    'inventory.view',
+                    'kpi_targets.view',
+                    'exports.view',
+                    'notifications.view',
+                    'approvals.view',
                 ],
             ],
         ];

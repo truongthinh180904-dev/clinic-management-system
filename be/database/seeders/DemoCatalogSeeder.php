@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\AlertRule;
 use App\Models\ExpenseCategory;
+use App\Models\Product;
 use App\Models\Service;
 use App\Models\ServicePackage;
 use Illuminate\Database\Seeder;
@@ -169,6 +171,87 @@ class DemoCatalogSeeder extends Seeder
             ExpenseCategory::updateOrCreate(
                 ['name' => $cat['name']],
                 $cat
+            );
+        }
+
+        // Demo Products (Phase 2 - PRD-001 -> PRD-005)
+        $productsData = [
+            [
+                'product_code' => 'PRD-001',
+                'name' => 'Paracetamol 500mg',
+                'unit' => 'Hộp',
+                'minimum_stock' => 50.000,
+                'status' => 'ACTIVE',
+            ],
+            [
+                'product_code' => 'PRD-002',
+                'name' => 'Amoxicillin 500mg',
+                'unit' => 'Hộp',
+                'minimum_stock' => 30.000,
+                'status' => 'ACTIVE',
+            ],
+            [
+                'product_code' => 'PRD-003',
+                'name' => 'Bơm tiêm vô trùng 5ml',
+                'unit' => 'Cái',
+                'minimum_stock' => 200.000,
+                'status' => 'ACTIVE',
+            ],
+            [
+                'product_code' => 'PRD-004',
+                'name' => 'Cồn y tế 70 độ 500ml',
+                'unit' => 'Chai',
+                'minimum_stock' => 20.000,
+                'status' => 'ACTIVE',
+            ],
+            [
+                'product_code' => 'PRD-005',
+                'name' => 'Găng tay y tế Nitrile (Hộp 100 chiếc)',
+                'unit' => 'Hộp',
+                'minimum_stock' => 40.000,
+                'status' => 'ACTIVE',
+            ],
+        ];
+
+        foreach ($productsData as $prod) {
+            Product::updateOrCreate(
+                ['product_code' => $prod['product_code']],
+                $prod
+            );
+        }
+
+        // Demo Alert Rules (Phase 2 - LOW_STOCK, PACKAGE_EXPIRING, OVERDUE_INVOICE)
+        $alertRulesData = [
+            [
+                'name' => 'Cảnh báo tồn kho thuốc & vật tư dưới mức tối thiểu',
+                'alert_type' => 'LOW_STOCK',
+                'threshold_value' => 10.00,
+                'threshold_days' => null,
+                'threshold_sessions' => null,
+                'status' => 'ACTIVE',
+            ],
+            [
+                'name' => 'Cảnh báo gói dịch vụ bệnh nhân sắp hết hạn sử dụng',
+                'alert_type' => 'PACKAGE_EXPIRING',
+                'threshold_value' => null,
+                'threshold_days' => 30,
+                'threshold_sessions' => 1,
+                'status' => 'ACTIVE',
+            ],
+            [
+                'name' => 'Cảnh báo hóa đơn công nợ quá hạn thanh toán',
+                'alert_type' => 'OVERDUE_INVOICE',
+                'threshold_value' => 500000.00,
+                'threshold_days' => 15,
+                'threshold_sessions' => null,
+                'status' => 'ACTIVE',
+            ],
+        ];
+
+        foreach ($alertRulesData as $rule) {
+            AlertRule::updateOrCreate(
+                ['alert_type' => $rule['alert_type']],
+                $rule
             );
         }
     }

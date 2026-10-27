@@ -35,7 +35,7 @@
 | `P2-001` | `F2-01` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `claude-sonnet-5-5-high` / `gemini-4-argon-high` | `docs/phase-2/F2-01-01_SURVEY_AND_PLAN.md` | Khảo sát Giai đoạn 1 & lập kế hoạch Giai đoạn 2 (`F2-01-01`) |
 | `P2-002` | `F2-01` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-002.md` | Cài đặt `lucide-react`, `recharts` & bộ UI `shadcn/ui` Core Design System |
 | `P2-003` | `F2-01` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-003.md` | Nâng cấp `AdminShell.tsx` & Login UI chuyên nghiệp (`shadcn/ui` + `lucide-react`) |
-| `P2-004` | `F2-02` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-004.md` | Mở rộng `RolePermissionSeeder` & dữ liệu mẫu cho Giai đoạn 2 |
+| `P2-004` | `F2-02` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-004.md` | Mở rộng `RolePermissionSeeder` & dữ liệu mẫu cho Giai đoạn 2 |
 | `P2-005` | `F2-02` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-005.md` | Xây dựng API Dashboard Tổng quan (`/api/v1/dashboard/*`) |
 | `P2-006` | `F2-02` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-006.md` | Giao diện Dashboard Tổng quan với `shadcn/ui` & biểu đồ `recharts` |
 | `P2-007` | `F2-03` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-007.md` | Xây dựng API Quản lý Hóa đơn (`/api/v1/invoices`) |
