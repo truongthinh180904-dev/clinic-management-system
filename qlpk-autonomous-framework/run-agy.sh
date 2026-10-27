@@ -57,12 +57,13 @@ CPU_LOAD_PER_CORE_LIMIT="${CPU_LOAD_PER_CORE_LIMIT:-0.85}"
 MIN_FREE_MEMORY_PERCENT="${MIN_FREE_MEMORY_PERCENT:-15}"
 RESOURCE_WAIT_SECONDS="${RESOURCE_WAIT_SECONDS:-300}"
 RESOURCE_POLL_INTERVAL_SECONDS="${RESOURCE_POLL_INTERVAL_SECONDS:-15}"
-MODEL_TIMEOUT_SECONDS="${MODEL_TIMEOUT_SECONDS:-300}"
-TASK_TIMEOUT_SECONDS="${TASK_TIMEOUT_SECONDS:-900}"
+MODEL_TIMEOUT_SECONDS="${MODEL_TIMEOUT_SECONDS:-900}"
+TASK_TIMEOUT_SECONDS="${TASK_TIMEOUT_SECONDS:-2700}"
 SESSION_TIMEOUT_SECONDS="${SESSION_TIMEOUT_SECONDS:-43200}"
 MAX_TASKS_PER_SESSION="${MAX_TASKS_PER_SESSION:-30}"
-MAX_CONSECUTIVE_FAILURES="${MAX_CONSECUTIVE_FAILURES:-2}"
+MAX_CONSECUTIVE_FAILURES="${MAX_CONSECUTIVE_FAILURES:-5}"
 MAX_REVIEW_ROUNDS="${MAX_REVIEW_ROUNDS:-3}"
+MAX_TEST_FIX_RETRIES="${MAX_TEST_FIX_RETRIES:-2}"
 MAX_MODEL_RETRIES="${MAX_MODEL_RETRIES:-2}"
 RETRY_BASE_SECONDS="${RETRY_BASE_SECONDS:-5}"
 
@@ -71,6 +72,8 @@ RETRY_BASE_SECONDS="${RETRY_BASE_SECONDS:-5}"
 # ==============================================================================
 ALLOWED_BRANCHES="${ALLOWED_BRANCHES:-main,dev}"
 ALLOW_UNTRACKED_REGEX="${ALLOW_UNTRACKED_REGEX:-^(\.DS_Store|qlpk-autonomous-framework(-v2\.zip|/.*)?|docs/.*|be/.*|fe/.*)$}"
+AUTO_COMMIT_ON_DONE="${AUTO_COMMIT_ON_DONE:-1}"
+TARGET_COMMIT_BRANCH="${TARGET_COMMIT_BRANCH:-dev}"
 
 SESSION_START_EPOCH="$(date +%s)"
 ACTIVE_CHILD_PID=""
@@ -312,13 +315,14 @@ assert_clean_git_tree() {
   local current_branch
   current_branch="$(git -C "$PROJECT_ROOT" branch --show-current 2>/dev/null || true)"
   local branch_ok=0
-  local IFS=','
-  for b in $ALLOWED_BRANCHES; do
+  local b
+  while IFS= read -r b; do
+    [[ -z "$b" ]] && continue
     if [[ "$current_branch" == "$b" ]]; then
       branch_ok=1
       break
     fi
-  done
+  done < <(tr ',' '\n' <<<"$ALLOWED_BRANCHES")
   if [[ "$branch_ok" -eq 0 ]]; then
     log "BLOCKED: Current branch '${current_branch}' is not in ALLOWED_BRANCHES (${ALLOWED_BRANCHES})."
     return 1
@@ -651,7 +655,7 @@ execute_task_lifecycle() {
   wait_for_resources || return 11
 
   local coder_out="${REPORTS_DIR}/tasks/${task_id}-coder.json"
-  local coder_prompt="ROLE=CODER TASK_ID=${task_id} RUN_ID=${run_id} GOAL=${task_goal} — Read ${ROADMAP_FILE} section for ${task_id} and ${FRAMEWORK_DIR}/AGENTS.md. Implement all required deliverables within allowed_files so all mandatory test_commands pass."
+  local coder_prompt="ROLE=CODER TASK_ID=${task_id} RUN_ID=${run_id} GOAL=${task_goal} — Read ${ROADMAP_FILE} section for ${task_id}. IMPORTANT: (1) Do NOT use run_command (shell execution is disabled in non-interactive print mode and Automated Tester runs test_commands after you finish). (2) Work fast and concisely: do NOT read all 30 migrations/models one by one; read only 2-3 directly relevant files and immediately create/update the required deliverable files using write_file or edit_file with absolute paths under ${PROJECT_ROOT}."
   if ! invoke_agy_model "CODER" "$CODER_MODEL" "accept-edits" "$coder_prompt" "$coder_out"; then
     log "TASK_ABORTED: Coder model invocation failed for ${task_id}."
     return 12
@@ -667,10 +671,21 @@ execute_task_lifecycle() {
     printf '\n```\n'
   } > "${REPORTS_DIR}/tasks/${task_id}.md"
 
-  if ! run_task_tests "$task_id" "$run_id" "${test_cmds[@]}"; then
-    log "GATE_BLOCKED: Automated tests FAILED for ${task_id}. Reviewer (${REVIEWER_MODEL}) will NOT be called."
-    return 13
-  fi
+  local test_fix_attempt=0
+  while ! run_task_tests "$task_id" "$run_id" "${test_cmds[@]}"; do
+    if (( test_fix_attempt >= MAX_TEST_FIX_RETRIES )); then
+      log "GATE_BLOCKED: Automated tests FAILED for ${task_id}. Reviewer (${REVIEWER_MODEL}) will NOT be called."
+      return 13
+    fi
+    test_fix_attempt=$(( test_fix_attempt + 1 ))
+    log "TEST_FIX_LOOP: Automated test failed on attempt ${test_fix_attempt}/${MAX_TEST_FIX_RETRIES} for ${task_id}; invoking ${CODER_MODEL} to fix test failure..."
+    local tfix_out="${REPORTS_DIR}/tasks/${task_id}-test-fix-${test_fix_attempt}.json"
+    local tfix_prompt="ROLE=CODER_TEST_FIX TASK_ID=${task_id} RUN_ID=${run_id} ATTEMPT=${test_fix_attempt} — Read ${REPORTS_DIR}/tasks/${task_id}-test.md and ${ROADMAP_FILE} for ${task_id}. IMPORTANT: Do NOT use run_command; use ONLY read_file, write_file, and edit_file with absolute paths under ${PROJECT_ROOT} to fix the test failure shown in ${REPORTS_DIR}/tasks/${task_id}-test.md."
+    if ! invoke_agy_model "CODER" "$CODER_MODEL" "accept-edits" "$tfix_prompt" "$tfix_out"; then
+      log "GATE_BLOCKED: Coder test-fix invocation failed for ${task_id}."
+      return 13
+    fi
+  done
 
   local round=1
   while (( round <= MAX_REVIEW_ROUNDS )); do
@@ -683,7 +698,7 @@ execute_task_lifecycle() {
 
     local review_out="${REPORTS_DIR}/tasks/${task_id}-review-round-${round}.json"
     local review_md="${REPORTS_DIR}/tasks/${task_id}-review-round-${round}.md"
-    local review_prompt="ROLE=REVIEWER TASK_ID=${task_id} RUN_ID=${run_id} ROUND=${round}/${MAX_REVIEW_ROUNDS} TEST_RESULT=PASS — Read ${ROADMAP_FILE} for ${task_id}, ${FRAMEWORK_DIR}/REVIEWER.md, and test report ${REPORTS_DIR}/tasks/${task_id}-test.md. Respond with JSON containing \"verdict\": \"PASS\" (or \"FAIL\" with findings)."
+    local review_prompt="ROLE=REVIEWER TASK_ID=${task_id} RUN_ID=${run_id} ROUND=${round}/${MAX_REVIEW_ROUNDS} TEST_RESULT=PASS — Read ${ROADMAP_FILE} for ${task_id} and ${REPORTS_DIR}/tasks/${task_id}-test.md using read_file ONLY (do NOT use run_command). Verify deliverables and respond with JSON containing \"verdict\": \"PASS\" (or \"FAIL\" with findings)."
 
     if ! invoke_agy_model "REVIEWER" "$REVIEWER_MODEL" "plan" "$review_prompt" "$review_out"; then
       log "BLOCKED: Reviewer invocation failed on round ${round} for ${task_id}."
@@ -691,9 +706,9 @@ execute_task_lifecycle() {
     fi
 
     local verdict="FAIL"
-    if grep -qiE '"verdict"[[:space:]]*:[[:space:]]*"PASS"|^PASS$|OVERALL_REVIEW_RESULT:[[:space:]]*PASS' "$review_out"; then
+    if grep -qiE '"verdict"[[:space:]]*:[[:space:]]*"PASS"|\\"verdict\\"[[:space:]]*:[[:space:]]*\\"PASS\\"|^PASS$|OVERALL_REVIEW_RESULT:[[:space:]]*PASS' "$review_out"; then
       verdict="PASS"
-    elif grep -qiE '"verdict"[[:space:]]*:[[:space:]]*"BLOCKED"|^BLOCKED$' "$review_out"; then
+    elif grep -qiE '"verdict"[[:space:]]*:[[:space:]]*"BLOCKED"|\\"verdict\\"[[:space:]]*:[[:space:]]*\\"BLOCKED\\"|^BLOCKED$' "$review_out"; then
       verdict="BLOCKED"
     fi
 
@@ -731,7 +746,7 @@ execute_task_lifecycle() {
 
     log "FIX_LOOP: Starting fix attempt ${round} for ${task_id} with ${CODER_MODEL}..."
     local fix_out="${REPORTS_DIR}/tasks/${task_id}-fix-${round}.json"
-    local fix_prompt="ROLE=CODER_FIX TASK_ID=${task_id} RUN_ID=${run_id} FIX_ROUND=${round} FINDINGS_FILE=${review_md}"
+    local fix_prompt="ROLE=CODER_FIX TASK_ID=${task_id} RUN_ID=${run_id} FIX_ROUND=${round} FINDINGS_FILE=${review_md} — Read ${review_md} and ${ROADMAP_FILE} for ${task_id}. IMPORTANT: Do NOT use run_command; use ONLY read_file, write_file, and edit_file to fix the findings."
     if ! invoke_agy_model "CODER" "$CODER_MODEL" "accept-edits" "$fix_prompt" "$fix_out"; then
       log "BLOCKED: Coder fix attempt ${round} failed for ${task_id}."
       return 19
@@ -951,6 +966,56 @@ update_progress_table() {
   ' "$PROGRESS_FILE" > "$tmp_prog" && mv "$tmp_prog" "$PROGRESS_FILE"
 }
 
+auto_commit_task_on_dev() {
+  local task_id="$1"
+  local task_goal="$2"
+
+  if [[ "${AUTO_COMMIT_ON_DONE:-1}" != "1" ]]; then
+    return 0
+  fi
+
+  local current_branch
+  current_branch="$(git -C "$PROJECT_ROOT" branch --show-current 2>/dev/null || true)"
+  if [[ "$current_branch" != "$TARGET_COMMIT_BRANCH" ]]; then
+    log "GIT_AUTO_COMMIT_SKIP: Current branch '${current_branch}' != target branch '${TARGET_COMMIT_BRANCH}' (never auto-committing onto main)."
+    return 0
+  fi
+
+  git -C "$PROJECT_ROOT" add -- \
+    be/ fe/ docs/ \
+    qlpk-autonomous-framework/PROGRESS.md \
+    qlpk-autonomous-framework/ROADMAP.md \
+    qlpk-autonomous-framework/MORNING.md \
+    qlpk-autonomous-framework/run-agy.sh 2>/dev/null || true
+
+  local rpt
+  for rpt in "${REPORTS_DIR}/tasks/${task_id}"*.md; do
+    if [[ -f "$rpt" ]]; then
+      git -C "$PROJECT_ROOT" add -- "$rpt" 2>/dev/null || true
+    fi
+  done
+
+  # Defense-in-depth: ensure runtime state, logs, and .env secrets are never staged
+  git -C "$PROJECT_ROOT" reset HEAD -- \
+    .env be/.env fe/.env \
+    qlpk-autonomous-framework/.agy-state \
+    qlpk-autonomous-framework/logs 2>/dev/null || true
+
+  if ! git -C "$PROJECT_ROOT" diff --cached --quiet; then
+    local commit_msg="feat(phase-1): complete ${task_id} - ${task_goal}"
+    if git -C "$PROJECT_ROOT" commit -m "$commit_msg" >/dev/null 2>&1; then
+      local commit_hash
+      commit_hash="$(git -C "$PROJECT_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+      log "GIT_AUTO_COMMIT: task=${task_id} branch=${current_branch} commit=${commit_hash} msg='${commit_msg}'"
+    else
+      log "WARN: GIT_AUTO_COMMIT failed for task=${task_id} on branch=${current_branch}."
+    fi
+  else
+    log "GIT_AUTO_COMMIT_NOOP: task=${task_id} branch=${current_branch} (no staged changes to commit)."
+  fi
+  return 0
+}
+
 run_session() {
   local requested_task="${1:-}"
   local tasks_to_run=()
@@ -1001,7 +1066,11 @@ run_session() {
     fi
 
     local goal="${spec_lines[0]}"
-    local cmds=("${spec_lines[@]:1}")
+    local cmds=()
+    local c_idx
+    for (( c_idx=1; c_idx<${#spec_lines[@]}; c_idx++ )); do
+      cmds+=("${spec_lines[$c_idx]}")
+    done
 
     update_progress_table "$task_id" "IN_PROGRESS" "RUNNING" "PENDING"
     local task_rc=0
@@ -1010,6 +1079,7 @@ run_session() {
 
     if [[ "$task_rc" -eq 0 ]]; then
       update_progress_table "$task_id" "DONE" "PASS" "PASS"
+      auto_commit_task_on_dev "$task_id" "$goal"
       consecutive_failures=0
       if (( idx < total_tasks )); then
         cooldown_sleep "$TASK_COOLDOWN_SECONDS" "TASK_COOLDOWN_AFTER_${task_id}" || break
@@ -1035,11 +1105,14 @@ run_session() {
 # 13. STATUS, DRY-RUN & ISOLATED SELF-TEST SUITE (AT-00 .. AT-11)
 # ==============================================================================
 status() {
-  local cpu_load free_mem
+  local cpu_load free_mem cur_branch
   cpu_load="$(get_cpu_load_per_core)"
   free_mem="$(get_free_memory_percent)"
+  cur_branch="$(git -C "$PROJECT_ROOT" branch --show-current 2>/dev/null || echo unknown)"
   printf 'framework_dir=%s\n' "$FRAMEWORK_DIR"
   printf 'project_root=%s\n' "$PROJECT_ROOT"
+  printf 'git_branch=%s\n' "$cur_branch"
+  printf 'auto_commit_on_done=%s (target_branch=%s)\n' "$AUTO_COMMIT_ON_DONE" "$TARGET_COMMIT_BRANCH"
   printf 'roadmap=%s\n' "$([[ -f "$ROADMAP_FILE" ]] && echo present || echo missing)"
   printf 'agy_cli_verification=%s\n' "$([[ -f "${REPORTS_DIR}/agy-cli-capability-matrix.md" ]] && echo verified_v1.4.7 || echo not_verified)"
   printf 'stop_requested=%s\n' "$([[ -f "$STOP_FILE" ]] && echo yes || echo no)"
@@ -1198,6 +1271,7 @@ MOCK_EOF
     export MOCK_CALLS_LOG="$mock_calls"
     export MOCK_COUNTER_FILE="${tmp_base}/counter"
     export MOCK_SCENARIO="PASS_ALL"
+    export MAX_TEST_FIX_RETRIES=0
     export OVERRIDE_CPU_LOAD_PER_CORE="0.20"
     export OVERRIDE_FREE_MEM_PERCENT="50.00"
     execute_task_lifecycle "T-AT01" "Test fail gate" "exit 1"

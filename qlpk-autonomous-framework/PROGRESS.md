@@ -5,9 +5,9 @@
 - **Roadmap approval:** `APPROVED_PHASE_01`
 - **Current phase:** `PHASE-01` — Xây dựng nền tảng và nghiệp vụ khám chữa bệnh cốt lõi
 - **Total tasks in Phase 1:** `30` (`P1-001` → `P1-030`)
-- **Completed (`DONE`):** `2 / 30` (`P1-005` — Migrations 30 bảng, `P1-006` — 30 Eloquent Models & Relationships)
-- **Remaining (`READY`):** `28 / 30`
-- **Automated test status:** `PASS` (Self-Test `AT-00..AT-11` + PHPUnit 5 tests / 89 assertions + Laravel Pint)
+- **Completed (`DONE`):** `8 / 30` (`P1-001` → `P1-008`: Khảo sát, Kiến trúc, Môi trường & `/api/v1/health`, Thiết kế CSDL, 30 Migrations, 30 Eloquent Models, Seeders RBAC/Catalog, Auth API)
+- **Remaining (`READY`):** `22 / 30` (`P1-009` → `P1-030`: RBAC Middleware, Giao diện Login, CRUD APIs & Giao diện Next.js)
+- **Automated test status:** `PASS` (Self-Test `AT-00..AT-11` + PHPUnit 24 tests / 220 assertions + Laravel Pint)
 - **Max review rounds per task:** `3`
 - **Configured Models (`agy 1.4.7`):**
   - Planner: `claude-sonnet-5-5-high`
@@ -22,14 +22,14 @@
 
 | Task ID | Nhóm | Ưu tiên | Status | Test status | Review status | Round | Coder / Reviewer Model | Evidence Report | Mô tả ngắn |
 |---|---|---|---|---|---|---:|---|---|---|
-| `P1-001` | Nhóm 1 | P0 | `IN_PROGRESS` | `RUNNING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/INITIAL_AUDIT.md` | Kiểm tra toàn bộ repository |
-| `P1-002` | Nhóm 1 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/ARCHITECTURE.md` | Xác lập kiến trúc kỹ thuật BE/FE |
-| `P1-003` | Nhóm 1 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/DEVELOPMENT.md` | Chuẩn hóa môi trường & lệnh kiểm tra |
-| `P1-004` | Nhóm 2 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/DATABASE_DESIGN.md` | Đối chiếu & chốt mô hình dữ liệu 30 bảng |
+| `P1-001` | Nhóm 1 | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/INITIAL_AUDIT.md` | Đã kiểm tra & lập báo cáo khảo sát repository |
+| `P1-002` | Nhóm 1 | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/ARCHITECTURE.md` | Đã xác lập kiến trúc kỹ thuật BE/FE (38KB) |
+| `P1-003` | Nhóm 1 | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-4-argon-medium` / `gemini-4-argon-high` | `docs/phase-1/DEVELOPMENT.md` | Đã chuẩn hóa môi trường & `/api/v1/health` (`HealthCheckApiTest` PASS) |
+| `P1-004` | Nhóm 2 | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-4-argon-medium` / `gemini-4-argon-high` | `docs/phase-1/DATABASE_DESIGN.md` | Đã chốt thiết kế & quan hệ 30 bảng CSDL |
 | `P1-005` | Nhóm 2 | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-4-argon-medium` / `gemini-4-argon-high` | `be/tests/Feature/DatabaseSchemaTest.php` | Đã tạo & migrate đủ 30 bảng lên `DBQLPK` (66 assertions PASS) |
 | `P1-006` | Nhóm 2 | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-4-argon-medium` / `gemini-4-argon-high` | `be/tests/Feature/EloquentModelsRelationshipTest.php` | Đã tạo đủ 30 Models & Relationships (89 assertions PASS) |
-| `P1-007` | Nhóm 2 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-007.md` | Seed dữ liệu nền (8 vai trò, quyền, dịch vụ mẫu) |
-| `P1-008` | Nhóm 3 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-008.md` | Xây dựng hệ thống đăng nhập API |
+| `P1-007` | Nhóm 2 | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-007.md` | Seed dữ liệu nền (8 vai trò, quyền, dịch vụ mẫu) |
+| `P1-008` | Nhóm 3 | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-008.md` | Xây dựng hệ thống đăng nhập API (`AuthApiTest` 14/14 PASS) |
 | `P1-009` | Nhóm 3 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-009.md` | Xây dựng hệ thống Role & Permission (RBAC) |
 | `P1-010` | Nhóm 3 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-010.md` | Giao diện đăng nhập & bảo vệ trang quản trị |
 | `P1-011` | Nhóm 4 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-011.md` | Xây dựng API quản lý nhân viên |
