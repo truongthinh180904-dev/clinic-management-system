@@ -626,7 +626,7 @@
 
 ### TASK `P2-025` (`F2-10-01`): Xây dựng API Quy tắc Cảnh báo & Thông báo (`/api/v1/notifications`, `/api/v1/alert-rules`) và `NotificationAndAlertApiTest`
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-016`
 - **goal:** Xây dựng API quản lý Quy tắc cảnh báo (`alert_rules`), Thông báo người dùng (`notifications`) và cơ chế quét cảnh báo tự động (`/api/v1/alerts/scan`: quét vật tư dưới định mức tồn kho, gói dịch vụ sắp hết hạn/hết buổi, hóa đơn nợ quá hạn).
 - **scope:**

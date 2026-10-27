@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AlertRuleController;
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CashTransactionController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Api\V1\InventoryTransactionController;
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\KpiTargetController;
 use App\Http\Controllers\Api\V1\MedicalRecordController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PackageServiceController;
 use App\Http\Controllers\Api\V1\PatientController;
 use App\Http\Controllers\Api\V1\PatientPackageController;
@@ -602,6 +604,59 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/inventory', [ExportController::class, 'inventory'])
                 ->middleware('permission:exports.view')
                 ->name('api.v1.exports.inventory');
+        });
+
+        // Notifications
+        Route::prefix('notifications')->group(function (): void {
+            Route::get('/', [NotificationController::class, 'index'])
+                ->middleware('permission:notifications.view')
+                ->name('api.v1.notifications.index');
+
+            Route::post('/read-all', [NotificationController::class, 'markAllAsRead'])
+                ->middleware('permission:notifications.view')
+                ->name('api.v1.notifications.read-all');
+
+            Route::patch('/{notification}/read', [NotificationController::class, 'markAsRead'])
+                ->middleware('permission:notifications.read|notifications.view')
+                ->name('api.v1.notifications.read');
+
+            Route::delete('/{notification}', [NotificationController::class, 'destroy'])
+                ->middleware('permission:notifications.view')
+                ->name('api.v1.notifications.destroy');
+        });
+
+        // Alert Rules
+        Route::prefix('alert-rules')->group(function (): void {
+            Route::get('/', [AlertRuleController::class, 'index'])
+                ->middleware('permission:alert_rules.manage|notifications.view')
+                ->name('api.v1.alert-rules.index');
+
+            Route::post('/', [AlertRuleController::class, 'store'])
+                ->middleware('permission:alert_rules.manage')
+                ->name('api.v1.alert-rules.store');
+
+            Route::get('/{alert_rule}', [AlertRuleController::class, 'show'])
+                ->middleware('permission:alert_rules.manage|notifications.view')
+                ->name('api.v1.alert-rules.show');
+
+            Route::match(['put', 'patch'], '/{alert_rule}', [AlertRuleController::class, 'update'])
+                ->middleware('permission:alert_rules.manage')
+                ->name('api.v1.alert-rules.update');
+
+            Route::delete('/{alert_rule}', [AlertRuleController::class, 'destroy'])
+                ->middleware('permission:alert_rules.manage')
+                ->name('api.v1.alert-rules.destroy');
+
+            Route::post('/scan', [AlertRuleController::class, 'scan'])
+                ->middleware('permission:alert_rules.manage')
+                ->name('api.v1.alert-rules.scan');
+        });
+
+        // Alerts Scanning Trigger
+        Route::prefix('alerts')->group(function (): void {
+            Route::post('/scan', [AlertRuleController::class, 'scan'])
+                ->middleware('permission:alert_rules.manage')
+                ->name('api.v1.alerts.scan');
         });
     });
 });
