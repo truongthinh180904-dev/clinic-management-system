@@ -47,7 +47,7 @@
 | `P1-023` | Nhóm 6 | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-023.md` | Quy tắc trừ buổi gói trong lượt khám (lock an toàn) |
 | `P1-024` | Nhóm 6 | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-024.md` | Xây dựng hồ sơ bệnh án cơ bản |
 | `P1-025` | Nhóm 6 | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-025.md` | Giao diện lượt khám và bệnh án |
-| `P1-026` | Nhóm 7 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-026.md` | Hoàn thiện kiểm thử Backend toàn diện |
+| `P1-026` | Nhóm 7 | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-026.md` | Hoàn thiện kiểm thử Backend toàn diện |
 | `P1-027` | Nhóm 7 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-027.md` | Hoàn thiện kiểm thử Frontend & tích hợp API |
 | `P1-028` | Nhóm 7 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-028.md` | Kiểm thử tích hợp 4 luồng nghiệp vụ đầu-cuối (E2E) |
 | `P1-029` | Nhóm 8 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-029.md` | Hoàn thiện bộ tài liệu kỹ thuật Giai đoạn 1 |

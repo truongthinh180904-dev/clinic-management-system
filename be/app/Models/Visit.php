@@ -35,6 +35,24 @@ class Visit extends Model
 
     public const STATUS_CANCELLED = 'CANCELLED';
 
+    public const PAYMENT_STATUS_UNPAID = 'UNPAID';
+
+    public const PAYMENT_STATUS_PARTIAL = 'PARTIAL';
+
+    public const PAYMENT_STATUS_PAID = 'PAID';
+
+    public const PAYMENT_STATUS_PACKAGED = 'PACKAGED';
+
+    /**
+     * The model's default values for attributes.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'payment_status' => self::PAYMENT_STATUS_UNPAID,
+        'status' => self::STATUS_SCHEDULED,
+    ];
+
     protected function casts(): array
     {
         return [
