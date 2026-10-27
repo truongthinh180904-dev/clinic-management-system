@@ -380,7 +380,7 @@
 
 ### TASK `P2-014` (`F2-05-03`): Xây dựng Giao diện Thu chi & Sổ quỹ chuyên nghiệp (`/finance/cashbook`)
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-013`
 - **goal:** Xây dựng giao diện Quản lý Thu chi & Sổ quỹ tại `fe/app/(admin)/finance/cashbook/page.tsx` bằng `shadcn/ui`, `lucide-react` và `recharts`.
 - **scope:**
