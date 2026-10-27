@@ -32,8 +32,8 @@ class PaymentResource extends JsonResource
             'payment_date' => $paymentDate,
             'received_by' => $this->received_by,
             'notes' => $this->notes,
-            'invoice' => new InvoiceResource($this->whenLoaded('invoice')),
-            'receiver' => new UserResource($this->whenLoaded('receiver')),
+            'invoice' => InvoiceResource::make($this->whenLoaded('invoice')),
+            'receiver' => UserResource::make($this->whenLoaded('receiver')),
             'cash_transactions' => $this->whenLoaded('cashTransactions', function () {
                 return $this->cashTransactions->map(function ($tx) {
                     return [
