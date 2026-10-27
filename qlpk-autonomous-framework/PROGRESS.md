@@ -61,7 +61,7 @@
 | `P2-027` | `F2-10` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-027.md` | Giao diện Trung tâm Phê duyệt (`/approvals`), Thông báo (`/notifications`) & Chuông Topbar |
 | `P2-028` | `F2-11` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-028.md` | Kiểm thử tích hợp End-to-End Giai đoạn 2 (`Phase2EndToEndWorkflowTest`) |
 | `P2-029` | `F2-11` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-029.md` | Kiểm thử đồng bộ toàn diện Backend + Frontend (Lint, Typecheck, Build) |
-| `P2-030` | `F2-11` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-2/PHASE_2_REPORT.md` | Hoàn thiện tài liệu & Báo cáo bàn giao Giai đoạn 2 (`PHASE_2_REPORT.md`) |
+| `P2-030` | `F2-11` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-2/PHASE_2_REPORT.md` | Hoàn thiện tài liệu & Báo cáo bàn giao Giai đoạn 2 (`PHASE_2_REPORT.md`) |
 
 ---
 

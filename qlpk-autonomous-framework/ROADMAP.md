@@ -723,7 +723,7 @@
 
 ### TASK `P2-030` (`F2-11-03`): Hoàn thiện Tài liệu Kỹ thuật & Báo cáo Nghiệm thu Giai đoạn 2 (`docs/phase-2/PHASE_2_REPORT.md`)
 - **priority:** `P0`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-029`
 - **goal:** Xuất tài liệu API Giai đoạn 2 (`docs/phase-2/API_DOCUMENTATION_PHASE_2.md`) và Báo cáo tổng kết bàn giao Giai đoạn 2 (`docs/phase-2/PHASE_2_REPORT.md`), chạy lại toàn bộ cổng chất lượng cuối cùng trước khi bàn giao cho người dùng review trên nhánh `dev`.
 - **deliverables:**
