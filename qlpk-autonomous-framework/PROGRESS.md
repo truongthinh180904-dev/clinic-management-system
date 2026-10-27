@@ -57,7 +57,7 @@
 | `P2-023` | `F2-09` | P1 | `BLOCKED` | `FAIL` | `FAIL` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-023.md` | Xây dựng API Export CSV UTF-8 BOM cho Bệnh nhân/Hóa đơn/Quỹ/Kho (`/api/v1/exports`) |
 | `P2-024` | `F2-09` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-024.md` | Giao diện Trung tâm Import / Export Dữ liệu (`/data-transfer`) |
 | `P2-025` | `F2-10` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-025.md` | Xây dựng API Quy tắc Cảnh báo & Thông báo (`/api/v1/notifications`, `/api/v1/alert-rules`) |
-| `P2-026` | `F2-10` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-026.md` | Xây dựng API Phê duyệt Tập trung (`/api/v1/approval-requests`) |
+| `P2-026` | `F2-10` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-026.md` | Xây dựng API Phê duyệt Tập trung (`/api/v1/approval-requests`) |
 | `P2-027` | `F2-10` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-027.md` | Giao diện Trung tâm Phê duyệt (`/approvals`), Thông báo (`/notifications`) & Chuông Topbar |
 | `P2-028` | `F2-11` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-028.md` | Kiểm thử tích hợp End-to-End Giai đoạn 2 (`Phase2EndToEndWorkflowTest`) |
 | `P2-029` | `F2-11` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-029.md` | Kiểm thử đồng bộ toàn diện Backend + Frontend (Lint, Typecheck, Build) |

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AlertRuleController;
 use App\Http\Controllers\Api\V1\AppointmentController;
+use App\Http\Controllers\Api\V1\ApprovalRequestController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CashTransactionController;
 use App\Http\Controllers\Api\V1\DashboardController;
@@ -657,6 +658,29 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/scan', [AlertRuleController::class, 'scan'])
                 ->middleware('permission:alert_rules.manage')
                 ->name('api.v1.alerts.scan');
+        });
+
+        // Approval Requests Workflow Management
+        Route::prefix('approval-requests')->group(function (): void {
+            Route::get('/', [ApprovalRequestController::class, 'index'])
+                ->middleware('permission:approvals.view|approvals.manage')
+                ->name('api.v1.approval-requests.index');
+
+            Route::post('/', [ApprovalRequestController::class, 'store'])
+                ->middleware('permission:approvals.view|approvals.manage|expenses.create')
+                ->name('api.v1.approval-requests.store');
+
+            Route::get('/{approvalRequest}', [ApprovalRequestController::class, 'show'])
+                ->middleware('permission:approvals.view|approvals.manage')
+                ->name('api.v1.approval-requests.show');
+
+            Route::match(['post', 'patch'], '/{approvalRequest}/approve', [ApprovalRequestController::class, 'approve'])
+                ->middleware('permission:approvals.manage')
+                ->name('api.v1.approval-requests.approve');
+
+            Route::match(['post', 'patch'], '/{approvalRequest}/reject', [ApprovalRequestController::class, 'reject'])
+                ->middleware('permission:approvals.manage')
+                ->name('api.v1.approval-requests.reject');
         });
     });
 });

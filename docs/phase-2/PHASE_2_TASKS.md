@@ -652,7 +652,7 @@
 
 ### TASK `P2-026` (`F2-10-02`): Xây dựng API Phê duyệt Tập trung (`/api/v1/approval-requests`) và `ApprovalWorkflowApiTest`
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-025`
 - **goal:** Xây dựng `ApprovalRequestController` quản lý tập trung các yêu cầu phê duyệt (`approval_requests` — duyệt phiếu chi `Expense`, yêu cầu điều chỉnh/hủy), tự động đồng bộ trạng thái sang bảng gốc (`expenses` + ghi `cash_transactions`) và gửi `Notification` tức thì cho người tạo yêu cầu.
 - **scope:**

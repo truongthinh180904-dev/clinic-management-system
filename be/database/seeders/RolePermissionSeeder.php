@@ -269,6 +269,7 @@ class RolePermissionSeeder extends Seeder
                     'inventory.view',
                     'products.view',
                     'notifications.view',
+                    'approvals.view',
                 ],
             ],
             'EMPLOYEE' => [
@@ -291,7 +292,6 @@ class RolePermissionSeeder extends Seeder
                     'inventory.view',
                     'kpi_targets.view',
                     'notifications.view',
-                    'approvals.view',
                 ],
             ],
         ];
