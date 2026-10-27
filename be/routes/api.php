@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CashTransactionController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DebtController;
 use App\Http\Controllers\Api\V1\EmployeeController;
@@ -424,6 +425,36 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/patients/{patient}/debts', [DebtController::class, 'patientDebts'])
                 ->middleware('permission:debts.view|invoices.view')
                 ->name('api.v1.debts.patient-debts-ledger');
+        });
+
+        // Cash Transactions & Cashbook Management
+        Route::prefix('cash-transactions')->group(function (): void {
+            Route::get('/summary', [CashTransactionController::class, 'summary'])
+                ->middleware('permission:cash_transactions.view')
+                ->name('api.v1.cash-transactions.summary');
+
+            Route::get('/', [CashTransactionController::class, 'index'])
+                ->middleware('permission:cash_transactions.view')
+                ->name('api.v1.cash-transactions.index');
+
+            Route::post('/', [CashTransactionController::class, 'store'])
+                ->middleware('permission:cash_transactions.create')
+                ->name('api.v1.cash-transactions.store');
+
+            Route::get('/{cash_transaction}', [CashTransactionController::class, 'show'])
+                ->middleware('permission:cash_transactions.view')
+                ->name('api.v1.cash-transactions.show');
+        });
+
+        // Alias Cashbook routes
+        Route::prefix('cashbook')->group(function (): void {
+            Route::get('/summary', [CashTransactionController::class, 'summary'])
+                ->middleware('permission:cash_transactions.view')
+                ->name('api.v1.cashbook.summary');
+
+            Route::get('/', [CashTransactionController::class, 'index'])
+                ->middleware('permission:cash_transactions.view')
+                ->name('api.v1.cashbook.index');
         });
     });
 });

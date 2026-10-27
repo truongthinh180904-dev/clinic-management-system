@@ -357,7 +357,7 @@
 
 ### TASK `P2-013` (`F2-05-02`): Xây dựng API Sổ quỹ & Giao dịch Quỹ (`/api/v1/cash-transactions`) và `CashTransactionApiTest`
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-012`
 - **goal:** Xây dựng `CashTransactionController` quản lý sổ quỹ tập trung (`cash_transactions`), hỗ trợ tra cứu lịch sử thu/chi (`IN`/`OUT`), lập phiếu thu/chi quỹ trực tiếp, và tính toán tồn quỹ đầu kỳ - thu trong kỳ - chi trong kỳ - tồn quỹ cuối kỳ theo từng phương thức (`CASH`, `BANK_TRANSFER`, `CARD`).
 - **scope:**
