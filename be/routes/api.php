@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EmployeeController;
+use App\Http\Controllers\Api\V1\PatientController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
@@ -107,6 +108,37 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('/{employee}', [EmployeeController::class, 'destroy'])
                 ->middleware('permission:employees.delete|employees.update')
                 ->name('api.v1.employees.destroy');
+        });
+
+        // Patient Management
+        Route::prefix('patients')->group(function (): void {
+            Route::post('/check-duplicates', [PatientController::class, 'checkDuplicates'])
+                ->middleware('permission:patients.view|patients.create')
+                ->name('api.v1.patients.check-duplicates');
+
+            Route::get('/', [PatientController::class, 'index'])
+                ->middleware('permission:patients.view')
+                ->name('api.v1.patients.index');
+
+            Route::post('/', [PatientController::class, 'store'])
+                ->middleware('permission:patients.create')
+                ->name('api.v1.patients.store');
+
+            Route::patch('/{patient}/status', [PatientController::class, 'updateStatus'])
+                ->middleware('permission:patients.update')
+                ->name('api.v1.patients.status.update');
+
+            Route::get('/{patient}', [PatientController::class, 'show'])
+                ->middleware('permission:patients.view')
+                ->name('api.v1.patients.show');
+
+            Route::match(['put', 'patch'], '/{patient}', [PatientController::class, 'update'])
+                ->middleware('permission:patients.update')
+                ->name('api.v1.patients.update');
+
+            Route::delete('/{patient}', [PatientController::class, 'destroy'])
+                ->middleware('permission:patients.delete|patients.update')
+                ->name('api.v1.patients.destroy');
         });
     });
 });
