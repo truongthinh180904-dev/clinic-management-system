@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\DebtController;
 use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\InventoryTransactionController;
 use App\Http\Controllers\Api\V1\InvoiceController;
+use App\Http\Controllers\Api\V1\KpiTargetController;
 use App\Http\Controllers\Api\V1\MedicalRecordController;
 use App\Http\Controllers\Api\V1\PackageServiceController;
 use App\Http\Controllers\Api\V1\PatientController;
@@ -515,5 +516,36 @@ Route::prefix('v1')->group(function (): void {
                 ->middleware('permission:inventory.view')
                 ->name('api.v1.inventory.transactions');
         });
+
+        // KPI Targets Management
+        Route::prefix('kpi-targets')->group(function (): void {
+            Route::get('/summary', [KpiTargetController::class, 'summary'])
+                ->middleware('permission:kpi_targets.view')
+                ->name('api.v1.kpi-targets.summary');
+
+            Route::get('/', [KpiTargetController::class, 'index'])
+                ->middleware('permission:kpi_targets.view')
+                ->name('api.v1.kpi-targets.index');
+
+            Route::post('/', [KpiTargetController::class, 'store'])
+                ->middleware('permission:kpi_targets.manage')
+                ->name('api.v1.kpi-targets.store');
+
+            Route::get('/{kpi_target}', [KpiTargetController::class, 'show'])
+                ->middleware('permission:kpi_targets.view')
+                ->name('api.v1.kpi-targets.show');
+
+            Route::match(['put', 'patch'], '/{kpi_target}', [KpiTargetController::class, 'update'])
+                ->middleware('permission:kpi_targets.manage')
+                ->name('api.v1.kpi-targets.update');
+
+            Route::delete('/{kpi_target}', [KpiTargetController::class, 'destroy'])
+                ->middleware('permission:kpi_targets.manage')
+                ->name('api.v1.kpi-targets.destroy');
+        });
+
+        Route::get('/employees/{employee}/kpi-targets', [KpiTargetController::class, 'index'])
+            ->middleware('permission:kpi_targets.view')
+            ->name('api.v1.employees.kpi-targets.index');
     });
 });
