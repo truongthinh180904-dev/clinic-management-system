@@ -933,6 +933,149 @@ get_demo_task_spec() {
       printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint --test\n'
       printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
       ;;
+    P2-001)
+      printf 'Survey Phase 1 baseline and generate Phase 2 implementation plan in docs/phase-2/F2-01-01_SURVEY_AND_PLAN.md and PHASE_2_TASKS.md\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-1/PHASE_1_TASKS.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-2/F2-01-01_SURVEY_AND_PLAN.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-2/PHASE_2_TASKS.md"\n'
+      ;;
+    P2-002)
+      printf 'Install lucide-react, recharts, clsx, tailwind-merge, class-variance-authority and build shadcn/ui Core Design System in fe/components/ui/\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npm install --no-audit --no-fund lucide-react recharts clsx tailwind-merge class-variance-authority && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-003)
+      printf 'Upgrade AdminShell.tsx and LoginPage with professional shadcn/ui components, lucide-react icons, and grouped Phase 2 navigation\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-004)
+      printf 'Extend RolePermissionSeeder and DemoCatalogSeeder for Phase 2 modules and verify with Phase2PermissionSeederTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DatabaseSeederTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=Phase2PermissionSeederTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-005)
+      printf 'Implement Dashboard Overview API (/api/v1/dashboard/summary, /revenue-chart, /visit-trends, /top-performers) and DashboardApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DashboardApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-006)
+      printf 'Implement executive Dashboard UI at fe/app/admin/page.tsx with shadcn/ui StatCards and interactive Recharts charts\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-007)
+      printf 'Implement Invoice management API (/api/v1/invoices) and InvoiceApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=InvoiceApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-008)
+      printf 'Implement multi-installment Payment API (/api/v1/payments) with lockForUpdate, auto cashbook entry, and PaymentApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=PaymentApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-009)
+      printf 'Implement Invoices & Cashier UI (/invoices and /invoices/[id]) with shadcn/ui and multi-payment modal\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-010)
+      printf 'Implement Debt & Receivable tracking API (/api/v1/debts/summary, /debts/patients, /patients/{patient}/debts) and DebtManagementApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DebtManagementApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-011)
+      printf 'Implement Debt Management UI (/debts) with shadcn/ui, aging analysis, and quick debt collection modal\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-012)
+      printf 'Implement ExpenseCategory and Expense API (/api/v1/expense-categories, /api/v1/expenses) with approval workflow and ExpenseApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ExpenseApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-013)
+      printf 'Implement Cashbook & CashTransaction API (/api/v1/cash-transactions, /summary) and CashTransactionApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=CashTransactionApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-014)
+      printf 'Implement Finance, Expenses & Cashbook UI (/finance/cashbook) with shadcn/ui Tabs and Recharts cashflow chart\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-015)
+      printf 'Implement Product catalog & dynamic stock calculation API (/api/v1/products) and ProductApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ProductApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-016)
+      printf 'Implement InventoryTransaction API (/api/v1/inventory-transactions) with lockForUpdate negative-stock prevention and InventoryTransactionApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=InventoryTransactionApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-017)
+      printf 'Implement Inventory & Stock Alert Management UI (/inventory) with shadcn/ui and lucide-react\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-018)
+      printf 'Implement Employee KPI Target & automated actual performance API (/api/v1/kpi-targets) and KpiTargetApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=KpiTargetApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-019)
+      printf 'Implement Employee KPI Management UI (/kpi) with shadcn/ui Progress and Recharts target vs actual comparison\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-020)
+      printf 'Implement Management Reports API (/api/v1/reports/financial, /clinical, /inventory) and ManagementReportApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ManagementReportApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-021)
+      printf 'Implement Management Reports Center UI (/reports) with shadcn/ui Tabs and Recharts analytics\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-022)
+      printf 'Implement CSV Data Import API (/api/v1/imports) with import_batches and import_errors tracking and DataImportApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DataImportApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-023)
+      printf 'Implement UTF-8 BOM CSV Data Export API (/api/v1/exports/patients, /invoices, /cashbook, /inventory) and DataExportApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DataExportApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-024)
+      printf 'Implement Data Import & Export Center UI (/data-transfer) with shadcn/ui error inspection table\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-025)
+      printf 'Implement AlertRule and Notification API (/api/v1/alert-rules, /api/v1/notifications, /api/v1/alerts/scan) and NotificationAndAlertApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=NotificationAndAlertApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-026)
+      printf 'Implement ApprovalRequest workflow API (/api/v1/approval-requests) and ApprovalWorkflowApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ApprovalWorkflowApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-027)
+      printf 'Implement Approvals (/approvals) and Notifications (/notifications) UI and Topbar notification bell in AdminShell\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-028)
+      printf 'Implement comprehensive Phase 2 End-to-End integration tests in Phase2EndToEndWorkflowTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=Phase2EndToEndWorkflowTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P2-029)
+      printf 'Run full Backend PHPUnit suite, Pint, Frontend TypeScript typecheck, and Next.js production build verification\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-030)
+      printf 'Complete Phase 2 documentation (docs/phase-2/API_DOCUMENTATION_PHASE_2.md and PHASE_2_REPORT.md) and final quality gates\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-2/API_DOCUMENTATION_PHASE_2.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-2/PHASE_2_REPORT.md"\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
     *)
       return 1
       ;;
@@ -1002,7 +1145,11 @@ auto_commit_task_on_dev() {
     qlpk-autonomous-framework/logs 2>/dev/null || true
 
   if ! git -C "$PROJECT_ROOT" diff --cached --quiet; then
-    local commit_msg="feat(phase-1): complete ${task_id} - ${task_goal}"
+    local phase_prefix="phase-1"
+    if [[ "$task_id" == P2-* ]]; then
+      phase_prefix="phase-2"
+    fi
+    local commit_msg="feat(${phase_prefix}): complete ${task_id} - ${task_goal}"
     if git -C "$PROJECT_ROOT" commit -m "$commit_msg" >/dev/null 2>&1; then
       local commit_hash
       commit_hash="$(git -C "$PROJECT_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
@@ -1022,15 +1169,15 @@ run_session() {
   if [[ -n "$requested_task" ]]; then
     tasks_to_run=("$requested_task")
   else
-    local all_p1_tasks=(
-      "P1-001" "P1-002" "P1-003" "P1-004" "P1-005" "P1-006" "P1-007"
-      "P1-008" "P1-009" "P1-010" "P1-011" "P1-012" "P1-013" "P1-014"
-      "P1-015" "P1-016" "P1-017" "P1-018" "P1-019" "P1-020" "P1-021"
-      "P1-022" "P1-023" "P1-024" "P1-025" "P1-026" "P1-027" "P1-028"
-      "P1-029" "P1-030"
+    local all_p2_tasks=(
+      "P2-001" "P2-002" "P2-003" "P2-004" "P2-005" "P2-006" "P2-007"
+      "P2-008" "P2-009" "P2-010" "P2-011" "P2-012" "P2-013" "P2-014"
+      "P2-015" "P2-016" "P2-017" "P2-018" "P2-019" "P2-020" "P2-021"
+      "P2-022" "P2-023" "P2-024" "P2-025" "P2-026" "P2-027" "P2-028"
+      "P2-029" "P2-030"
     )
     local t
-    for t in "${all_p1_tasks[@]}"; do
+    for t in "${all_p2_tasks[@]}"; do
       if is_task_done_in_progress "$t"; then
         log "SKIP_DONE_TASK: ${t} is already marked DONE in PROGRESS.md."
         continue
