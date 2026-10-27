@@ -455,7 +455,7 @@
 
 ### TASK `P2-017` (`F2-06-03`): Xây dựng Giao diện Quản lý Kho Thuốc & Vật tư (`/inventory`)
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-016`
 - **goal:** Xây dựng giao diện Quản lý Kho & Cảnh báo Tồn kho tại `fe/app/(admin)/inventory/page.tsx` bằng `shadcn/ui` và `lucide-react`.
 - **scope:**
