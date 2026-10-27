@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\PackageServiceController;
 use App\Http\Controllers\Api\V1\PatientController;
 use App\Http\Controllers\Api\V1\PatientPackageController;
 use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\ServicePackageController;
@@ -455,6 +456,33 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/', [CashTransactionController::class, 'index'])
                 ->middleware('permission:cash_transactions.view')
                 ->name('api.v1.cashbook.index');
+        });
+
+        // Product & Stock Catalog Management
+        Route::prefix('products')->group(function (): void {
+            Route::get('/', [ProductController::class, 'index'])
+                ->middleware('permission:products.view')
+                ->name('api.v1.products.index');
+
+            Route::post('/', [ProductController::class, 'store'])
+                ->middleware('permission:products.create')
+                ->name('api.v1.products.store');
+
+            Route::patch('/{product}/status', [ProductController::class, 'updateStatus'])
+                ->middleware('permission:products.update')
+                ->name('api.v1.products.status.update');
+
+            Route::get('/{product}', [ProductController::class, 'show'])
+                ->middleware('permission:products.view')
+                ->name('api.v1.products.show');
+
+            Route::match(['put', 'patch'], '/{product}', [ProductController::class, 'update'])
+                ->middleware('permission:products.update')
+                ->name('api.v1.products.update');
+
+            Route::delete('/{product}', [ProductController::class, 'destroy'])
+                ->middleware('permission:products.delete|products.update')
+                ->name('api.v1.products.destroy');
         });
     });
 });

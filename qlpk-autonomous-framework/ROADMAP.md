@@ -402,7 +402,7 @@
 
 ### TASK `P2-015` (`F2-06-01`): Xây dựng API Danh mục Sản phẩm & Tồn kho (`/api/v1/products`) và `ProductApiTest`
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-004`
 - **goal:** Xây dựng API quản lý Sản phẩm/Thuốc/Vật tư (`products`) có tự động tính toán số lượng tồn kho hiện tại (`current_stock` kiểu `DECIMAL(15,3)`) từ lịch sử giao dịch kho và gắn cờ cảnh báo khi `current_stock <= minimum_stock`.
 - **scope:**

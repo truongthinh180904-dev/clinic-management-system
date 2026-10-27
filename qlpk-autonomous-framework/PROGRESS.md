@@ -46,7 +46,7 @@
 | `P2-012` | `F2-05` | P1 | `BLOCKED` | `FAIL` | `FAIL` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-012.md` | Xây dựng API Danh mục Chi phí & Phiếu chi (`/api/v1/expenses`) |
 | `P2-013` | `F2-05` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-013.md` | Xây dựng API Sổ quỹ & Dòng tiền (`/api/v1/cash-transactions`) |
 | `P2-014` | `F2-05` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-014.md` | Giao diện Thu chi & Sổ quỹ chuyên nghiệp (`/finance/cashbook`) |
-| `P2-015` | `F2-06` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-015.md` | Xây dựng API Danh mục Sản phẩm & Tồn kho (`/api/v1/products`) |
+| `P2-015` | `F2-06` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-015.md` | Xây dựng API Danh mục Sản phẩm & Tồn kho (`/api/v1/products`) |
 | `P2-016` | `F2-06` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-016.md` | Xây dựng API Giao dịch Nhập/Xuất/Kiểm kê Kho chống âm kho |
 | `P2-017` | `F2-06` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-017.md` | Giao diện Quản lý Kho Thuốc, Vật tư & Cảnh báo tồn kho (`/inventory`) |
 | `P2-018` | `F2-07` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-018.md` | Xây dựng API Chỉ tiêu & Thực đạt KPI Nhân viên (`/api/v1/kpi-targets`) |
