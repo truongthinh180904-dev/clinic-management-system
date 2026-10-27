@@ -532,6 +532,8 @@ class ManagementReportApiTest extends TestCase
             'employee_id' => $admin->employee_id,
             'service_id' => $service->id,
             'appointment_date' => '2026-09-20',
+            'start_time' => '09:00',
+            'end_time' => '09:30',
             'status' => 'COMPLETED',
             'created_by' => $admin->id,
         ]);
@@ -543,6 +545,8 @@ class ManagementReportApiTest extends TestCase
             'employee_id' => $admin->employee_id,
             'service_id' => $service->id,
             'appointment_date' => '2026-10-20',
+            'start_time' => '10:00',
+            'end_time' => '10:30',
             'status' => 'COMPLETED',
             'created_by' => $admin->id,
         ]);

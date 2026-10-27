@@ -710,7 +710,7 @@
 
 ### TASK `P2-029` (`F2-11-02`): Kiểm tra đồng bộ toàn diện Backend Test Suite, Pint, Frontend Typecheck, Lint & Production Build
 - **priority:** `P0`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-028`
 - **goal:** Chạy toàn bộ bộ kiểm thử của cả Giai đoạn 1 và Giai đoạn 2 trên Backend (`php artisan test && ./vendor/bin/pint --test`) và Frontend (`npx tsc --noEmit && npm run lint && npm run build`), đảm bảo 0 lỗi, 0 xung đột.
 - **deliverables:**
