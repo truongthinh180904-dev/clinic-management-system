@@ -377,6 +377,7 @@ class DebtController extends Controller
                     'total_paid' => round($totalPaid, 2),
                     'total_collected' => round($totalPaid, 2),
                     'total_remaining_debt' => round($totalRemainingDebt, 2),
+                    'total_remaining' => round($totalRemainingDebt, 2),
                     'remaining_debt' => round($totalRemainingDebt, 2),
                     'total_invoices_count' => $invoices->count(),
                     'debt_invoices_count' => $debtInvoicesCount,

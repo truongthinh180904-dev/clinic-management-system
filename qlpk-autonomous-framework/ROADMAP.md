@@ -692,7 +692,7 @@
 
 ### TASK `P2-028` (`F2-11-01`): Kiểm thử tích hợp End-to-End Giai đoạn 2 (`Phase2EndToEndWorkflowTest`)
 - **priority:** `P0`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-027`
 - **goal:** Xây dựng bộ kiểm thử tích hợp xuyên suốt Giai đoạn 2 tại `be/tests/Feature/Phase2EndToEndWorkflowTest.php` kiểm chứng tính toàn vẹn dữ liệu giữa Khám bệnh → Hóa đơn → Thanh toán nhiều đợt → Công nợ → Sổ quỹ → Chi phí & Phê duyệt → Kho Dược & Cảnh báo → KPI → Báo cáo.
 - **scope:**

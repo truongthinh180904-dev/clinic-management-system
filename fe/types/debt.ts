@@ -73,6 +73,7 @@ export interface PatientDebtSummary {
   total_paid: number;
   total_collected: number;
   total_remaining_debt: number;
+  total_remaining?: number;
   remaining_debt: number;
   total_invoices_count: number;
   debt_invoices_count: number;
