@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,5 +45,32 @@ Route::prefix('v1')->group(function (): void {
         Route::put('/users/{user}/roles', [RolePermissionController::class, 'updateUserRoles'])
             ->middleware('permission:roles.manage')
             ->name('api.v1.users.roles.update');
+
+        // Employee Management
+        Route::prefix('employees')->group(function (): void {
+            Route::get('/', [EmployeeController::class, 'index'])
+                ->middleware('permission:employees.view')
+                ->name('api.v1.employees.index');
+
+            Route::post('/', [EmployeeController::class, 'store'])
+                ->middleware('permission:employees.create')
+                ->name('api.v1.employees.store');
+
+            Route::patch('/{employee}/status', [EmployeeController::class, 'updateStatus'])
+                ->middleware('permission:employees.update')
+                ->name('api.v1.employees.status.update');
+
+            Route::get('/{employee}', [EmployeeController::class, 'show'])
+                ->middleware('permission:employees.view')
+                ->name('api.v1.employees.show');
+
+            Route::match(['put', 'patch'], '/{employee}', [EmployeeController::class, 'update'])
+                ->middleware('permission:employees.update')
+                ->name('api.v1.employees.update');
+
+            Route::delete('/{employee}', [EmployeeController::class, 'destroy'])
+                ->middleware('permission:employees.delete|employees.update')
+                ->name('api.v1.employees.destroy');
+        });
     });
 });
