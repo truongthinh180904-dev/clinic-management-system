@@ -22,7 +22,7 @@
 
 | Task ID | Nhóm | Ưu tiên | Status | Test status | Review status | Round | Coder / Reviewer Model | Evidence Report | Mô tả ngắn |
 |---|---|---|---|---|---|---:|---|---|---|
-| `P1-001` | Nhóm 1 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/INITIAL_AUDIT.md` | Kiểm tra toàn bộ repository |
+| `P1-001` | Nhóm 1 | P0 | `IN_PROGRESS` | `RUNNING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/INITIAL_AUDIT.md` | Kiểm tra toàn bộ repository |
 | `P1-002` | Nhóm 1 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/ARCHITECTURE.md` | Xác lập kiến trúc kỹ thuật BE/FE |
 | `P1-003` | Nhóm 1 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/DEVELOPMENT.md` | Chuẩn hóa môi trường & lệnh kiểm tra |
 | `P1-004` | Nhóm 2 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/DATABASE_DESIGN.md` | Đối chiếu & chốt mô hình dữ liệu 30 bảng |

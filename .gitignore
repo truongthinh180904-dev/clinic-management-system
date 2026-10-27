@@ -23,3 +23,11 @@ be/storage/framework/views/
 .idea/
 .vscode/
 *.log
+
+# Autonomous framework runtime state & raw logs
+qlpk-autonomous-framework-v2.zip
+qlpk-autonomous-framework/.agy-state/
+qlpk-autonomous-framework/logs/
+qlpk-autonomous-framework/reports/tasks/*.json
+qlpk-autonomous-framework/reports/tasks/*.stderr
+qlpk-autonomous-framework/reports/tasks/*.cli.log
