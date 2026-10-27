@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\PackageServiceController;
@@ -248,6 +249,37 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('/{service_package}', [ServicePackageController::class, 'destroy'])
                 ->middleware('permission:service_packages.delete|service_packages.update')
                 ->name('api.v1.service-packages.destroy');
+        });
+
+        // Appointment Management
+        Route::prefix('appointments')->group(function (): void {
+            Route::get('/', [AppointmentController::class, 'index'])
+                ->middleware('permission:appointments.view')
+                ->name('api.v1.appointments.index');
+
+            Route::post('/', [AppointmentController::class, 'store'])
+                ->middleware('permission:appointments.create')
+                ->name('api.v1.appointments.store');
+
+            Route::get('/{appointment}', [AppointmentController::class, 'show'])
+                ->middleware('permission:appointments.view')
+                ->name('api.v1.appointments.show');
+
+            Route::match(['put', 'patch'], '/{appointment}', [AppointmentController::class, 'update'])
+                ->middleware('permission:appointments.update')
+                ->name('api.v1.appointments.update');
+
+            Route::patch('/{appointment}/status', [AppointmentController::class, 'updateStatus'])
+                ->middleware('permission:appointments.update|appointments.cancel')
+                ->name('api.v1.appointments.status.update');
+
+            Route::post('/{appointment}/cancel', [AppointmentController::class, 'cancel'])
+                ->middleware('permission:appointments.cancel|appointments.update')
+                ->name('api.v1.appointments.cancel');
+
+            Route::delete('/{appointment}', [AppointmentController::class, 'destroy'])
+                ->middleware('permission:appointments.cancel|appointments.update')
+                ->name('api.v1.appointments.destroy');
         });
     });
 });
