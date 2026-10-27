@@ -157,18 +157,23 @@ class VisitController extends Controller
     /**
      * Display the specified visit.
      */
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
-        $visit = Visit::with([
+        $relations = [
             'patient',
             'employee',
             'service',
             'patientPackage.package',
             'appointment',
             'creator',
-            'medicalRecord',
             'invoices',
-        ])->find($id);
+        ];
+
+        if ($request->user()?->hasPermission('medical_records.view')) {
+            $relations[] = 'medicalRecord.doctor';
+        }
+
+        $visit = Visit::with($relations)->find($id);
 
         if (! $visit) {
             return response()->json([

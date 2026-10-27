@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EmployeeController;
+use App\Http\Controllers\Api\V1\MedicalRecordController;
 use App\Http\Controllers\Api\V1\PackageServiceController;
 use App\Http\Controllers\Api\V1\PatientController;
 use App\Http\Controllers\Api\V1\PatientPackageController;
@@ -312,6 +313,31 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('/{visit}', [VisitController::class, 'destroy'])
                 ->middleware('permission:visits.cancel|visits.update')
                 ->name('api.v1.visits.destroy');
+        });
+
+        // Medical Record Management
+        Route::prefix('visits/{visit}/medical-record')->group(function (): void {
+            Route::get('/', [MedicalRecordController::class, 'show'])
+                ->middleware('permission:medical_records.view')
+                ->name('api.v1.visits.medical-record.show');
+
+            Route::post('/', [MedicalRecordController::class, 'store'])
+                ->middleware('permission:medical_records.create')
+                ->name('api.v1.visits.medical-record.store');
+
+            Route::match(['put', 'patch'], '/', [MedicalRecordController::class, 'update'])
+                ->middleware('permission:medical_records.update')
+                ->name('api.v1.visits.medical-record.update');
+        });
+
+        Route::prefix('medical-records')->group(function (): void {
+            Route::get('/{medical_record}', [MedicalRecordController::class, 'showRecord'])
+                ->middleware('permission:medical_records.view')
+                ->name('api.v1.medical-records.show');
+
+            Route::match(['put', 'patch'], '/{medical_record}', [MedicalRecordController::class, 'updateRecord'])
+                ->middleware('permission:medical_records.update')
+                ->name('api.v1.medical-records.update');
         });
     });
 });

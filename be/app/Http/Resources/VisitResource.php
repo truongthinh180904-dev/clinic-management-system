@@ -22,6 +22,8 @@ class VisitResource extends JsonResource
             ? $this->visit_date->toIso8601String()
             : (string) $this->visit_date;
 
+        $canViewMedicalRecord = $request->user()?->hasPermission('medical_records.view') ?? false;
+
         return [
             'id' => $this->id,
             'visit_code' => $this->visit_code,
@@ -45,7 +47,9 @@ class VisitResource extends JsonResource
             'patient_package' => new PatientPackageResource($this->whenLoaded('patientPackage')),
             'appointment' => new AppointmentResource($this->whenLoaded('appointment')),
             'creator' => new UserResource($this->whenLoaded('creator')),
-            'medical_record' => $this->whenLoaded('medicalRecord'),
+            'medical_record' => $canViewMedicalRecord && $this->relationLoaded('medicalRecord')
+                ? ($this->medicalRecord ? new MedicalRecordResource($this->medicalRecord) : null)
+                : null,
             'invoices' => $this->whenLoaded('invoices'),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
