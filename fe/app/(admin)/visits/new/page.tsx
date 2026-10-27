@@ -110,6 +110,42 @@ function CreateVisitContent() {
     return () => clearTimeout(timer);
   }, [patientSearchTerm]);
 
+  // Check package validity
+  const handleSelectPackage = (pkg: PatientPackage) => {
+    setSelectedPackage(pkg);
+    setPackageError(null);
+
+    const now = new Date();
+    const expiry = new Date(pkg.expiry_date);
+    const isExpired = expiry < now;
+
+    if (pkg.status !== 'ACTIVE') {
+      setPackageError(
+        `Gói này đang ở trạng thái "${pkg.status}", không thể sử dụng để khám.`
+      );
+    } else if (pkg.remaining_sessions <= 0) {
+      setPackageError(
+        `Gói "${pkg.package?.name || pkg.id}" đã hết buổi (${pkg.used_sessions}/${pkg.total_sessions} buổi đã dùng). Vui lòng chọn gói khác hoặc dùng dịch vụ lẻ.`
+      );
+    } else if (isExpired) {
+      setPackageError(
+        `Gói "${pkg.package?.name || pkg.id}" đã hết hạn sử dụng vào ngày ${new Date(pkg.expiry_date).toLocaleDateString('vi-VN')}. Không thể trừ buổi.`
+      );
+    }
+
+    // Filter service to package services if possible
+    if (pkg.package?.services && pkg.package.services.length > 0) {
+      // If current serviceId is not in package services, select the first one
+      const inPkg = pkg.package.services.some((s) => s.id === Number(serviceId));
+      if (!inPkg) {
+        setServiceId(pkg.package.services[0].id);
+      }
+    }
+
+    setUnitPrice(0);
+    setDiscountAmount(0);
+  };
+
   // Load Patient Packages when Patient is selected
   useEffect(() => {
     if (!selectedPatient) {
@@ -176,42 +212,6 @@ function CreateVisitContent() {
       setDiscountAmount(0);
       setPaymentStatus('PAID');
     }
-  };
-
-  // Check package validity
-  const handleSelectPackage = (pkg: PatientPackage) => {
-    setSelectedPackage(pkg);
-    setPackageError(null);
-
-    const now = new Date();
-    const expiry = new Date(pkg.expiry_date);
-    const isExpired = expiry < now;
-
-    if (pkg.status !== 'ACTIVE') {
-      setPackageError(
-        `Gói này đang ở trạng thái "${pkg.status}", không thể sử dụng để khám.`
-      );
-    } else if (pkg.remaining_sessions <= 0) {
-      setPackageError(
-        `Gói "${pkg.package?.name || pkg.id}" đã hết buổi (${pkg.used_sessions}/${pkg.total_sessions} buổi đã dùng). Vui lòng chọn gói khác hoặc dùng dịch vụ lẻ.`
-      );
-    } else if (isExpired) {
-      setPackageError(
-        `Gói "${pkg.package?.name || pkg.id}" đã hết hạn sử dụng vào ngày ${new Date(pkg.expiry_date).toLocaleDateString('vi-VN')}. Không thể trừ buổi.`
-      );
-    }
-
-    // Filter service to package services if possible
-    if (pkg.package?.services && pkg.package.services.length > 0) {
-      // If current serviceId is not in package services, select the first one
-      const inPkg = pkg.package.services.some((s) => s.id === Number(serviceId));
-      if (!inPkg) {
-        setServiceId(pkg.package.services[0].id);
-      }
-    }
-
-    setUnitPrice(0);
-    setDiscountAmount(0);
   };
 
   // Handle Service Change

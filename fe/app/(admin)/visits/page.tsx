@@ -1,18 +1,15 @@
 'use client';
 
-import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { ApiError } from '@/lib/api/client';
 import {
   cancelVisit,
-  deleteVisit,
   getVisits,
   updateVisitStatus,
 } from '@/lib/api/visits';
 import { getEmployees } from '@/lib/api/employees';
-import { getPatients } from '@/lib/api/patients';
-import { getServices } from '@/lib/api/services';
 import {
   PAYMENT_STATUS_MAP,
   VISIT_STATUS_MAP,
@@ -22,8 +19,6 @@ import {
 } from '@/types/visit';
 import { PaginationMeta } from '@/types/auth';
 import { Employee } from '@/types/employee';
-import { Patient } from '@/types/patient';
-import { Service } from '@/types/service';
 
 function VisitsListContent() {
   const { hasPermission, hasRole } = useAuth();
@@ -46,20 +41,12 @@ function VisitsListContent() {
     hasRole('ADMIN') ||
     hasRole('MANAGER') ||
     hasRole('RECEPTIONIST');
-  const canDelete =
-    hasPermission('visits.cancel') ||
-    hasPermission('visits.delete') ||
-    hasRole('ADMIN');
-  const canViewMedical =
-    hasPermission('medical_records.view') ||
-    hasRole('ADMIN') ||
-    hasRole('DOCTOR');
 
   // List & pagination
   const [visits, setVisits] = useState<Visit[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(15);
+  const [perPage] = useState(15);
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -76,9 +63,6 @@ function VisitsListContent() {
 
   // Dropdown references
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [patientSearchQuery, setPatientSearchQuery] = useState('');
-  const [isSearchingPatients, setIsSearchingPatients] = useState(false);
 
   // Action Modals
   const [statusModalVisit, setStatusModalVisit] = useState<Visit | null>(null);
@@ -102,26 +86,6 @@ function VisitsListContent() {
     }
     loadRefs();
   }, []);
-
-  // Search patients for filter
-  useEffect(() => {
-    if (!patientSearchQuery.trim()) return;
-    const timer = setTimeout(async () => {
-      setIsSearchingPatients(true);
-      try {
-        const res = await getPatients({
-          search: patientSearchQuery.trim(),
-          per_page: 20,
-        });
-        setPatients(res.data || []);
-      } catch (err) {
-        console.error('Failed to search patients', err);
-      } finally {
-        setIsSearchingPatients(false);
-      }
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [patientSearchQuery]);
 
   // Load Visits
   const loadVisits = async () => {

@@ -9,7 +9,6 @@ import {
   changeUserPassword,
   createUser,
   deleteUser,
-  getRoles,
   getUsers,
   updateUser,
   updateUserStatus,
@@ -18,7 +17,6 @@ import { Employee } from '@/types/employee';
 import {
   ChangePasswordInput,
   CreateUserInput,
-  RoleItem,
   UpdateUserInput,
   UserItem,
 } from '@/types/user';
@@ -68,7 +66,6 @@ function UsersContent() {
     total: 0,
   });
 
-  const [roles, setRoles] = useState<RoleItem[]>([]);
   const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
 
   const [search, setSearch] = useState('');
@@ -116,16 +113,6 @@ function UsersContent() {
     password_confirmation: '',
   });
 
-  // Load roles list
-  const loadRoles = async () => {
-    try {
-      const res = await getRoles();
-      if (res.data) setRoles(res.data);
-    } catch {
-      // Fallback: roles can still be selected by standard names
-    }
-  };
-
   // Load employees for linking
   const loadEmployees = async () => {
     try {
@@ -159,9 +146,7 @@ function UsersContent() {
   };
 
   useEffect(() => {
-    loadRoles();
     loadEmployees();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

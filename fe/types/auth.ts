@@ -59,6 +59,14 @@ export interface ApiResponse<T = unknown> {
   errors?: Record<string, string[]> | null;
 }
 
+export interface PaginatedResponse<T> {
+  success: boolean;
+  message: string;
+  data: T[];
+  meta: PaginationMeta;
+  errors?: Record<string, string[]> | null;
+}
+
 export interface ApiErrorResponse {
   success: false;
   message: string;

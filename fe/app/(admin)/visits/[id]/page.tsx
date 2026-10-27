@@ -2,7 +2,6 @@
 
 import React, { Suspense, use, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
 import { ApiError } from '@/lib/api/client';
 import {
@@ -32,7 +31,6 @@ interface PageProps {
 }
 
 function VisitDetailContent({ visitId }: { visitId: string }) {
-  const router = useRouter();
   const { hasPermission, hasRole, user } = useAuth();
 
   // Permissions

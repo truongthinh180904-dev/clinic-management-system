@@ -85,6 +85,7 @@ function AppointmentDetailContent({ appointmentId }: { appointmentId: string }) 
 
   useEffect(() => {
     fetchAppointmentDetail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appointmentId]);
 
   // Load employees and services when opening edit modal

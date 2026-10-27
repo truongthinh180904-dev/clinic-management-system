@@ -58,7 +58,7 @@ export interface CreatePatientInput {
   notes?: string | null;
 }
 
-export interface UpdatePatientInput extends Partial<CreatePatientInput> {}
+export type UpdatePatientInput = Partial<CreatePatientInput>;
 
 export interface PatientQueryParams {
   search?: string;

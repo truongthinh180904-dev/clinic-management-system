@@ -43,7 +43,7 @@ export interface CreateEmployeeInput {
   notes?: string | null;
 }
 
-export interface UpdateEmployeeInput extends Partial<CreateEmployeeInput> {}
+export type UpdateEmployeeInput = Partial<CreateEmployeeInput>;
 
 export interface EmployeeQueryParams {
   search?: string;

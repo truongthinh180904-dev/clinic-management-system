@@ -183,10 +183,12 @@ function PackagesContent() {
 
   useEffect(() => {
     fetchAssignedPackages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignedPage, assignedStatus]);
 
   useEffect(() => {
     fetchCatalogPackages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [catalogPage, catalogStatus]);
 
   // Load patients list for assignment modal
@@ -207,6 +209,7 @@ function PackagesContent() {
     if (isAssignModalOpen) {
       searchPatientsForAssign(patientSearchTerm);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAssignModalOpen, patientSearchTerm]);
 
   // Handle assign package submission

@@ -1,4 +1,3 @@
-import { PaginationMeta } from './auth';
 import { Employee } from './employee';
 import { Patient } from './patient';
 import { Service } from './service';

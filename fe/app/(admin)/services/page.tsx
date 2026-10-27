@@ -88,6 +88,7 @@ export default function ServicesPage() {
 
   useEffect(() => {
     fetchServices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, statusFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
