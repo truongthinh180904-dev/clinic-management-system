@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\PatientController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
 use App\Http\Controllers\Api\V1\ServiceController;
+use App\Http\Controllers\Api\V1\ServicePackageController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -167,6 +168,33 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('/{service}', [ServiceController::class, 'destroy'])
                 ->middleware('permission:services.delete|services.update')
                 ->name('api.v1.services.destroy');
+        });
+
+        // Service Package Catalog Management
+        Route::prefix('service-packages')->group(function (): void {
+            Route::get('/', [ServicePackageController::class, 'index'])
+                ->middleware('permission:service_packages.view')
+                ->name('api.v1.service-packages.index');
+
+            Route::post('/', [ServicePackageController::class, 'store'])
+                ->middleware('permission:service_packages.create')
+                ->name('api.v1.service-packages.store');
+
+            Route::patch('/{service_package}/status', [ServicePackageController::class, 'updateStatus'])
+                ->middleware('permission:service_packages.update')
+                ->name('api.v1.service-packages.status.update');
+
+            Route::get('/{service_package}', [ServicePackageController::class, 'show'])
+                ->middleware('permission:service_packages.view')
+                ->name('api.v1.service-packages.show');
+
+            Route::match(['put', 'patch'], '/{service_package}', [ServicePackageController::class, 'update'])
+                ->middleware('permission:service_packages.update')
+                ->name('api.v1.service-packages.update');
+
+            Route::delete('/{service_package}', [ServicePackageController::class, 'destroy'])
+                ->middleware('permission:service_packages.delete|service_packages.update')
+                ->name('api.v1.service-packages.destroy');
         });
     });
 });
