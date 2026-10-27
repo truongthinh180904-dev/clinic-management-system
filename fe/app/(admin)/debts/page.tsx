@@ -571,7 +571,7 @@ export default function DebtManagementPage() {
                         }
                       />
                       <Tooltip
-                        formatter={(val: number) => [formatCurrency(val), 'Số tiền nợ']}
+                        formatter={(val: any) => [formatCurrency(Number(val) || 0), 'Số tiền nợ']}
                         labelFormatter={(lbl) => `Kỳ hạn: ${lbl}`}
                       />
                       <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
@@ -616,7 +616,7 @@ export default function DebtManagementPage() {
                           <Cell key={`pie-cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(val: number) => formatCurrency(val)} />
+                      <Tooltip formatter={(val: any) => formatCurrency(Number(val) || 0)} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
