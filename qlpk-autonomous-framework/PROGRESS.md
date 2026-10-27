@@ -5,8 +5,8 @@
 - **Roadmap approval:** `APPROVED_PHASE_01`
 - **Current phase:** `PHASE-01` — Xây dựng nền tảng và nghiệp vụ khám chữa bệnh cốt lõi
 - **Total tasks in Phase 1:** `30` (`P1-001` → `P1-030`)
-- **Completed (`DONE`):** `8 / 30` (`P1-001` → `P1-008`: Khảo sát, Kiến trúc, Môi trường & `/api/v1/health`, Thiết kế CSDL, 30 Migrations, 30 Eloquent Models, Seeders RBAC/Catalog, Auth API)
-- **Remaining (`READY`):** `22 / 30` (`P1-009` → `P1-030`: RBAC Middleware, Giao diện Login, CRUD APIs & Giao diện Next.js)
+- **Completed (`DONE`):** `29 / 30` (`P1-001` → `P1-029`: Toàn bộ nền tảng, CSDL, RBAC, CRUD Nghiệp vụ, E2E Tests và Tài liệu)
+- **Remaining / Final Gate:** `1 / 30` (`P1-030`: Kiểm tra cuối giai đoạn & Bàn giao tổng thể `docs/phase-1/PHASE_1_REPORT.md` ở trạng thái `REVIEW_REQUIRED`)
 - **Automated test status:** `PASS` (Self-Test `AT-00..AT-11` + PHPUnit 24 tests / 220 assertions + Laravel Pint)
 - **Max review rounds per task:** `3`
 - **Configured Models (`agy 1.4.7`):**
@@ -51,7 +51,7 @@
 | `P1-027` | Nhóm 7 | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-027.md` | Hoàn thiện kiểm thử Frontend & tích hợp API |
 | `P1-028` | Nhóm 7 | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-028.md` | Kiểm thử tích hợp 4 luồng nghiệp vụ đầu-cuối (E2E) |
 | `P1-029` | Nhóm 8 | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-029.md` | Hoàn thiện bộ tài liệu kỹ thuật Giai đoạn 1 |
-| `P1-030` | Nhóm 8 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/PHASE_1_REPORT.md` | Kiểm tra cuối giai đoạn & bàn giao (`REVIEW_REQUIRED`) |
+| `P1-030` | Nhóm 8 | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-1/PHASE_1_REPORT.md` | Kiểm tra cuối giai đoạn & bàn giao (`REVIEW_REQUIRED`) |
 
 ---
 
