@@ -205,6 +205,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if the user has all of the given roles.
+     *
+     * @param  list<string>  $roles
+     */
+    public function hasAllRoles(array $roles): bool
+    {
+        if ($this->relationLoaded('roles')) {
+            $userRoles = $this->roles->pluck('name')->all();
+        } else {
+            $userRoles = $this->roles()->pluck('name')->all();
+        }
+
+        return empty(array_diff($roles, $userRoles));
+    }
+
+    /**
      * Get all unique permissions granted to the user through their roles.
      *
      * @return Collection<int, Permission>
@@ -223,14 +239,35 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if the user has a specific permission.
+     * Check if the user has a specific permission or any of the given permissions.
+     *
+     * @param  string|list<string>  $permission
      */
-    public function hasPermission(string $permissionKey): bool
+    public function hasPermission(string|array $permission): bool
     {
         if ($this->hasRole('ADMIN')) {
             return true;
         }
 
-        return $this->permissions()->contains('permission_key', $permissionKey);
+        $permissionList = is_array($permission) ? $permission : func_get_args();
+        $keys = $this->permissions()->pluck('permission_key')->all();
+
+        return ! empty(array_intersect($permissionList, $keys));
+    }
+
+    /**
+     * Check if the user has all of the given permissions.
+     *
+     * @param  list<string>  $permissions
+     */
+    public function hasAllPermissions(array $permissions): bool
+    {
+        if ($this->hasRole('ADMIN')) {
+            return true;
+        }
+
+        $keys = $this->permissions()->pluck('permission_key')->all();
+
+        return empty(array_diff($permissions, $keys));
     }
 }

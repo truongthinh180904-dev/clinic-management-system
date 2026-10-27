@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\CheckActiveUser;
+use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\CheckRole;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\RequestGuard;
@@ -22,6 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'active_user' => CheckActiveUser::class,
+            'permission' => CheckPermission::class,
+            'role' => CheckRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -63,9 +67,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 {
                     $token = $this->request->bearerToken();
                     if (! $token) {
-                        $this->user = null;
-
-                        return null;
+                        return $this->user;
                     }
 
                     if (! is_null($this->user)) {
@@ -82,7 +84,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
                 public function setRequest(Request $request)
                 {
-                    $this->user = null;
+                    if ($request->bearerToken()) {
+                        $this->user = null;
+                    }
 
                     return parent::setRequest($request);
                 }
