@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { getNotifications } from '@/lib/api/notifications';
 import {
   LayoutDashboard,
   Users,
@@ -123,9 +124,11 @@ function findCurrentModule(pathname: string | null): { groupTitle: string; itemN
 function NavContent({
   groups,
   onItemClick,
+  unreadCount = 0,
 }: {
   groups: NavGroup[];
   onItemClick?: () => void;
+  unreadCount?: number;
 }) {
   const pathname = usePathname();
 
@@ -168,6 +171,11 @@ function NavContent({
                     />
                     <span className="truncate">{item.name}</span>
                   </div>
+                  {item.href === '/notifications' && unreadCount > 0 ? (
+                    <span className="ml-auto mr-1.5 px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  ) : null}
                   {isActive ? (
                     <ChevronRight className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400 opacity-80" />
                   ) : null}
@@ -215,6 +223,25 @@ function AdminShellInner({ children }: AdminShellProps) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState<number>(0);
+
+  const fetchUnreadCount = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const res = await getNotifications({ unread_only: 1, per_page: 1 });
+      if (typeof res?.unread_count === 'number') {
+        setUnreadNotificationsCount(res.unread_count);
+      }
+    } catch {
+      // Graceful degradation when offline or backend unreachable
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const timer = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(timer);
+  }, [fetchUnreadCount]);
 
   const closeMobileMenu = useCallback(() => {
     setMobileMenuOpen(false);
@@ -313,7 +340,7 @@ function AdminShellInner({ children }: AdminShellProps) {
               </div>
             }
           >
-            <NavContent groups={filteredGroups} />
+            <NavContent groups={filteredGroups} unreadCount={unreadNotificationsCount} />
           </Suspense>
         </div>
 
@@ -391,6 +418,7 @@ function AdminShellInner({ children }: AdminShellProps) {
             <NavContent
               groups={filteredGroups}
               onItemClick={closeMobileMenu}
+              unreadCount={unreadNotificationsCount}
             />
           </Suspense>
         </div>
@@ -447,17 +475,26 @@ function AdminShellInner({ children }: AdminShellProps) {
               </kbd>
             </div>
 
-            {/* Notifications Shortcut */}
+            {/* Notifications Shortcut with Real Unread Badge */}
             <Link
               href="/notifications"
               className="relative p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="Thông báo & Cảnh báo"
+              title={
+                unreadNotificationsCount > 0
+                  ? `Có ${unreadNotificationsCount} thông báo chưa đọc`
+                  : 'Thông báo & Cảnh báo'
+              }
+              aria-label="Thông báo và Cảnh báo"
             >
               <Bell className="h-4 w-4" />
-              <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-              </span>
+              {unreadNotificationsCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-xs">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-60"></span>
+                  <span className="relative z-10">
+                    {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
+                  </span>
+                </span>
+              )}
             </Link>
 
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
