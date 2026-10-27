@@ -21,7 +21,7 @@ const navItems: NavItem[] = [
   { name: 'Tổng quan', href: '/admin', icon: '📊' },
   { name: 'Bệnh nhân', href: '/patients', icon: '🧑‍🤝‍🧑', permission: 'patients.view' },
   { name: 'Tiếp nhận', href: '/admin/reception', icon: '👥', permission: 'patients.view' },
-  { name: 'Lịch hẹn', href: '/admin/appointments', icon: '📅', permission: 'appointments.view' },
+  { name: 'Lịch hẹn', href: '/appointments', icon: '📅', permission: 'appointments.view' },
   { name: 'Khám bệnh', href: '/admin/consultations', icon: '🩺', permission: 'encounters.view' },
   { name: 'Dịch vụ', href: '/services', icon: '💊', permission: 'services.view' },
   { name: 'Gói dịch vụ', href: '/packages', icon: '📦', permission: 'service_packages.view' },
