@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\PatientController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
+use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -139,6 +140,33 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('/{patient}', [PatientController::class, 'destroy'])
                 ->middleware('permission:patients.delete|patients.update')
                 ->name('api.v1.patients.destroy');
+        });
+
+        // Service Catalog Management
+        Route::prefix('services')->group(function (): void {
+            Route::get('/', [ServiceController::class, 'index'])
+                ->middleware('permission:services.view')
+                ->name('api.v1.services.index');
+
+            Route::post('/', [ServiceController::class, 'store'])
+                ->middleware('permission:services.create')
+                ->name('api.v1.services.store');
+
+            Route::patch('/{service}/status', [ServiceController::class, 'updateStatus'])
+                ->middleware('permission:services.update')
+                ->name('api.v1.services.status.update');
+
+            Route::get('/{service}', [ServiceController::class, 'show'])
+                ->middleware('permission:services.view')
+                ->name('api.v1.services.show');
+
+            Route::match(['put', 'patch'], '/{service}', [ServiceController::class, 'update'])
+                ->middleware('permission:services.update')
+                ->name('api.v1.services.update');
+
+            Route::delete('/{service}', [ServiceController::class, 'destroy'])
+                ->middleware('permission:services.delete|services.update')
+                ->name('api.v1.services.destroy');
         });
     });
 });
