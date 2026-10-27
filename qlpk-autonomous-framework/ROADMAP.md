@@ -228,7 +228,7 @@
 
 ### TASK `P2-008` (`F2-03-02`): Xây dựng API Thanh toán Hóa đơn nhiều đợt (`/api/v1/payments`) tự động ghi Sổ quỹ và `PaymentApiTest`
 - **priority:** `P0`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-007`
 - **goal:** Xây dựng nghiệp vụ thu tiền hóa đơn hỗ trợ thanh toán 1 lần hoặc chia nhiều đợt (`payments`), khóa dòng hóa đơn bằng `lockForUpdate()`, chống thu vượt số tiền còn nợ, tự động cập nhật trạng thái hóa đơn (`PARTIAL` / `PAID`) và tự động ghi bút toán thu (`IN`) vào bảng `cash_transactions`.
 - **scope:**
@@ -259,7 +259,7 @@
 
 ### TASK `P2-009` (`F2-03-03`): Xây dựng Giao diện Quản lý Hóa đơn & Thu ngân chuyên nghiệp (`/invoices`, `/invoices/[id]`)
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-008`
 - **goal:** Xây dựng giao diện Quản lý Hóa đơn & Thu ngân nhiều đợt tại `fe/app/(admin)/invoices/page.tsx` và `fe/app/(admin)/invoices/[id]/page.tsx` sử dụng `shadcn/ui` và `lucide-react`.
 - **scope:**

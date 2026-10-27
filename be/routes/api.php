@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\MedicalRecordController;
 use App\Http\Controllers\Api\V1\PackageServiceController;
 use App\Http\Controllers\Api\V1\PatientController;
 use App\Http\Controllers\Api\V1\PatientPackageController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\ServicePackageController;
@@ -378,6 +379,26 @@ Route::prefix('v1')->group(function (): void {
             Route::match(['patch', 'post'], '/{invoice}/cancel', [InvoiceController::class, 'cancel'])
                 ->middleware('permission:invoices.update')
                 ->name('api.v1.invoices.cancel');
+
+            // Record payment for an invoice
+            Route::post('/{invoice}/payments', [PaymentController::class, 'store'])
+                ->middleware('permission:payments.create')
+                ->name('api.v1.invoices.payments.store');
+        });
+
+        // Payment Management
+        Route::prefix('payments')->group(function (): void {
+            Route::get('/', [PaymentController::class, 'index'])
+                ->middleware('permission:payments.view')
+                ->name('api.v1.payments.index');
+
+            Route::post('/', [PaymentController::class, 'store'])
+                ->middleware('permission:payments.create')
+                ->name('api.v1.payments.store');
+
+            Route::get('/{payment}', [PaymentController::class, 'show'])
+                ->middleware('permission:payments.view')
+                ->name('api.v1.payments.show');
         });
     });
 });
