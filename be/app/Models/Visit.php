@@ -27,6 +27,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class Visit extends Model
 {
+    public const STATUS_SCHEDULED = 'SCHEDULED';
+
+    public const STATUS_IN_PROGRESS = 'IN_PROGRESS';
+
+    public const STATUS_COMPLETED = 'COMPLETED';
+
+    public const STATUS_CANCELLED = 'CANCELLED';
+
     protected function casts(): array
     {
         return [
@@ -81,5 +89,10 @@ class Visit extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class, 'visit_id');
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === self::STATUS_CANCELLED;
     }
 }

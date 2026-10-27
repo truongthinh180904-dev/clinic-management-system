@@ -292,19 +292,29 @@ class VisitController extends Controller
 
         $reason = $request->input('reason') ?? $request->input('notes');
 
-        $cancelled = $this->visitService->cancelVisit(
-            $visit,
-            $reason,
-            $request->user(),
-            $request->ip(),
-            $request->userAgent()
-        );
+        try {
+            $cancelled = $this->visitService->cancelVisit(
+                $visit,
+                $reason,
+                $request->user(),
+                $request->ip(),
+                $request->userAgent()
+            );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Hủy lượt khám thành công.',
-            'data' => new VisitResource($cancelled->load(['patient', 'employee', 'service', 'patientPackage.package', 'appointment', 'creator'])),
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Hủy lượt khám thành công.',
+                'data' => new VisitResource($cancelled->load(['patient', 'employee', 'service', 'patientPackage.package', 'appointment', 'creator'])),
+            ], 200);
+        } catch (InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => [
+                    'error' => [$e->getMessage()],
+                ],
+            ], 422);
+        }
     }
 
     /**

@@ -44,7 +44,7 @@
 | `P1-020` | Nhóm 6 | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-020.md` | API quản lý lịch hẹn (chống trùng khung giờ) |
 | `P1-021` | Nhóm 6 | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-021.md` | Giao diện quản lý lịch hẹn |
 | `P1-022` | Nhóm 6 | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-022.md` | API tạo và quản lý lượt khám |
-| `P1-023` | Nhóm 6 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-023.md` | Quy tắc trừ buổi gói trong lượt khám (lock an toàn) |
+| `P1-023` | Nhóm 6 | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-023.md` | Quy tắc trừ buổi gói trong lượt khám (lock an toàn) |
 | `P1-024` | Nhóm 6 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-024.md` | Xây dựng hồ sơ bệnh án cơ bản |
 | `P1-025` | Nhóm 6 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-025.md` | Giao diện lượt khám và bệnh án |
 | `P1-026` | Nhóm 7 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-026.md` | Hoàn thiện kiểm thử Backend toàn diện |
