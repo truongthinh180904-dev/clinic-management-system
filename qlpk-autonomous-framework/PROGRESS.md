@@ -31,7 +31,7 @@
 | `P1-007` | Nhóm 2 | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-007.md` | Seed dữ liệu nền (8 vai trò, quyền, dịch vụ mẫu) |
 | `P1-008` | Nhóm 3 | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-008.md` | Xây dựng hệ thống đăng nhập API (`AuthApiTest` 14/14 PASS) |
 | `P1-009` | Nhóm 3 | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-009.md` | Xây dựng hệ thống Role & Permission (RBAC) |
-| `P1-010` | Nhóm 3 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-010.md` | Giao diện đăng nhập & bảo vệ trang quản trị |
+| `P1-010` | Nhóm 3 | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-010.md` | Giao diện đăng nhập & bảo vệ trang quản trị |
 | `P1-011` | Nhóm 4 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-011.md` | Xây dựng API quản lý nhân viên |
 | `P1-012` | Nhóm 4 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-012.md` | Xây dựng API quản lý tài khoản & vai trò |
 | `P1-013` | Nhóm 4 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-013.md` | Xây dựng giao diện nhân sự & tài khoản |
