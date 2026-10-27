@@ -426,7 +426,7 @@
 
 ### TASK `P2-016` (`F2-06-02`): Xây dựng API Giao dịch Nhập / Xuất / Điều chỉnh Kho (`/api/v1/inventory-transactions`) chống âm kho và `InventoryTransactionApiTest`
 - **priority:** `P0`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-015`
 - **goal:** Xây dựng API giao dịch kho (`inventory_transactions`) hỗ trợ Nhập kho (`IN`), Xuất kho (`OUT`), Điều chỉnh kiểm kê (`ADJUST`) với khóa bi quan `lockForUpdate()` trên dòng `Product`, tuyệt đối không cho phép tồn kho sau giao dịch bị âm (`< 0`), và tự động sinh thông báo cảnh báo khi tồn kho rơi xuống dưới mức `minimum_stock`.
 - **scope:**

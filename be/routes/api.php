@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\CashTransactionController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DebtController;
 use App\Http\Controllers\Api\V1\EmployeeController;
+use App\Http\Controllers\Api\V1\InventoryTransactionController;
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\MedicalRecordController;
 use App\Http\Controllers\Api\V1\PackageServiceController;
@@ -483,6 +484,36 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('/{product}', [ProductController::class, 'destroy'])
                 ->middleware('permission:products.delete|products.update')
                 ->name('api.v1.products.destroy');
+        });
+
+        // Inventory Transactions & Stock Movement Management
+        Route::prefix('inventory-transactions')->group(function (): void {
+            Route::get('/summary', [InventoryTransactionController::class, 'summary'])
+                ->middleware('permission:inventory.view')
+                ->name('api.v1.inventory-transactions.summary');
+
+            Route::get('/', [InventoryTransactionController::class, 'index'])
+                ->middleware('permission:inventory.view')
+                ->name('api.v1.inventory-transactions.index');
+
+            Route::post('/', [InventoryTransactionController::class, 'store'])
+                ->middleware('permission:inventory.in|inventory.out|inventory.adjust')
+                ->name('api.v1.inventory-transactions.store');
+
+            Route::get('/{inventory_transaction}', [InventoryTransactionController::class, 'show'])
+                ->middleware('permission:inventory.view')
+                ->name('api.v1.inventory-transactions.show');
+        });
+
+        // Warehouse & Stock Summary Alias
+        Route::prefix('inventory')->group(function (): void {
+            Route::get('/summary', [InventoryTransactionController::class, 'summary'])
+                ->middleware('permission:inventory.view')
+                ->name('api.v1.inventory.summary');
+
+            Route::get('/transactions', [InventoryTransactionController::class, 'index'])
+                ->middleware('permission:inventory.view')
+                ->name('api.v1.inventory.transactions');
         });
     });
 });
