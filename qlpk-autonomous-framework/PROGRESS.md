@@ -36,7 +36,7 @@
 | `P1-012` | Nhóm 4 | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-012.md` | Xây dựng API quản lý tài khoản & vai trò |
 | `P1-013` | Nhóm 4 | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-013.md` | Xây dựng giao diện nhân sự & tài khoản |
 | `P1-014` | Nhóm 5 | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-014.md` | Xây dựng API quản lý bệnh nhân (kèm cảnh báo trùng) |
-| `P1-015` | Nhóm 5 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-015.md` | Xây dựng trang danh sách & hồ sơ bệnh nhân |
+| `P1-015` | Nhóm 5 | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-015.md` | Xây dựng trang danh sách & hồ sơ bệnh nhân |
 | `P1-016` | Nhóm 5 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-016.md` | Xây dựng API quản lý dịch vụ |
 | `P1-017` | Nhóm 5 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-017.md` | Xây dựng API quản lý gói dịch vụ |
 | `P1-018` | Nhóm 5 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-018.md` | Cấu hình dịch vụ thành phần trong gói |
