@@ -96,3 +96,14 @@ export type {
   CreateMedicalRecordInput,
   UpdateMedicalRecordInput,
 } from './medical-record';
+
+// KPI types
+export type {
+  KpiEvaluationStatus,
+  KpiTarget,
+  KpiSummary,
+  CreateKpiTargetInput,
+  UpdateKpiTargetInput,
+  KpiQueryParams,
+  KpiChartComparisonItem,
+} from './kpi';

@@ -502,7 +502,7 @@
 
 ### TASK `P2-019` (`F2-07-02`): Xây dựng Giao diện Quản lý KPI Nhân viên (`/kpi`) với `shadcn/ui` & `recharts`
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-018`
 - **goal:** Xây dựng giao diện Quản lý & Đánh giá KPI Nhân viên tại `fe/app/(admin)/kpi/page.tsx` sử dụng `shadcn/ui` (`Progress`, `StatCard`, `Badge`, `Dialog`) và biểu đồ `BarChart` của `recharts` so sánh Chỉ tiêu vs Thực đạt.
 - **scope:**
