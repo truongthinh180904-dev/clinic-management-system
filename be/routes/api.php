@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\EmployeeController;
+use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\MedicalRecordController;
 use App\Http\Controllers\Api\V1\PackageServiceController;
 use App\Http\Controllers\Api\V1\PatientController;
@@ -354,6 +355,29 @@ Route::prefix('v1')->group(function (): void {
             Route::match(['put', 'patch'], '/{medical_record}', [MedicalRecordController::class, 'updateRecord'])
                 ->middleware('permission:medical_records.update')
                 ->name('api.v1.medical-records.update');
+        });
+
+        // Invoice Management
+        Route::prefix('invoices')->group(function (): void {
+            Route::get('/', [InvoiceController::class, 'index'])
+                ->middleware('permission:invoices.view')
+                ->name('api.v1.invoices.index');
+
+            Route::post('/', [InvoiceController::class, 'store'])
+                ->middleware('permission:invoices.create')
+                ->name('api.v1.invoices.store');
+
+            Route::get('/{invoice}', [InvoiceController::class, 'show'])
+                ->middleware('permission:invoices.view')
+                ->name('api.v1.invoices.show');
+
+            Route::match(['put', 'patch'], '/{invoice}', [InvoiceController::class, 'update'])
+                ->middleware('permission:invoices.update')
+                ->name('api.v1.invoices.update');
+
+            Route::match(['patch', 'post'], '/{invoice}/cancel', [InvoiceController::class, 'cancel'])
+                ->middleware('permission:invoices.update')
+                ->name('api.v1.invoices.cancel');
         });
     });
 });

@@ -201,7 +201,7 @@
 
 ### TASK `P2-007` (`F2-03-01`): Xây dựng API Quản lý Hóa đơn (`/api/v1/invoices`) và `InvoiceApiTest`
 - **priority:** `P0`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-004`
 - **goal:** Xây dựng API quản lý vòng đời Hóa đơn (`invoices`) cho phép lập hóa đơn từ Lượt khám (`visit_id`), từ Gói dịch vụ (`patient_package_id`) hoặc hóa đơn dịch vụ trực tiếp cho bệnh nhân (`patient_id`), tự động sinh mã `invoice_code` (`INV-...`) an toàn tương tranh.
 - **scope:**

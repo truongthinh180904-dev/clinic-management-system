@@ -289,7 +289,7 @@ class DashboardController extends Controller
             }
 
             if ($dateKey) {
-                if (!isset($visitsByDate[$dateKey])) {
+                if (! isset($visitsByDate[$dateKey])) {
                     $visitsByDate[$dateKey] = [
                         'total' => 0,
                         'waiting' => 0,
