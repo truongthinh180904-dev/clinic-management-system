@@ -290,7 +290,6 @@ class RolePermissionSeeder extends Seeder
                     'products.view',
                     'inventory.view',
                     'kpi_targets.view',
-                    'exports.view',
                     'notifications.view',
                     'approvals.view',
                 ],

@@ -26,9 +26,9 @@ PROGRESS_FILE="${PROGRESS_FILE:-${FRAMEWORK_DIR}/PROGRESS.md}"
 AGY_BIN="${AGY_BIN:-agy}"
 PLANNER_MODEL="${PLANNER_MODEL:-claude-sonnet-5-5-high}"
 CODER_MODEL="${CODER_MODEL:-gemini-3.8-flash-high}"
-REVIEWER_MODEL="${REVIEWER_MODEL:-claude-sonnet-5-5-high}"
-DEBUG_FALLBACK_MODEL="${DEBUG_FALLBACK_MODEL:-claude-sonnet-5-5-high}"
-ARCH_ESCALATION_MODEL="${ARCH_ESCALATION_MODEL:-claude-opus-5-5-high}"
+REVIEWER_MODEL="${REVIEWER_MODEL:-gemini-4-argon-high}"
+DEBUG_FALLBACK_MODEL="${DEBUG_FALLBACK_MODEL:-gemini-3.8-flash-high}"
+ARCH_ESCALATION_MODEL="${ARCH_ESCALATION_MODEL:-gemini-4-argon-high}"
 ALLOW_FALLBACK="${ALLOW_FALLBACK:-1}"
 
 VALID_AGY_MODELS=(
@@ -145,6 +145,16 @@ on_signal() {
 
 acquire_lock() {
   ensure_runtime_dirs
+  if [[ "${FORCE_RUN:-0}" == "1" ]]; then
+    if [[ -f "${LOCK_DIR}/pid" ]]; then
+      local old_pid
+      old_pid="$(cat "${LOCK_DIR}/pid" 2>/dev/null || true)"
+      if [[ -n "$old_pid" ]]; then
+        kill -9 "$old_pid" 2>/dev/null || true
+      fi
+    fi
+    rm -rf -- "$LOCK_DIR" 2>/dev/null || true
+  fi
   if ! mkdir "$LOCK_DIR" 2>/dev/null; then
     local existing_pid=""
     if [[ -f "${LOCK_DIR}/pid" ]]; then
@@ -155,7 +165,7 @@ acquire_lock() {
       rm -rf -- "$LOCK_DIR"
       mkdir "$LOCK_DIR"
     else
-      log "ERROR: Lock exists at ${LOCK_DIR} (active PID: ${existing_pid:-unknown}). Refusing concurrent execution."
+      log "ERROR: Lock exists at ${LOCK_DIR} (active PID: ${existing_pid:-unknown}). Refusing concurrent execution. (Run with FORCE_RUN=1 or ./run-agy.sh unlock if stale)"
       exit 3
     fi
   fi
@@ -492,16 +502,16 @@ invoke_agy_model() {
 
     case "$err_type" in
       QUOTA_ERROR)
-        log "QUOTA_EXCEEDED: Model ${model_id} hit quota/rate limit. Working tree is preserved untouched (no reset/clean/stash). Backing off for ${QUOTA_BACKOFF_SECONDS}s."
-        if (( attempt < max_attempts )); then
-          cooldown_sleep "$QUOTA_BACKOFF_SECONDS" "QUOTA_BACKOFF" || return 75
+        log "QUOTA_EXCEEDED: Model ${model_id} hit quota/rate limit. Working tree is preserved untouched."
+        if [[ "$ALLOW_FALLBACK" -eq 1 && "$model_id" != "$DEBUG_FALLBACK_MODEL" ]]; then
+          log "FALLBACK_TRIGGERED: role=${role} from=${model_id} to=${DEBUG_FALLBACK_MODEL} reason=QUOTA_EXCEEDED"
+          model_id="$DEBUG_FALLBACK_MODEL"
+          max_attempts=$(( attempt + 1 ))
           attempt=$(( attempt + 1 ))
           continue
         fi
-        if [[ "$ALLOW_FALLBACK" -eq 1 && "$model_id" != "$DEBUG_FALLBACK_MODEL" ]]; then
-          log "FALLBACK_TRIGGERED: role=${role} from=${model_id} to=${DEBUG_FALLBACK_MODEL} reason=QUOTA_EXCEEDED_AFTER_${max_attempts}_ATTEMPTS"
-          model_id="$DEBUG_FALLBACK_MODEL"
-          max_attempts=$(( attempt + 1 ))
+        if (( attempt < max_attempts )); then
+          cooldown_sleep "$QUOTA_BACKOFF_SECONDS" "QUOTA_BACKOFF" || return 75
           attempt=$(( attempt + 1 ))
           continue
         fi
@@ -1714,6 +1724,12 @@ clear_stop() {
   log "STOP flag cleared."
 }
 
+unlock() {
+  ensure_runtime_dirs
+  rm -rf -- "$LOCK_DIR" "$STOP_FILE"
+  log "Lock and stop flag cleared."
+}
+
 main() {
   case "${1:-}" in
     status) status ;;
@@ -1722,6 +1738,7 @@ main() {
     self-test) acquire_lock; run_self_tests ;;
     stop) request_stop ;;
     clear-stop) clear_stop ;;
+    unlock|clear-lock) unlock ;;
     run)
       acquire_lock
       shift

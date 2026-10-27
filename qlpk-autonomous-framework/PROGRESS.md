@@ -17,14 +17,14 @@
 - **Tài liệu khảo sát & kế hoạch (`F2-01-01`):** [`docs/phase-2/F2-01-01_SURVEY_AND_PLAN.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-2/F2-01-01_SURVEY_AND_PLAN.md)
 - **Đặc tả 30 Task Giai đoạn 2:** [`docs/phase-2/PHASE_2_TASKS.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-2/PHASE_2_TASKS.md)
 - **Total tasks in Phase 2:** `30` (`P2-001` → `P2-030` thuộc 11 Features `F2-01` → `F2-11`)
-- **Completed (`DONE`):** `1 / 30` (`P2-001` / `F2-01-01`: Khảo sát hiện trạng & lập kế hoạch triển khai Giai đoạn 2)
-- **Remaining (`READY`):** `29 / 30` (`P2-002` → `P2-030`)
+- **Completed (`DONE`):** `17 / 30` Tasks (`P2-001` → `P2-011`, `P2-013` → `P2-019`)
+- **Remaining:** `13 / 30` Tasks (`P2-012`, `P2-020` → `P2-030`)
 - **Configured Models (`agy 1.4.7`):**
   - Planner: `claude-sonnet-5-5-high`
   - Coder: `gemini-3.8-flash-high`
-  - Reviewer: `claude-sonnet-5-5-high`
-  - Debug fallback: `claude-sonnet-5-5-high`
-  - Arch/Security escalation: `claude-opus-5-5-high`
+  - Reviewer: `gemini-4-argon-high`
+  - Debug fallback: `gemini-3.8-flash-high`
+  - Arch/Security escalation: `gemini-4-argon-high`
 
 ---
 
@@ -43,7 +43,7 @@
 | `P2-009` | `F2-03` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-009.md` | Giao diện Hóa đơn & Thu ngân nhiều đợt (`/invoices`, `/invoices/[id]`) |
 | `P2-010` | `F2-04` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-010.md` | Xây dựng API Theo dõi & Đối soát Công nợ (`/api/v1/debts`) |
 | `P2-011` | `F2-04` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-011.md` | Giao diện Quản lý Công nợ & Thu nợ nhanh (`/debts`) |
-| `P2-012` | `F2-05` | P1 | `BLOCKED` | `FAIL` | `FAIL` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-012.md` | Xây dựng API Danh mục Chi phí & Phiếu chi (`/api/v1/expenses`) |
+| `P2-012` | `F2-05` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-012.md` | Xây dựng API Danh mục Chi phí & Phiếu chi (`/api/v1/expenses`) |
 | `P2-013` | `F2-05` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-013.md` | Xây dựng API Sổ quỹ & Dòng tiền (`/api/v1/cash-transactions`) |
 | `P2-014` | `F2-05` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-014.md` | Giao diện Thu chi & Sổ quỹ chuyên nghiệp (`/finance/cashbook`) |
 | `P2-015` | `F2-06` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-015.md` | Xây dựng API Danh mục Sản phẩm & Tồn kho (`/api/v1/products`) |
@@ -51,17 +51,17 @@
 | `P2-017` | `F2-06` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-017.md` | Giao diện Quản lý Kho Thuốc, Vật tư & Cảnh báo tồn kho (`/inventory`) |
 | `P2-018` | `F2-07` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-018.md` | Xây dựng API Chỉ tiêu & Thực đạt KPI Nhân viên (`/api/v1/kpi-targets`) |
 | `P2-019` | `F2-07` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-019.md` | Giao diện Quản lý KPI Nhân viên & Biểu đồ hiệu suất (`/kpi`) |
-| `P2-020` | `F2-08` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-020.md` | Xây dựng API Báo cáo Quản trị Tài chính, Khám bệnh & Kho (`/api/v1/reports`) |
-| `P2-021` | `F2-08` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-021.md` | Giao diện Trung tâm Báo cáo Quản trị đa chiều (`/reports`) |
-| `P2-022` | `F2-09` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-022.md` | Xây dựng API Import CSV kèm lưu vết lỗi `import_errors` (`/api/v1/imports`) |
-| `P2-023` | `F2-09` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-023.md` | Xây dựng API Export CSV UTF-8 BOM cho Bệnh nhân/Hóa đơn/Quỹ/Kho (`/api/v1/exports`) |
-| `P2-024` | `F2-09` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-024.md` | Giao diện Trung tâm Import / Export Dữ liệu (`/data-transfer`) |
-| `P2-025` | `F2-10` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-025.md` | Xây dựng API Quy tắc Cảnh báo & Thông báo (`/api/v1/notifications`, `/api/v1/alert-rules`) |
-| `P2-026` | `F2-10` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-026.md` | Xây dựng API Phê duyệt Tập trung (`/api/v1/approval-requests`) |
-| `P2-027` | `F2-10` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-027.md` | Giao diện Trung tâm Phê duyệt (`/approvals`), Thông báo (`/notifications`) & Chuông Topbar |
-| `P2-028` | `F2-11` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-028.md` | Kiểm thử tích hợp End-to-End Giai đoạn 2 (`Phase2EndToEndWorkflowTest`) |
-| `P2-029` | `F2-11` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-029.md` | Kiểm thử đồng bộ toàn diện Backend + Frontend (Lint, Typecheck, Build) |
-| `P2-030` | `F2-11` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `docs/phase-2/PHASE_2_REPORT.md` | Hoàn thiện tài liệu & Báo cáo bàn giao Giai đoạn 2 (`PHASE_2_REPORT.md`) |
+| `P2-020` | `F2-08` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-020.md` | Xây dựng API Báo cáo Quản trị Tài chính, Khám bệnh & Kho (`/api/v1/reports`) |
+| `P2-021` | `F2-08` | P1 | `BLOCKED` | `FAIL` | `FAIL` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-021.md` | Giao diện Trung tâm Báo cáo Quản trị đa chiều (`/reports`) |
+| `P2-022` | `F2-09` | P1 | `BLOCKED` | `FAIL` | `FAIL` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-022.md` | Xây dựng API Import CSV kèm lưu vết lỗi `import_errors` (`/api/v1/imports`) |
+| `P2-023` | `F2-09` | P1 | `BLOCKED` | `FAIL` | `FAIL` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-023.md` | Xây dựng API Export CSV UTF-8 BOM cho Bệnh nhân/Hóa đơn/Quỹ/Kho (`/api/v1/exports`) |
+| `P2-024` | `F2-09` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-024.md` | Giao diện Trung tâm Import / Export Dữ liệu (`/data-transfer`) |
+| `P2-025` | `F2-10` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-025.md` | Xây dựng API Quy tắc Cảnh báo & Thông báo (`/api/v1/notifications`, `/api/v1/alert-rules`) |
+| `P2-026` | `F2-10` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-026.md` | Xây dựng API Phê duyệt Tập trung (`/api/v1/approval-requests`) |
+| `P2-027` | `F2-10` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-027.md` | Giao diện Trung tâm Phê duyệt (`/approvals`), Thông báo (`/notifications`) & Chuông Topbar |
+| `P2-028` | `F2-11` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-028.md` | Kiểm thử tích hợp End-to-End Giai đoạn 2 (`Phase2EndToEndWorkflowTest`) |
+| `P2-029` | `F2-11` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-029.md` | Kiểm thử đồng bộ toàn diện Backend + Frontend (Lint, Typecheck, Build) |
+| `P2-030` | `F2-11` | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `docs/phase-2/PHASE_2_REPORT.md` | Hoàn thiện tài liệu & Báo cáo bàn giao Giai đoạn 2 (`PHASE_2_REPORT.md`) |
 
 ---
 

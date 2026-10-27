@@ -40,7 +40,7 @@ export function removeStoredToken(): void {
   localStorage.removeItem(TOKEN_STORAGE_KEY);
 }
 
-const getBaseUrl = (): string => {
+export const getBaseUrl = (): string => {
   return (
     process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1'
   ).replace(/\/$/, '');
@@ -62,10 +62,12 @@ export async function request<T>(
 
   const currentToken = token !== undefined ? token : getStoredToken();
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
+  const headers: Record<string, string> = {
     Accept: 'application/json',
     ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
+    ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(customHeaders as Record<string, string>),
   };
 
@@ -75,7 +77,7 @@ export async function request<T>(
   };
 
   if (body !== undefined) {
-    config.body = JSON.stringify(body);
+    config.body = isFormData ? (body as BodyInit) : JSON.stringify(body);
   }
 
   let response: Response;

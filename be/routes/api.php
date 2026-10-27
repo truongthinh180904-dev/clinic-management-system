@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\V1\CashTransactionController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DebtController;
 use App\Http\Controllers\Api\V1\EmployeeController;
+use App\Http\Controllers\Api\V1\ExportController;
+use App\Http\Controllers\Api\V1\ImportController;
 use App\Http\Controllers\Api\V1\InventoryTransactionController;
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\KpiTargetController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\Api\V1\PatientController;
 use App\Http\Controllers\Api\V1\PatientPackageController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\ServicePackageController;
@@ -547,5 +550,58 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/employees/{employee}/kpi-targets', [KpiTargetController::class, 'index'])
             ->middleware('permission:kpi_targets.view')
             ->name('api.v1.employees.kpi-targets.index');
+
+        // Management Reports
+        Route::prefix('reports')->group(function (): void {
+            Route::get('/financial', [ReportController::class, 'financial'])
+                ->middleware('permission:reports.view')
+                ->name('api.v1.reports.financial');
+
+            Route::get('/clinical', [ReportController::class, 'clinical'])
+                ->middleware('permission:reports.view')
+                ->name('api.v1.reports.clinical');
+
+            Route::get('/inventory', [ReportController::class, 'inventory'])
+                ->middleware('permission:reports.view')
+                ->name('api.v1.reports.inventory');
+        });
+
+        // Data Import & Batch Tracking
+        Route::prefix('imports')->group(function (): void {
+            Route::get('/', [ImportController::class, 'index'])
+                ->middleware('permission:imports.manage')
+                ->name('api.v1.imports.index');
+
+            Route::get('/templates/{module}', [ImportController::class, 'template'])
+                ->middleware('permission:imports.manage')
+                ->name('api.v1.imports.template');
+
+            Route::get('/{batch}', [ImportController::class, 'show'])
+                ->middleware('permission:imports.manage')
+                ->name('api.v1.imports.show');
+
+            Route::post('/{module}', [ImportController::class, 'import'])
+                ->middleware('permission:imports.manage')
+                ->name('api.v1.imports.store');
+        });
+
+        // Data Export (CSV UTF-8 BOM)
+        Route::prefix('exports')->group(function (): void {
+            Route::get('/patients', [ExportController::class, 'patients'])
+                ->middleware('permission:exports.view')
+                ->name('api.v1.exports.patients');
+
+            Route::get('/invoices', [ExportController::class, 'invoices'])
+                ->middleware('permission:exports.view')
+                ->name('api.v1.exports.invoices');
+
+            Route::get('/cashbook', [ExportController::class, 'cashbook'])
+                ->middleware('permission:exports.view')
+                ->name('api.v1.exports.cashbook');
+
+            Route::get('/inventory', [ExportController::class, 'inventory'])
+                ->middleware('permission:exports.view')
+                ->name('api.v1.exports.inventory');
+        });
     });
 });

@@ -524,7 +524,7 @@
 
 ### TASK `P2-020` (`F2-08-01`): Xây dựng API Báo cáo Quản trị (`/api/v1/reports`) và `ManagementReportApiTest`
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-013`, `P2-016`
 - **goal:** Xây dựng `ReportController` cung cấp 3 báo cáo quản trị cốt lõi: Báo cáo Tài chính & Lợi nhuận, Báo cáo Hoạt động Khám chữa bệnh, và Báo cáo Nhập Xuất Tồn Kho.
 - **scope:**
@@ -545,7 +545,7 @@
 
 ### TASK `P2-021` (`F2-08-02`): Xây dựng Giao diện Trung tâm Báo cáo Quản trị (`/reports`) với `shadcn/ui` & `recharts`
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-020`
 - **goal:** Xây dựng giao diện Trung tâm Báo cáo Quản trị tại `fe/app/(admin)/reports/page.tsx` với bộ lọc kỳ báo cáo, 3 Tab phân hệ (`Báo cáo Tài chính`, `Báo cáo Khám bệnh`, `Báo cáo Kho Dược`), biểu đồ `recharts` và bảng phân tích chi tiết.
 - **deliverables:**
@@ -561,7 +561,7 @@
 
 ### TASK `P2-022` (`F2-09-01`): Xây dựng API Import dữ liệu từ CSV (`/api/v1/imports`) kèm lưu vết `import_batches` & `import_errors` và `DataImportApiTest`
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-015`
 - **goal:** Xây dựng `ImportController` cho phép tải lên file CSV (hoặc mảng dữ liệu chuẩn hóa từ CSV/Excel) cho các module `patients`, `services`, `products`, lưu vết đầy đủ vào `import_batches` và ghi chi tiết từng dòng lỗi vào `import_errors` (`row_number`, `column_name`, `error_message`, `raw_data`).
 - **scope:**

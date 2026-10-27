@@ -5,15 +5,24 @@
   - [`docs/phase-1/PHASE_1_TASKS.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-1/PHASE_1_TASKS.md)
   - [`docs/phase-1/PHASE_1_REPORT.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-1/PHASE_1_REPORT.md)
   - [`ROADMAP-PHASE-1-ARCHIVE.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/qlpk-autonomous-framework/ROADMAP-PHASE-1-ARCHIVE.md)
-- **Giai đoạn 2 (`PHASE-02`):** Đã hoàn tất khảo sát và lập kế hoạch **`P2-001` (`F2-01-01`)** tại [`docs/phase-2/F2-01-01_SURVEY_AND_PLAN.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-2/F2-01-01_SURVEY_AND_PLAN.md) và nạp đủ **30 Tasks (`P2-001` → `P2-030`)** thuộc **11 Features (`F2-01` → `F2-11`)** vào [`docs/phase-2/PHASE_2_TASKS.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-2/PHASE_2_TASKS.md) và [`ROADMAP.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/qlpk-autonomous-framework/ROADMAP.md).
+- **Giai đoạn 2 (`PHASE-02`):** Đã hoàn tất **`17 / 30 Tasks DONE`** (`P2-001` → `P2-011`, `P2-013` → `P2-019`).
+  - Đã xong: Khảo sát, UI Core `shadcn/ui`, AdminShell, RBAC Phase 2, Dashboard API + UI, Invoices API + UI, Payments API + Quỹ, Debts API + UI, Cashbook API + UI, Products API, Inventory Transactions API, Inventory UI, KPI Targets API, KPI Management UI.
+  - Còn lại 13 tasks (`P2-012`, `P2-020` → `P2-030`).
+  - Model Reviewer hiện tại: `gemini-4-argon-high`. Coder: `gemini-3.8-flash-high`.
 
 ---
 
-## 2. Lệnh khởi chạy tự động Giai đoạn 2 (`P2-002` → `P2-030`) trên nhánh `dev`
+## 2. Lệnh khởi chạy tự động xuyên đêm tới sáng trên nhánh `dev`
 
 ```bash
-nohup caffeinate -i env CPU_LOAD_PER_CORE_LIMIT=1.8 MAX_TASKS_PER_SESSION=30 SESSION_TIMEOUT_SECONDS=43200 ./qlpk-autonomous-framework/run-agy.sh run > qlpk-autonomous-framework/logs/overnight.out 2>&1 &
+nohup caffeinate -dimsu env FORCE_RUN=1 CPU_LOAD_PER_CORE_LIMIT=1.8 MAX_TASKS_PER_SESSION=30 SESSION_TIMEOUT_SECONDS=43200 ./qlpk-autonomous-framework/run-agy.sh run > qlpk-autonomous-framework/logs/overnight.out 2>&1 &
 ```
+
+> **Lưu ý để máy chạy thông suốt tới sáng:**
+> 1. **Cắm sạc cho máy Mac** (tránh tình trạng macOS ngắt process khi pin yếu).
+> 2. **Không gập hoàn toàn nắp MacBook** (để hở nắp hoặc không gập màn hình để macOS không ngắt kết nối mạng và tắt CPU).
+> 3. Cờ `-dimsu` của `caffeinate` sẽ ngăn chặn hoàn toàn việc tắt màn hình, ngủ ổ cứng và sleep hệ thống.
+> 4. `FORCE_RUN=1` sẽ tự động hủy tiến trình cũ còn sót lại trong bộ nhớ và khởi động phiên mới chạy bằng model `gemini-4-argon-high`.
 
 ### Các lệnh theo dõi tiến độ
 ```bash
