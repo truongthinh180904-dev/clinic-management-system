@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EmployeeController;
+use App\Http\Controllers\Api\V1\PackageServiceController;
 use App\Http\Controllers\Api\V1\PatientController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
 use App\Http\Controllers\Api\V1\ServiceController;
@@ -183,6 +184,33 @@ Route::prefix('v1')->group(function (): void {
             Route::patch('/{service_package}/status', [ServicePackageController::class, 'updateStatus'])
                 ->middleware('permission:service_packages.update')
                 ->name('api.v1.service-packages.status.update');
+
+            // Service Package Composition (Package Services)
+            Route::prefix('{package}/services')->group(function (): void {
+                Route::get('/', [PackageServiceController::class, 'index'])
+                    ->middleware('permission:service_packages.view')
+                    ->name('api.v1.service-packages.services.index');
+
+                Route::post('/', [PackageServiceController::class, 'store'])
+                    ->middleware('permission:service_packages.update|service_packages.create')
+                    ->name('api.v1.service-packages.services.store');
+
+                Route::match(['put', 'patch'], '/', [PackageServiceController::class, 'syncOrUpdate'])
+                    ->middleware('permission:service_packages.update')
+                    ->name('api.v1.service-packages.services.sync-or-update');
+
+                Route::match(['put', 'patch'], '/{service}', [PackageServiceController::class, 'update'])
+                    ->middleware('permission:service_packages.update')
+                    ->name('api.v1.service-packages.services.update');
+
+                Route::delete('/', [PackageServiceController::class, 'destroy'])
+                    ->middleware('permission:service_packages.update|service_packages.delete')
+                    ->name('api.v1.service-packages.services.destroy-by-query');
+
+                Route::delete('/{service}', [PackageServiceController::class, 'destroy'])
+                    ->middleware('permission:service_packages.update|service_packages.delete')
+                    ->name('api.v1.service-packages.services.destroy');
+            });
 
             Route::get('/{service_package}', [ServicePackageController::class, 'show'])
                 ->middleware('permission:service_packages.view')
