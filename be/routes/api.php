@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\RolePermissionController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\ServicePackageController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\VisitController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -280,6 +281,37 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('/{appointment}', [AppointmentController::class, 'destroy'])
                 ->middleware('permission:appointments.cancel|appointments.update')
                 ->name('api.v1.appointments.destroy');
+        });
+
+        // Visit Management
+        Route::prefix('visits')->group(function (): void {
+            Route::get('/', [VisitController::class, 'index'])
+                ->middleware('permission:visits.view')
+                ->name('api.v1.visits.index');
+
+            Route::post('/', [VisitController::class, 'store'])
+                ->middleware('permission:visits.create')
+                ->name('api.v1.visits.store');
+
+            Route::get('/{visit}', [VisitController::class, 'show'])
+                ->middleware('permission:visits.view')
+                ->name('api.v1.visits.show');
+
+            Route::match(['put', 'patch'], '/{visit}', [VisitController::class, 'update'])
+                ->middleware('permission:visits.update')
+                ->name('api.v1.visits.update');
+
+            Route::patch('/{visit}/status', [VisitController::class, 'updateStatus'])
+                ->middleware('permission:visits.update|visits.cancel')
+                ->name('api.v1.visits.status.update');
+
+            Route::post('/{visit}/cancel', [VisitController::class, 'cancel'])
+                ->middleware('permission:visits.cancel|visits.update')
+                ->name('api.v1.visits.cancel');
+
+            Route::delete('/{visit}', [VisitController::class, 'destroy'])
+                ->middleware('permission:visits.cancel|visits.update')
+                ->name('api.v1.visits.destroy');
         });
     });
 });
