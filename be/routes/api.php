@@ -420,6 +420,10 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/patients/{patient}', [DebtController::class, 'patientDebts'])
                 ->middleware('permission:debts.view|invoices.view')
                 ->name('api.v1.debts.patient-debts');
+
+            Route::get('/patients/{patient}/debts', [DebtController::class, 'patientDebts'])
+                ->middleware('permission:debts.view|invoices.view')
+                ->name('api.v1.debts.patient-debts-ledger');
         });
     });
 });

@@ -41,7 +41,7 @@
 | `P2-007` | `F2-03` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-007.md` | Xây dựng API Quản lý Hóa đơn (`/api/v1/invoices`) |
 | `P2-008` | `F2-03` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-008.md` | Xây dựng API Thanh toán Hóa đơn nhiều đợt (`/api/v1/payments`) + ghi quỹ |
 | `P2-009` | `F2-03` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-009.md` | Giao diện Hóa đơn & Thu ngân nhiều đợt (`/invoices`, `/invoices/[id]`) |
-| `P2-010` | `F2-04` | P1 | `BLOCKED` | `FAIL` | `FAIL` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-010.md` | Xây dựng API Theo dõi & Đối soát Công nợ (`/api/v1/debts`) |
+| `P2-010` | `F2-04` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-010.md` | Xây dựng API Theo dõi & Đối soát Công nợ (`/api/v1/debts`) |
 | `P2-011` | `F2-04` | P1 | `BLOCKED` | `FAIL` | `FAIL` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-011.md` | Giao diện Quản lý Công nợ & Thu nợ nhanh (`/debts`) |
 | `P2-012` | `F2-05` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-012.md` | Xây dựng API Danh mục Chi phí & Phiếu chi (`/api/v1/expenses`) |
 | `P2-013` | `F2-05` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-013.md` | Xây dựng API Sổ quỹ & Dòng tiền (`/api/v1/cash-transactions`) |

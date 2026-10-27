@@ -500,4 +500,72 @@ class DebtManagementApiTest extends TestCase
 
         $this->getJson('/api/v1/patients/999999/debts')->assertStatus(404);
     }
+
+    public function test_accountant_and_cashier_can_access_debt_endpoints(): void
+    {
+        $accountant = $this->createUserWithRole('ACCOUNTANT');
+        $this->authenticate($accountant)->getJson('/api/v1/debts/summary')->assertStatus(200);
+        $this->authenticate($accountant)->getJson('/api/v1/debts/patients')->assertStatus(200);
+
+        $cashier = $this->createUserWithRole('CASHIER');
+        $this->authenticate($cashier)->getJson('/api/v1/debts/summary')->assertStatus(200);
+        $this->authenticate($cashier)->getJson('/api/v1/debts/patients')->assertStatus(200);
+    }
+
+    public function test_debts_summary_supports_date_range_filtering(): void
+    {
+        $admin = $this->createUserWithRole('ADMIN');
+        $this->authenticate($admin);
+
+        $patient = $this->createPatient();
+
+        // Invoice within range (today)
+        $this->createInvoice([
+            'patient_id' => $patient->id,
+            'total_amount' => 1000000,
+            'remaining_amount' => 1000000,
+            'issued_at' => now(),
+        ]);
+
+        // Invoice outside range (60 days ago)
+        $this->createInvoice([
+            'patient_id' => $patient->id,
+            'total_amount' => 2000000,
+            'remaining_amount' => 2000000,
+            'issued_at' => now()->subDays(60),
+        ]);
+
+        $from = now()->subDays(7)->format('Y-m-d');
+        $to = now()->addDay()->format('Y-m-d');
+
+        $response = $this->getJson("/api/v1/debts/summary?start_date={$from}&end_date={$to}");
+        $response->assertStatus(200)
+            ->assertJsonPath('data.total_invoiced', 1000000)
+            ->assertJsonPath('data.total_remaining_debt', 1000000);
+    }
+
+    public function test_patient_debts_accessible_via_all_route_variants(): void
+    {
+        $admin = $this->createUserWithRole('ADMIN');
+        $this->authenticate($admin);
+
+        $patient = $this->createPatient();
+        $this->createInvoice([
+            'patient_id' => $patient->id,
+            'total_amount' => 500000,
+            'remaining_amount' => 500000,
+        ]);
+
+        // Variant 1: /api/v1/patients/{patient}/debts
+        $res1 = $this->getJson("/api/v1/patients/{$patient->id}/debts");
+        $res1->assertStatus(200)->assertJsonPath('data.patient.id', $patient->id);
+
+        // Variant 2: /api/v1/debts/patients/{patient}
+        $res2 = $this->getJson("/api/v1/debts/patients/{$patient->id}");
+        $res2->assertStatus(200)->assertJsonPath('data.patient.id', $patient->id);
+
+        // Variant 3: /api/v1/debts/patients/{patient}/debts
+        $res3 = $this->getJson("/api/v1/debts/patients/{$patient->id}/debts");
+        $res3->assertStatus(200)->assertJsonPath('data.patient.id', $patient->id);
+    }
 }

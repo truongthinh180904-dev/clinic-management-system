@@ -62,7 +62,8 @@ class DebtController extends Controller
 
         foreach ($activeDebtInvoices as $invoice) {
             $refDate = $invoice->issued_at ?? $invoice->created_at;
-            $days = $refDate ? max(0, (int) $refDate->startOfDay()->diffInDays($today, false)) : 0;
+            $carbonDate = $refDate instanceof Carbon ? $refDate : ($refDate ? Carbon::parse($refDate) : null);
+            $days = $carbonDate ? max(0, (int) $carbonDate->startOfDay()->diffInDays($today, false)) : 0;
             $rem = (float) $invoice->remaining_amount;
 
             if ($days <= 7) {
@@ -266,7 +267,7 @@ class DebtController extends Controller
      * Get detailed debt ledger for a specific patient.
      * Includes all invoices and payment installments history.
      */
-    public function patientDebts(Request $request, Patient|int $patient): JsonResponse
+    public function patientDebts(Request $request, Patient|int|string $patient): JsonResponse
     {
         if (! ($patient instanceof Patient)) {
             $patient = Patient::findOrFail($patient);
@@ -274,6 +275,7 @@ class DebtController extends Controller
 
         $invoices = Invoice::where('patient_id', $patient->id)
             ->with([
+                'patient',
                 'visit:id,visit_code,status,check_in_time',
                 'patientPackage:id,patient_id,package_id',
                 'patientPackage.package:id,name,package_code',
@@ -319,7 +321,8 @@ class DebtController extends Controller
 
         foreach ($debtInvoices as $inv) {
             $refDate = $inv->issued_at ?? $inv->created_at;
-            $days = $refDate ? max(0, (int) $refDate->startOfDay()->diffInDays($today, false)) : 0;
+            $carbonDate = $refDate instanceof Carbon ? $refDate : ($refDate ? Carbon::parse($refDate) : null);
+            $days = $carbonDate ? max(0, (int) $carbonDate->startOfDay()->diffInDays($today, false)) : 0;
             $rem = (float) $inv->remaining_amount;
 
             if ($days <= 7) {
