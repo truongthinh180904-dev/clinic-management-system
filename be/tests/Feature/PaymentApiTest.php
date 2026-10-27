@@ -2,12 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\AuditLog;
 use App\Models\CashTransaction;
 use App\Models\Employee;
 use App\Models\Invoice;
 use App\Models\Patient;
-use App\Models\Payment;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Service;

@@ -156,7 +156,7 @@
 
 ### TASK `P2-005` (`F2-02-02`): Xây dựng API Dashboard Tổng quan (`/api/v1/dashboard`) và `DashboardApiTest`
 - **priority:** `P0`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-004`
 - **goal:** Xây dựng `DashboardController` cung cấp dữ liệu thống kê tổng quan, biểu đồ doanh thu - thu chi, xu hướng lượt khám, top dịch vụ/bác sĩ và cảnh báo vận hành cho Dashboard quản trị.
 - **scope:**

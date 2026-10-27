@@ -26,10 +26,10 @@ PROGRESS_FILE="${PROGRESS_FILE:-${FRAMEWORK_DIR}/PROGRESS.md}"
 AGY_BIN="${AGY_BIN:-agy}"
 PLANNER_MODEL="${PLANNER_MODEL:-claude-sonnet-5-5-high}"
 CODER_MODEL="${CODER_MODEL:-gemini-3.8-flash-high}"
-REVIEWER_MODEL="${REVIEWER_MODEL:-gemini-4-argon-high}"
+REVIEWER_MODEL="${REVIEWER_MODEL:-claude-sonnet-5-5-high}"
 DEBUG_FALLBACK_MODEL="${DEBUG_FALLBACK_MODEL:-claude-sonnet-5-5-high}"
 ARCH_ESCALATION_MODEL="${ARCH_ESCALATION_MODEL:-claude-opus-5-5-high}"
-ALLOW_FALLBACK="${ALLOW_FALLBACK:-0}"
+ALLOW_FALLBACK="${ALLOW_FALLBACK:-1}"
 
 VALID_AGY_MODELS=(
   "gemini-4-argon-medium"
@@ -170,7 +170,7 @@ acquire_lock() {
 # 7. STOP CONDITIONS & COOLDOWN SLEEP (Rule 4.C.2, 4.C.5, 4.C.10)
 # ==============================================================================
 should_stop() {
-  if [[ -f "$STOP_FILE" ]]; then
+  if [[ -f "$STOP_FILE" && -s "$STOP_FILE" ]]; then
     log "STOP_GATE: Manual stop file detected at ${STOP_FILE}."
     return 0
   fi
@@ -495,6 +495,13 @@ invoke_agy_model() {
         log "QUOTA_EXCEEDED: Model ${model_id} hit quota/rate limit. Working tree is preserved untouched (no reset/clean/stash). Backing off for ${QUOTA_BACKOFF_SECONDS}s."
         if (( attempt < max_attempts )); then
           cooldown_sleep "$QUOTA_BACKOFF_SECONDS" "QUOTA_BACKOFF" || return 75
+          attempt=$(( attempt + 1 ))
+          continue
+        fi
+        if [[ "$ALLOW_FALLBACK" -eq 1 && "$model_id" != "$DEBUG_FALLBACK_MODEL" ]]; then
+          log "FALLBACK_TRIGGERED: role=${role} from=${model_id} to=${DEBUG_FALLBACK_MODEL} reason=QUOTA_EXCEEDED_AFTER_${max_attempts}_ATTEMPTS"
+          model_id="$DEBUG_FALLBACK_MODEL"
+          max_attempts=$(( attempt + 1 ))
           attempt=$(( attempt + 1 ))
           continue
         fi
@@ -951,12 +958,12 @@ get_demo_task_spec() {
       printf 'Extend RolePermissionSeeder and DemoCatalogSeeder for Phase 2 modules and verify with Phase2PermissionSeederTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DatabaseSeederTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=Phase2PermissionSeederTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-005)
       printf 'Implement Dashboard Overview API (/api/v1/dashboard/summary, /revenue-chart, /visit-trends, /top-performers) and DashboardApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DashboardApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-006)
       printf 'Implement executive Dashboard UI at fe/app/admin/page.tsx with shadcn/ui StatCards and interactive Recharts charts\n'
@@ -965,12 +972,12 @@ get_demo_task_spec() {
     P2-007)
       printf 'Implement Invoice management API (/api/v1/invoices) and InvoiceApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=InvoiceApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-008)
       printf 'Implement multi-installment Payment API (/api/v1/payments) with lockForUpdate, auto cashbook entry, and PaymentApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=PaymentApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-009)
       printf 'Implement Invoices & Cashier UI (/invoices and /invoices/[id]) with shadcn/ui and multi-payment modal\n'
@@ -979,7 +986,7 @@ get_demo_task_spec() {
     P2-010)
       printf 'Implement Debt & Receivable tracking API (/api/v1/debts/summary, /debts/patients, /patients/{patient}/debts) and DebtManagementApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DebtManagementApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-011)
       printf 'Implement Debt Management UI (/debts) with shadcn/ui, aging analysis, and quick debt collection modal\n'
@@ -988,12 +995,12 @@ get_demo_task_spec() {
     P2-012)
       printf 'Implement ExpenseCategory and Expense API (/api/v1/expense-categories, /api/v1/expenses) with approval workflow and ExpenseApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ExpenseApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-013)
       printf 'Implement Cashbook & CashTransaction API (/api/v1/cash-transactions, /summary) and CashTransactionApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=CashTransactionApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-014)
       printf 'Implement Finance, Expenses & Cashbook UI (/finance/cashbook) with shadcn/ui Tabs and Recharts cashflow chart\n'
@@ -1002,12 +1009,12 @@ get_demo_task_spec() {
     P2-015)
       printf 'Implement Product catalog & dynamic stock calculation API (/api/v1/products) and ProductApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ProductApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-016)
       printf 'Implement InventoryTransaction API (/api/v1/inventory-transactions) with lockForUpdate negative-stock prevention and InventoryTransactionApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=InventoryTransactionApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-017)
       printf 'Implement Inventory & Stock Alert Management UI (/inventory) with shadcn/ui and lucide-react\n'
@@ -1016,7 +1023,7 @@ get_demo_task_spec() {
     P2-018)
       printf 'Implement Employee KPI Target & automated actual performance API (/api/v1/kpi-targets) and KpiTargetApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=KpiTargetApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-019)
       printf 'Implement Employee KPI Management UI (/kpi) with shadcn/ui Progress and Recharts target vs actual comparison\n'
@@ -1025,7 +1032,7 @@ get_demo_task_spec() {
     P2-020)
       printf 'Implement Management Reports API (/api/v1/reports/financial, /clinical, /inventory) and ManagementReportApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ManagementReportApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-021)
       printf 'Implement Management Reports Center UI (/reports) with shadcn/ui Tabs and Recharts analytics\n'
@@ -1034,12 +1041,12 @@ get_demo_task_spec() {
     P2-022)
       printf 'Implement CSV Data Import API (/api/v1/imports) with import_batches and import_errors tracking and DataImportApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DataImportApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-023)
       printf 'Implement UTF-8 BOM CSV Data Export API (/api/v1/exports/patients, /invoices, /cashbook, /inventory) and DataExportApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DataExportApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-024)
       printf 'Implement Data Import & Export Center UI (/data-transfer) with shadcn/ui error inspection table\n'
@@ -1048,12 +1055,12 @@ get_demo_task_spec() {
     P2-025)
       printf 'Implement AlertRule and Notification API (/api/v1/alert-rules, /api/v1/notifications, /api/v1/alerts/scan) and NotificationAndAlertApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=NotificationAndAlertApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-026)
       printf 'Implement ApprovalRequest workflow API (/api/v1/approval-requests) and ApprovalWorkflowApiTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ApprovalWorkflowApiTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-027)
       printf 'Implement Approvals (/approvals) and Notifications (/notifications) UI and Topbar notification bell in AdminShell\n'
@@ -1062,18 +1069,18 @@ get_demo_task_spec() {
     P2-028)
       printf 'Implement comprehensive Phase 2 End-to-End integration tests in Phase2EndToEndWorkflowTest\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=Phase2EndToEndWorkflowTest\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       ;;
     P2-029)
       printf 'Run full Backend PHPUnit suite, Pint, Frontend TypeScript typecheck, and Next.js production build verification\n'
-      printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
       ;;
     P2-030)
       printf 'Complete Phase 2 documentation (docs/phase-2/API_DOCUMENTATION_PHASE_2.md and PHASE_2_REPORT.md) and final quality gates\n'
       printf 'test -s "$PROJECT_ROOT/docs/phase-2/API_DOCUMENTATION_PHASE_2.md"\n'
       printf 'test -s "$PROJECT_ROOT/docs/phase-2/PHASE_2_REPORT.md"\n'
-      printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
       ;;
     *)
@@ -1697,7 +1704,7 @@ EOF
 
 request_stop() {
   ensure_runtime_dirs
-  : > "$STOP_FILE"
+  printf 'STOP\n' > "$STOP_FILE"
   log "STOP requested at ${STOP_FILE}."
 }
 

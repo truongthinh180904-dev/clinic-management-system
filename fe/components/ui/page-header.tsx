@@ -13,6 +13,7 @@ export interface PageHeaderProps {
   description?: React.ReactNode;
   breadcrumbs?: BreadcrumbItem[];
   actions?: React.ReactNode;
+  action?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
 }
@@ -22,9 +23,12 @@ export function PageHeader({
   description,
   breadcrumbs,
   actions,
+  action,
   children,
   className,
 }: PageHeaderProps) {
+  const headerActions = actions ?? action;
+
   return (
     <div
       className={cn(
@@ -67,9 +71,9 @@ export function PageHeader({
         )}
       </div>
 
-      {(actions || children) && (
+      {(headerActions || children) && (
         <div className="flex flex-wrap items-center gap-2.5">
-          {actions}
+          {headerActions}
           {children}
         </div>
       )}

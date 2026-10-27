@@ -156,7 +156,7 @@
 
 ### TASK `P2-005` (`F2-02-02`): Xây dựng API Dashboard Tổng quan (`/api/v1/dashboard`) và `DashboardApiTest`
 - **priority:** `P0`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-004`
 - **goal:** Xây dựng `DashboardController` cung cấp dữ liệu thống kê tổng quan, biểu đồ doanh thu - thu chi, xu hướng lượt khám, top dịch vụ/bác sĩ và cảnh báo vận hành cho Dashboard quản trị.
 - **scope:**
@@ -285,7 +285,7 @@
 
 ### TASK `P2-010` (`F2-04-01`): Xây dựng API Theo dõi & Đối soát Công nợ (`/api/v1/debts`) và `DebtManagementApiTest`
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-008`
 - **goal:** Xây dựng `DebtController` phục vụ theo dõi tổng hợp số tiền phải thu, đã thu, còn nợ theo từng bệnh nhân, danh sách hóa đơn nợ và phân tích tuổi nợ (Aging Receivable).
 - **scope:**
@@ -306,7 +306,7 @@
 
 ### TASK `P2-011` (`F2-04-02`): Xây dựng Giao diện Quản lý Công nợ chuyên nghiệp (`/debts`)
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-010`
 - **goal:** Xây dựng giao diện Quản lý Công nợ tại `fe/app/(admin)/debts/page.tsx` bằng `shadcn/ui`, `lucide-react` và `recharts` giúp kế toán/thu ngân theo dõi và thu hồi nợ trực quan.
 - **scope:**

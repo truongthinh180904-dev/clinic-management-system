@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DebtController;
 use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\MedicalRecordController;
@@ -173,6 +174,11 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/{patient}/packages', [PatientPackageController::class, 'store'])
                 ->middleware('permission:patient_packages.assign|patients.update')
                 ->name('api.v1.patients.packages.store');
+
+            // Patient Debts Ledger
+            Route::get('/{patient}/debts', [DebtController::class, 'patientDebts'])
+                ->middleware('permission:debts.view|invoices.view')
+                ->name('api.v1.patients.debts');
         });
 
         // Patient Packages Management
@@ -399,6 +405,21 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/{payment}', [PaymentController::class, 'show'])
                 ->middleware('permission:payments.view')
                 ->name('api.v1.payments.show');
+        });
+
+        // Debt & Receivable Tracking Management
+        Route::prefix('debts')->group(function (): void {
+            Route::get('/summary', [DebtController::class, 'summary'])
+                ->middleware('permission:debts.view|invoices.view')
+                ->name('api.v1.debts.summary');
+
+            Route::get('/patients', [DebtController::class, 'patients'])
+                ->middleware('permission:debts.view|invoices.view')
+                ->name('api.v1.debts.patients');
+
+            Route::get('/patients/{patient}', [DebtController::class, 'patientDebts'])
+                ->middleware('permission:debts.view|invoices.view')
+                ->name('api.v1.debts.patient-debts');
         });
     });
 });
