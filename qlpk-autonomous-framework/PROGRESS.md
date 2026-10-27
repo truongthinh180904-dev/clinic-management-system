@@ -40,7 +40,7 @@
 | `P1-016` | Nhóm 5 | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-016.md` | Xây dựng API quản lý dịch vụ |
 | `P1-017` | Nhóm 5 | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-017.md` | Xây dựng API quản lý gói dịch vụ |
 | `P1-018` | Nhóm 5 | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-018.md` | Cấu hình dịch vụ thành phần trong gói |
-| `P1-019` | Nhóm 5 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-019.md` | Nghiệp vụ cấp gói dịch vụ cho bệnh nhân |
+| `P1-019` | Nhóm 5 | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-019.md` | Nghiệp vụ cấp gói dịch vụ cho bệnh nhân |
 | `P1-020` | Nhóm 6 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-020.md` | API quản lý lịch hẹn (chống trùng khung giờ) |
 | `P1-021` | Nhóm 6 | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-021.md` | Giao diện quản lý lịch hẹn |
 | `P1-022` | Nhóm 6 | P0 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P1-022.md` | API tạo và quản lý lượt khám |

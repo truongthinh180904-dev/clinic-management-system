@@ -12,6 +12,8 @@ import {
   updatePatient,
   updatePatientStatus,
 } from '@/lib/api/patients';
+import { getPatientPackages } from '@/lib/api/packages';
+import { PatientPackage } from '@/types/package';
 import {
   DuplicateWarning,
   Gender,
@@ -69,6 +71,20 @@ function PatientDetailContent({ patientId }: { patientId: string }) {
   const [formErrors, setFormErrors] = useState<Record<string, string[]> | null>(null);
   const [formGeneralError, setFormGeneralError] = useState<string | null>(null);
   const [duplicateWarnings, setDuplicateWarnings] = useState<DuplicateWarning[]>([]);
+  const [patientPackages, setPatientPackages] = useState<PatientPackage[]>([]);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(false);
+
+  const fetchPackages = async () => {
+    setIsLoadingPackages(true);
+    try {
+      const res = await getPatientPackages(patientId);
+      setPatientPackages(res.data);
+    } catch {
+      // ignore
+    } finally {
+      setIsLoadingPackages(false);
+    }
+  };
 
   const fetchDetail = async () => {
     setIsLoading(true);
@@ -101,6 +117,13 @@ function PatientDetailContent({ patientId }: { patientId: string }) {
     fetchDetail();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientId]);
+
+  useEffect(() => {
+    if (activeTab === 'packages') {
+      fetchPackages();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, patientId]);
 
   // Pre-check duplicate records excluding current patient
   const handleCheckDuplicate = async () => {
@@ -814,7 +837,7 @@ function PatientDetailContent({ patientId }: { patientId: string }) {
 
             {canViewPackages && (
               <Link
-                href={`/services?patient_id=${patient.id}`}
+                href={`/packages?patient_id=${patient.id}`}
                 className="rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-medium text-white hover:bg-blue-700"
               >
                 + Cấp gói dịch vụ mới
@@ -822,15 +845,109 @@ function PatientDetailContent({ patientId }: { patientId: string }) {
             )}
           </div>
 
-          <div className="p-8 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-            <span className="text-3xl">💊</span>
-            <h4 className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
-              Gói dịch vụ đang kích hoạt ({patient.patient_packages_count ?? 0})
-            </h4>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-              Bệnh nhân đã đăng ký {patient.patient_packages_count ?? 0} gói liệu trình tại phòng khám.
-            </p>
-          </div>
+          {isLoadingPackages ? (
+            <div className="p-8 text-center">
+              <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+              <p className="mt-2 text-xs text-slate-400">Đang tải danh sách gói của bệnh nhân...</p>
+            </div>
+          ) : patientPackages.length === 0 ? (
+            <div className="p-8 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+              <span className="text-3xl">💊</span>
+              <h4 className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
+                Chưa có gói dịch vụ nào
+              </h4>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                Bệnh nhân chưa đăng ký gói liệu trình nào tại phòng khám.
+              </p>
+              {canViewPackages && (
+                <div className="mt-4">
+                  <Link
+                    href={`/packages?patient_id=${patient.id}`}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-700"
+                  >
+                    + Cấp gói đầu tiên cho bệnh nhân
+                  </Link>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {patientPackages.map((pp) => (
+                <div
+                  key={pp.id}
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/40 space-y-3"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-semibold text-slate-900 dark:text-white text-sm">
+                        {pp.package?.name || `Gói #${pp.package_id}`}
+                      </h4>
+                      <div className="text-xs text-slate-400 font-mono mt-0.5">
+                        {pp.package?.package_code}
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${
+                        pp.status === 'ACTIVE'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : pp.status === 'COMPLETED'
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                          : 'bg-slate-100 text-slate-600 border border-slate-200'
+                      }`}
+                    >
+                      {pp.status === 'ACTIVE'
+                        ? 'Đang áp dụng'
+                        : pp.status === 'COMPLETED'
+                        ? 'Đã hết buổi'
+                        : pp.status}
+                    </span>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs font-medium mb-1">
+                      <span className="text-slate-600 dark:text-slate-400">
+                        Đã dùng: {pp.used_sessions} / {pp.total_sessions} buổi
+                      </span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                        Còn lại: {pp.remaining_sessions} buổi
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(100, (pp.used_sessions / pp.total_sessions) * 100)}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-500 border-t border-slate-200/60 dark:border-slate-800 pt-2">
+                    <div>
+                      Ngày mua:{' '}
+                      <span className="text-slate-900 dark:text-white font-medium">
+                        {pp.purchase_date}
+                      </span>
+                    </div>
+                    <div>
+                      Hạn dùng:{' '}
+                      <span className="text-slate-900 dark:text-white font-medium">
+                        {pp.expiry_date}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      Giá chốt cấp:{' '}
+                      <span className="text-slate-900 dark:text-white font-mono font-medium">
+                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+                          pp.price
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

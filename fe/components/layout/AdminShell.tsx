@@ -23,7 +23,8 @@ const navItems: NavItem[] = [
   { name: 'Tiếp nhận', href: '/admin/reception', icon: '👥', permission: 'patients.view' },
   { name: 'Lịch hẹn', href: '/admin/appointments', icon: '📅', permission: 'appointments.view' },
   { name: 'Khám bệnh', href: '/admin/consultations', icon: '🩺', permission: 'encounters.view' },
-  { name: 'Dịch vụ & Gói', href: '/admin/services', icon: '💊', permission: 'services.view' },
+  { name: 'Dịch vụ', href: '/services', icon: '💊', permission: 'services.view' },
+  { name: 'Gói dịch vụ', href: '/packages', icon: '📦', permission: 'service_packages.view' },
   { name: 'Nhân sự', href: '/employees', icon: '🧑‍⚕️', permission: 'employees.view' },
   { name: 'Tài khoản & Quyền', href: '/users', icon: '🛡️', permission: 'users.view', role: 'ADMIN' },
 ];

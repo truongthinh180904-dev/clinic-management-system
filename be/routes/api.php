@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\PackageServiceController;
 use App\Http\Controllers\Api\V1\PatientController;
+use App\Http\Controllers\Api\V1\PatientPackageController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\ServicePackageController;
@@ -142,6 +143,30 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('/{patient}', [PatientController::class, 'destroy'])
                 ->middleware('permission:patients.delete|patients.update')
                 ->name('api.v1.patients.destroy');
+
+            // Patient Packages Assignment & History
+            Route::get('/{patient}/packages', [PatientPackageController::class, 'indexByPatient'])
+                ->middleware('permission:patient_packages.view|patients.view')
+                ->name('api.v1.patients.packages.index');
+
+            Route::post('/{patient}/packages', [PatientPackageController::class, 'store'])
+                ->middleware('permission:patient_packages.assign|patients.update')
+                ->name('api.v1.patients.packages.store');
+        });
+
+        // Patient Packages Management
+        Route::prefix('patient-packages')->group(function (): void {
+            Route::get('/', [PatientPackageController::class, 'index'])
+                ->middleware('permission:patient_packages.view|patients.view')
+                ->name('api.v1.patient-packages.index');
+
+            Route::get('/{patient_package}', [PatientPackageController::class, 'show'])
+                ->middleware('permission:patient_packages.view|patients.view')
+                ->name('api.v1.patient-packages.show');
+
+            Route::patch('/{patient_package}/status', [PatientPackageController::class, 'updateStatus'])
+                ->middleware('permission:patient_packages.assign|patients.update')
+                ->name('api.v1.patient-packages.status.update');
         });
 
         // Service Catalog Management
