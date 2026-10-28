@@ -52,7 +52,7 @@
 | `P2-018` | `F2-07` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-018.md` | Xây dựng API Chỉ tiêu & Thực đạt KPI Nhân viên (`/api/v1/kpi-targets`) |
 | `P2-019` | `F2-07` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-019.md` | Giao diện Quản lý KPI Nhân viên & Biểu đồ hiệu suất (`/kpi`) |
 | `P2-020` | `F2-08` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-020.md` | Xây dựng API Báo cáo Quản trị Tài chính, Khám bệnh & Kho (`/api/v1/reports`) |
-| `P2-021` | `F2-08` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-021.md` | Giao diện Trung tâm Báo cáo Quản trị đa chiều (`/reports`) |
+| `P2-021` | `F2-08` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-021.md` | Giao diện Trung tâm Báo cáo Quản trị đa chiều (`/reports`) |
 | `P2-022` | `F2-09` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-022.md` | Xây dựng API Import CSV kèm lưu vết lỗi `import_errors` (`/api/v1/imports`) |
 | `P2-023` | `F2-09` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-023.md` | Xây dựng API Export CSV UTF-8 BOM cho Bệnh nhân/Hóa đơn/Quỹ/Kho (`/api/v1/exports`) |
 | `P2-024` | `F2-09` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-024.md` | Giao diện Trung tâm Import / Export Dữ liệu (`/data-transfer`) |

@@ -16,18 +16,12 @@ import {
   Boxes,
   AlertTriangle,
   CheckCircle2,
-  XCircle,
   RefreshCw,
   Search,
-  Filter,
-  ArrowUpDown,
   Download,
-  Clock,
   PackagePlus,
   PackageMinus,
   PieChart as PieChartIcon,
-  ShieldAlert,
-  ChevronRight,
   UserCheck,
 } from 'lucide-react';
 import {
@@ -85,6 +79,7 @@ import {
   getClinicalReport,
   getInventoryReport,
 } from '@/lib/api/reports';
+import { getBaseUrl, getStoredToken } from '@/lib/api/client';
 
 // Helper to format ISO date string (YYYY-MM-DD)
 function toISODate(d: Date): string {
@@ -135,11 +130,17 @@ export default function ReportsPage() {
   const { hasPermission } = useAuth();
   const canViewReports = hasPermission('reports.view');
 
+  // SSR hydration flag for Recharts
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Active tab state
   const [activeTab, setActiveTab] = useState<'financial' | 'clinical' | 'inventory'>('financial');
 
   // Date range filter state
-  const [activePreset, setActivePreset] = useState<PresetKey>('thisMonth');
+  const [activePreset, setActivePreset] = useState<PresetKey | ''>('thisMonth');
   const initialRange = useMemo(() => getPresetRange('thisMonth'), []);
   const [startDate, setStartDate] = useState<string>(initialRange.startDate);
   const [endDate, setEndDate] = useState<string>(initialRange.endDate);
@@ -247,6 +248,16 @@ export default function ReportsPage() {
     if (activeTab === 'financial') fetchFinancial();
     else if (activeTab === 'clinical') fetchClinical();
     else if (activeTab === 'inventory') fetchInventory();
+  };
+
+  // Export report to CSV
+  const handleExportCsv = (module: 'cashbook' | 'invoices' | 'inventory') => {
+    const baseUrl = getBaseUrl();
+    const token = getStoredToken();
+    const url = `${baseUrl}/exports/${module}?start_date=${startDate}&end_date=${endDate}${
+      token ? `&token=${token}` : ''
+    }`;
+    window.open(url, '_blank');
   };
 
   // Filtered Inventory items
@@ -361,7 +372,7 @@ export default function ReportsPage() {
                   value={startDate}
                   onChange={(e) => {
                     setStartDate(e.target.value);
-                    setActivePreset('' as PresetKey);
+                    setActivePreset('');
                   }}
                 />
               </div>
@@ -377,7 +388,7 @@ export default function ReportsPage() {
                   value={endDate}
                   onChange={(e) => {
                     setEndDate(e.target.value);
-                    setActivePreset('' as PresetKey);
+                    setActivePreset('');
                   }}
                 />
               </div>
@@ -393,29 +404,68 @@ export default function ReportsPage() {
         onValueChange={(val) => setActiveTab(val as 'financial' | 'clinical' | 'inventory')}
         className="w-full space-y-6"
       >
-        <TabsList className="grid grid-cols-3 w-full max-w-xl bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-          <TabsTrigger
-            value="financial"
-            className="flex items-center justify-center space-x-2 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
-          >
-            <DollarSign className="h-4 w-4" />
-            <span>Báo cáo Tài chính</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="clinical"
-            className="flex items-center justify-center space-x-2 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
-          >
-            <Stethoscope className="h-4 w-4" />
-            <span>Báo cáo Khám bệnh</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="inventory"
-            className="flex items-center justify-center space-x-2 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
-          >
-            <Boxes className="h-4 w-4" />
-            <span>Báo cáo Kho Dược</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <TabsList className="grid grid-cols-3 w-full max-w-xl bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+            <TabsTrigger
+              value="financial"
+              className="flex items-center justify-center space-x-2 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
+            >
+              <DollarSign className="h-4 w-4" />
+              <span>Báo cáo Tài chính</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="clinical"
+              className="flex items-center justify-center space-x-2 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
+            >
+              <Stethoscope className="h-4 w-4" />
+              <span>Báo cáo Khám bệnh</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="inventory"
+              className="flex items-center justify-center space-x-2 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
+            >
+              <Boxes className="h-4 w-4" />
+              <span>Báo cáo Kho Dược</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Export Action */}
+          <div>
+            {activeTab === 'financial' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportCsv('cashbook')}
+                className="flex items-center space-x-1.5 text-xs h-9"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Xuất CSV Sổ quỹ</span>
+              </Button>
+            )}
+            {activeTab === 'clinical' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportCsv('invoices')}
+                className="flex items-center space-x-1.5 text-xs h-9"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Xuất CSV Doanh thu</span>
+              </Button>
+            )}
+            {activeTab === 'inventory' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportCsv('inventory')}
+                className="flex items-center space-x-1.5 text-xs h-9"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Xuất CSV Tồn kho</span>
+              </Button>
+            )}
+          </div>
+        </div>
 
         {/* ========================================================= */}
         {/* TAB 1: BÁO CÁO TÀI CHÍNH                                 */}
@@ -469,7 +519,7 @@ export default function ReportsPage() {
                 <StatCard
                   title="Lợi nhuận Ròng Kỳ này"
                   value={formatCurrency(financialData.summary.net_profit)}
-                  icon={TrendingUp}
+                  icon={financialData.summary.net_profit >= 0 ? TrendingUp : TrendingDown}
                   variant={financialData.summary.net_profit >= 0 ? 'success' : 'destructive'}
                   description={`Dòng tiền ròng: ${formatCurrency(financialData.summary.net_cashflow)}`}
                   trend={financialData.summary.net_profit >= 0 ? 'up' : 'down'}
@@ -531,7 +581,7 @@ export default function ReportsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="h-[320px] w-full">
-                      {financialData.daily_series.length > 0 ? (
+                      {isMounted && financialData.daily_series.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={financialData.daily_series} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                             <defs>
@@ -577,7 +627,7 @@ export default function ReportsPage() {
                                   expense_amount: 'Chi phí duyệt',
                                   net_profit: 'Lợi nhuận ròng',
                                 };
-                                return [formatCurrency(valNum), labels[name] || name];
+                                return [formatCurrency(valNum), labels[String(name)] || String(name)];
                               }}
                               labelFormatter={(label: any) => `Ngày: ${formatDate(String(label))}`}
                             />
@@ -588,7 +638,7 @@ export default function ReportsPage() {
                                   collected_amount: 'Thực thu',
                                   expense_amount: 'Chi phí',
                                 };
-                                return labels[value] || value;
+                                return labels[String(value)] || String(value);
                               }}
                             />
                             <Area
@@ -639,30 +689,32 @@ export default function ReportsPage() {
                     {financialData.expenses_by_category && financialData.expenses_by_category.length > 0 ? (
                       <div className="space-y-4">
                         <div className="h-[200px] w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={financialData.expenses_by_category}
-                                dataKey="total_amount"
-                                nameKey="category_name"
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={45}
-                                outerRadius={80}
-                                paddingAngle={3}
-                              >
-                                {financialData.expenses_by_category.map((_, index) => (
-                                  <Cell
-                                    key={`cell-${index}`}
-                                    fill={PIE_COLORS[index % PIE_COLORS.length]}
-                                  />
-                                ))}
-                              </Pie>
-                              <Tooltip
-                                formatter={(val: any) => formatCurrency(Number(val))}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
+                          {isMounted && (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={financialData.expenses_by_category}
+                                  dataKey="total_amount"
+                                  nameKey="category_name"
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={45}
+                                  outerRadius={80}
+                                  paddingAngle={3}
+                                >
+                                  {financialData.expenses_by_category.map((_, index) => (
+                                    <Cell
+                                      key={`cell-${index}`}
+                                      fill={PIE_COLORS[index % PIE_COLORS.length]}
+                                    />
+                                  ))}
+                                </Pie>
+                                <Tooltip
+                                  formatter={(val: any) => formatCurrency(Number(val))}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          )}
                         </div>
                         <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
                           {financialData.expenses_by_category.map((cat, idx) => (
@@ -909,7 +961,7 @@ export default function ReportsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="h-[280px] w-full">
-                      {clinicalData.daily_series.length > 0 ? (
+                      {isMounted && clinicalData.daily_series.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={clinicalData.daily_series} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -931,7 +983,7 @@ export default function ReportsPage() {
                                   visits_count: 'Tổng lượt khám',
                                   completed_visits: 'Đã hoàn tất',
                                 };
-                                return [value, labels[name] || name];
+                                return [value, labels[String(name)] || String(name)];
                               }}
                               labelFormatter={(label: any) => `Ngày: ${formatDate(String(label))}`}
                             />
@@ -942,7 +994,7 @@ export default function ReportsPage() {
                                   visits_count: 'Lượt khám',
                                   completed_visits: 'Đã khám xong',
                                 };
-                                return labels[value] || value;
+                                return labels[String(value)] || String(value);
                               }}
                             />
                             <Line
@@ -988,7 +1040,7 @@ export default function ReportsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="h-[280px] w-full">
-                      {clinicalData.visits_by_doctor && clinicalData.visits_by_doctor.length > 0 ? (
+                      {isMounted && clinicalData.visits_by_doctor && clinicalData.visits_by_doctor.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
                             data={clinicalData.visits_by_doctor.slice(0, 6)}
@@ -1011,7 +1063,7 @@ export default function ReportsPage() {
                                   total_visits: 'Tổng lượt khám',
                                   completed_visits: 'Hoàn thành',
                                 };
-                                return [val, labels[name] || name];
+                                return [val, labels[String(name)] || String(name)];
                               }}
                             />
                             <Legend
@@ -1020,7 +1072,7 @@ export default function ReportsPage() {
                                   total_visits: 'Lượt khám',
                                   completed_visits: 'Hoàn thành',
                                 };
-                                return labels[value] || value;
+                                return labels[String(value)] || String(value);
                               }}
                             />
                             <Bar dataKey="total_visits" fill="#93c5fd" radius={[0, 4, 4, 0]} />
