@@ -5,10 +5,11 @@
   - [`docs/phase-1/PHASE_1_TASKS.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-1/PHASE_1_TASKS.md)
   - [`docs/phase-1/PHASE_1_REPORT.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-1/PHASE_1_REPORT.md)
   - [`ROADMAP-PHASE-1-ARCHIVE.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/qlpk-autonomous-framework/ROADMAP-PHASE-1-ARCHIVE.md)
-- **Giai đoạn 2 (`PHASE-02`):** Đã hoàn tất **`17 / 30 Tasks DONE`** (`P2-001` → `P2-011`, `P2-013` → `P2-019`).
-  - Đã xong: Khảo sát, UI Core `shadcn/ui`, AdminShell, RBAC Phase 2, Dashboard API + UI, Invoices API + UI, Payments API + Quỹ, Debts API + UI, Cashbook API + UI, Products API, Inventory Transactions API, Inventory UI, KPI Targets API, KPI Management UI.
-  - Còn lại 13 tasks (`P2-012`, `P2-020` → `P2-030`).
-  - Model Reviewer hiện tại: `gemini-4-argon-high`. Coder: `gemini-3.8-flash-high`.
+- **Giai đoạn 2 (`PHASE-02`):** Đã hoàn tất **`30 / 30 Tasks DONE (100%)`**!
+  - Toàn bộ 11 Features (`F2-01` → `F2-11`) đã hoàn thành và tự động commit lên nhánh `dev`.
+  - Toàn bộ Backend Tests, Pint, Frontend Typecheck và Next.js Production Build đều `100% PASS`.
+  - Báo cáo tổng kết bàn giao: [`docs/phase-2/PHASE_2_REPORT.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-2/PHASE_2_REPORT.md).
+  - Tài liệu kỹ thuật API Phase 2: [`docs/phase-2/API_DOCUMENTATION_PHASE_2.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-2/API_DOCUMENTATION_PHASE_2.md).
 
 ---
 

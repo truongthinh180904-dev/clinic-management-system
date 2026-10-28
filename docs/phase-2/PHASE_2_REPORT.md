@@ -6,7 +6,7 @@
 - **Phiên bản:** `2.0.0`
 - **Ngày lập:** `2026-10-28`
 - **Phiên thực thi (RUN_ID):** `run-20261028011738-32432-2607`
-- **Trạng thái nghiệm thu:** `REVIEW_REQUIRED` (Sẵn sàng cho người dùng / Hội đồng nghiệm thu review trên nhánh `dev`)
+- **Trạng thái nghiệm thu:** `COMPLETED_AND_VERIFIED (30 / 30 TASKS DONE)` (Đã hoàn thành 100% trên nhánh `dev`)
 - **Công nghệ bắt buộc:**
   - **Backend (`be/`):** Laravel Framework `^13.17`, PHP `^8.3`, PHPUnit `^12.5`, Laravel Pint, MySQL 8.0 (`DBQLPK`).
   - **Frontend (`fe/`):** Next.js `16.4.2` (App Router), React `19.3.0`, TypeScript `5`, Tailwind CSS `v4`, **`shadcn/ui`**, **`lucide-react`**, **`recharts`**.
@@ -68,7 +68,7 @@ Toàn bộ giai đoạn gồm **11 Features** với **30 Tasks** (`P2-001` → `
 | `P2-027` | `F2-10` | P1 | Xây dựng Giao diện Phê duyệt (`/approvals`), Trung tâm Thông báo (`/notifications`) và Chuông Topbar | `PASS` | `DONE` |
 | `P2-028` | `F2-11` | P0 | Kiểm thử tích hợp End-to-End 4 kịch bản liên hoàn (`Phase2EndToEndWorkflowTest`) | `PASS` | `DONE` |
 | `P2-029` | `F2-11` | P0 | Kiểm tra đồng bộ toàn diện Backend Test Suite, Pint, Frontend Typecheck, Lint & Build | `PASS` | `DONE` |
-| `P2-030` | `F2-11` | P0 | Hoàn thiện Tài liệu Kỹ thuật API Phase 2 & Báo cáo Tổng kết Nghiệm thu Giai đoạn 2 | `PASS` | `REVIEW_REQUIRED` |
+| `P2-030` | `F2-11` | P0 | Hoàn thiện Tài liệu Kỹ thuật API Phase 2 & Báo cáo Tổng kết Nghiệm thu Giai đoạn 2 | `PASS` | `DONE` |
 
 ---
 
