@@ -283,6 +283,9 @@ class VisitService
                 : $this->generateVisitCode();
 
             $status = $data['status'] ?? 'SCHEDULED';
+            if ($status === 'WAITING') {
+                $status = 'SCHEDULED';
+            }
             $paymentStatus = $data['payment_status'] ?? 'UNPAID';
 
             $patientPackageId = isset($data['patient_package_id']) && ! empty($data['patient_package_id'])

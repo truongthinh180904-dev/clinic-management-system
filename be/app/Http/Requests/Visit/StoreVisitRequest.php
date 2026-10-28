@@ -32,7 +32,7 @@ class StoreVisitRequest extends FormRequest
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'appointment_id' => ['nullable', 'integer', 'exists:appointments,id'],
             'patient_package_id' => ['nullable', 'integer', 'exists:patient_packages,id'],
-            'status' => ['nullable', 'string', 'in:SCHEDULED,IN_PROGRESS,COMPLETED,CANCELLED'],
+            'status' => ['nullable', 'string', 'in:SCHEDULED,WAITING,IN_PROGRESS,COMPLETED,CANCELLED'],
             'payment_status' => ['nullable', 'string', 'in:UNPAID,PARTIALLY_PAID,PAID,REFUNDED'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'visit_code' => ['nullable', 'string', 'max:50', 'unique:visits,visit_code'],

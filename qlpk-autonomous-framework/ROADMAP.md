@@ -220,7 +220,7 @@
 
 ### TASK `P3-014` (`F3-04-04` / `F3-04-05`): Hoàn thiện Luồng Tiếp đón Bệnh nhân tại Quầy Lễ tân
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-013`
 - **goal:** Xây dựng màn hình/chức năng Tiếp đón nhanh tại quầy lễ tân: tìm kiếm bệnh nhân nhanh qua SĐT hoặc CCCD, tự động điền thông tin nếu bệnh nhân cũ, thêm bệnh nhân mới tức thời, phân luồng vào phòng khám chuyên khoa, và cấp số thứ tự chờ khám.
 - **scope:** `fe/app/(admin)/visits/page.tsx`, `fe/app/(admin)/appointments/page.tsx`.

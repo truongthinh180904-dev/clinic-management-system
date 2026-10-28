@@ -29,6 +29,8 @@ class Visit extends Model
 {
     public const STATUS_SCHEDULED = 'SCHEDULED';
 
+    public const STATUS_WAITING = 'WAITING';
+
     public const STATUS_IN_PROGRESS = 'IN_PROGRESS';
 
     public const STATUS_COMPLETED = 'COMPLETED';

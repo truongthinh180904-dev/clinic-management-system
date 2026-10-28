@@ -506,6 +506,13 @@ function AppointmentsContent() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            href="/visits?fastCheckIn=true"
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 transition-colors"
+          >
+            <span>⚡</span>
+            <span>Tiếp đón tại quầy</span>
+          </Link>
           {canCreate && (
             <button
               onClick={handleOpenCreateModal}

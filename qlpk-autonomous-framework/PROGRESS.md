@@ -33,8 +33,8 @@
 - **Kế hoạch triển khai (Plan):** [`docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md)
 - **Quản trị rủi ro (Risk Register):** [`docs/phase-3/PHASE_3_RISK_REGISTER.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_RISK_REGISTER.md)
 - **Total tasks in Phase 3:** `30 Tasks` (`P3-001` → `P3-030` thuộc 10 Features `F3-01` → `F3-10`)
-- **Completed (`DONE`):** `13 / 30` Tasks (`43.3%`)
-- **Remaining (`PENDING`):** `17 / 30` Tasks (`56.7%`)
+- **Completed (`DONE`):** `14 / 30` Tasks (`46.7%`)
+- **Remaining (`PENDING`):** `16 / 30` Tasks (`53.3%`)
 - **Cấu hình Model Phân công (`agy v1.4.7`):**
   - **Planner:** `gemini-3.8-flash-high`
   - **Coder:** `gemini-3.8-flash-high`
@@ -61,7 +61,7 @@
 | `P3-011` | `F3-03` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-011.md` | Hoàn thiện Giao diện & Nghiệp vụ Bệnh án điện tử cho Bác sĩ |
 | `P3-012` | `F3-03` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-012.md` | Phân quyền bảo mật & Lưu vết lịch sử sửa bệnh án (Audit Trail) |
 | `P3-013` | `F3-04` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-013.md` | Chuẩn hóa máy trạng thái Lịch hẹn & Bộ lọc đa tiêu chí |
-| `P3-014` | `F3-04` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-014.md` | Hoàn thiện luồng Tiếp đón bệnh nhân nhanh tại quầy lễ tân |
+| `P3-014` | `F3-04` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-014.md` | Hoàn thiện luồng Tiếp đón bệnh nhân nhanh tại quầy lễ tân |
 | `P3-015` | `F3-04` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-015.md` | Chuyển đổi nguyên tử từ Lịch hẹn sang Lượt khám chống trùng |
 | `P3-016` | `F3-05` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-016.md` | Backend API Tải lên & Quản lý Tệp y tế (`patient_files`) |
 | `P3-017` | `F3-05` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-017.md` | Backend API Tải xuống & Xem tệp có xác thực và phân quyền |

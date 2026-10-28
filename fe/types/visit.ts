@@ -5,7 +5,7 @@ import { PatientPackage } from './package';
 import { Appointment } from './appointment';
 import { MedicalRecord } from './medical-record';
 
-export type VisitStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type VisitStatus = 'SCHEDULED' | 'WAITING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export type VisitPaymentStatus = 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'REFUNDED';
 
 export interface Visit {
@@ -94,7 +94,13 @@ export const VISIT_STATUS_MAP: Record<
   { label: string; badgeClass: string; icon: string }
 > = {
   SCHEDULED: {
-    label: 'Đã lên lịch',
+    label: 'Chờ khám',
+    badgeClass:
+      'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
+    icon: '⏳',
+  },
+  WAITING: {
+    label: 'Chờ khám',
     badgeClass:
       'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
     icon: '⏳',

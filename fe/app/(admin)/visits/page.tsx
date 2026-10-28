@@ -2,14 +2,21 @@
 
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
 import { ApiError } from '@/lib/api/client';
+import { formatDate } from '@/lib/utils';
 import {
   cancelVisit,
+  createVisit,
   getVisits,
   updateVisitStatus,
 } from '@/lib/api/visits';
 import { getEmployees } from '@/lib/api/employees';
+import { getPatients, createPatient, checkDuplicatePatients } from '@/lib/api/patients';
+import { getServices } from '@/lib/api/services';
+import { Service } from '@/types/service';
+import { Patient, DuplicateWarning } from '@/types/patient';
 import {
   PAYMENT_STATUS_MAP,
   VISIT_STATUS_MAP,
@@ -42,9 +49,22 @@ import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { Pagination } from '@/components/ui/pagination';
 import { EmptySearchState, EmptyDataState, ErrorState } from '@/components/ui/empty-state';
-import { Stethoscope, Activity, CheckCircle2, XCircle, Search, X } from 'lucide-react';
+import {
+  Stethoscope,
+  Activity,
+  CheckCircle2,
+  XCircle,
+  Search,
+  X,
+  Zap,
+  UserCheck,
+  UserPlus,
+  AlertTriangle,
+} from 'lucide-react';
 
 function VisitsListContent() {
+  const searchParams = useSearchParams();
+  const fastCheckInParam = searchParams.get('fastCheckIn');
   const { hasPermission, hasRole } = useAuth();
 
   const canCreate =
@@ -92,6 +112,37 @@ function VisitsListContent() {
 
   // Dropdown references
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+
+  // Fast Reception Check-in States
+  const [isReceptionModalOpen, setIsReceptionModalOpen] = useState(false);
+  const [receptionMode, setReceptionMode] = useState<'existing' | 'new'>('existing');
+
+  // Existing patient search in check-in
+  const [patientSearchTerm, setPatientSearchTerm] = useState('');
+  const [matchedPatients, setMatchedPatients] = useState<Patient[]>([]);
+  const [isSearchingPatients, setIsSearchingPatients] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+
+  // New patient registration in check-in
+  const [newFullName, setNewFullName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newDob, setNewDob] = useState('');
+  const [newGender, setNewGender] = useState<'MALE' | 'FEMALE' | 'OTHER'>('MALE');
+  const [newAddress, setNewAddress] = useState('');
+  const [newNotes, setNewNotes] = useState('');
+
+  // Duplicate warnings
+  const [duplicateWarnings, setDuplicateWarnings] = useState<DuplicateWarning[]>([]);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
+  const [duplicateOverride, setDuplicateOverride] = useState(false);
+
+  // Check-in department & doctor selection
+  const [checkInServiceId, setCheckInServiceId] = useState<number | ''>('');
+  const [checkInDoctorId, setCheckInDoctorId] = useState<number | ''>('');
+  const [checkInNotes, setCheckInNotes] = useState('');
+  const [isSubmittingCheckIn, setIsSubmittingCheckIn] = useState(false);
+  const [checkInError, setCheckInError] = useState<string | null>(null);
 
   // Action Modals
   const [statusModalVisit, setStatusModalVisit] = useState<Visit | null>(null);
@@ -103,18 +154,89 @@ function VisitsListContent() {
   const [cancelReason, setCancelReason] = useState('');
   const [isSubmittingCancel, setIsSubmittingCancel] = useState(false);
 
-  // Load Reference Data
+  // Auto open fast check-in if query param present
+  useEffect(() => {
+    if (fastCheckInParam === 'true') {
+      setIsReceptionModalOpen(true);
+    }
+  }, [fastCheckInParam]);
+
+  // Load Reference Data (Employees & Services)
   useEffect(() => {
     async function loadRefs() {
       try {
-        const empRes = await getEmployees({ per_page: 100 });
+        const [empRes, srvRes] = await Promise.all([
+          getEmployees({ per_page: 100 }),
+          getServices({ per_page: 100, status: 'ACTIVE' }),
+        ]);
         setEmployees(empRes.data || []);
+        const activeServices = srvRes.data || [];
+        setServices(activeServices);
+        if (activeServices.length > 0) {
+          setCheckInServiceId(activeServices[0].id);
+        }
       } catch (err) {
-        console.error('Failed to load employees reference', err);
+        console.error('Failed to load references', err);
       }
     }
     loadRefs();
   }, []);
+
+  // Debounced patient search for existing mode
+  useEffect(() => {
+    if (receptionMode !== 'existing' || !patientSearchTerm.trim() || patientSearchTerm.trim().length < 2) {
+      setMatchedPatients([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearchingPatients(true);
+      try {
+        const res = await getPatients({ search: patientSearchTerm.trim(), per_page: 5 });
+        setMatchedPatients(res.data || []);
+      } catch (err) {
+        console.error('Error searching patients', err);
+      } finally {
+        setIsSearchingPatients(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [patientSearchTerm, receptionMode]);
+
+  // Debounced duplicate detection for new patient mode
+  useEffect(() => {
+    if (receptionMode !== 'new') {
+      setDuplicateWarnings([]);
+      return;
+    }
+    const phoneClean = newPhone.trim();
+    const nameClean = newFullName.trim();
+    if (phoneClean.length < 9 && (!nameClean || !newDob)) {
+      setDuplicateWarnings([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsCheckingDuplicates(true);
+      try {
+        const res = await checkDuplicatePatients({
+          phone: phoneClean || undefined,
+          full_name: nameClean || undefined,
+          date_of_birth: newDob || undefined,
+        });
+        if (res.data?.has_duplicates && res.data.duplicate_warnings) {
+          setDuplicateWarnings(res.data.duplicate_warnings);
+        } else {
+          setDuplicateWarnings([]);
+        }
+      } catch (err) {
+        console.error('Error checking duplicate patients', err);
+      } finally {
+        setIsCheckingDuplicates(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [newPhone, newFullName, newDob, receptionMode]);
 
   // Load Visits
   const loadVisits = async () => {
@@ -217,20 +339,134 @@ function VisitsListContent() {
     }).format(val);
   };
 
-  // Format date
-  const formatDate = (isoStr?: string | null) => {
-    if (!isoStr) return '—';
+  // Calculate Today's Queue Number
+  const todayQueueNumber = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const countToday = visits.filter((v) => v.visit_date?.startsWith(today)).length;
+    return countToday + 1;
+  }, [visits]);
+
+  // Reset Fast Check-in Form
+  const resetReceptionForm = () => {
+    setReceptionMode('existing');
+    setPatientSearchTerm('');
+    setMatchedPatients([]);
+    setSelectedPatient(null);
+    setNewFullName('');
+    setNewPhone('');
+    setNewDob('');
+    setNewGender('MALE');
+    setNewAddress('');
+    setNewNotes('');
+    setDuplicateWarnings([]);
+    setDuplicateOverride(false);
+    if (services.length > 0) {
+      setCheckInServiceId(services[0].id);
+    }
+    if (employees.length > 0) {
+      setCheckInDoctorId(employees[0].id);
+    }
+    setCheckInNotes('');
+    setCheckInError(null);
+  };
+
+  // Submit Fast Check-in
+  const handleConfirmCheckIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCheckInError(null);
+
+    if (!checkInServiceId) {
+      setCheckInError('Vui lòng chọn dịch vụ / chuyên khoa khám.');
+      return;
+    }
+    if (!checkInDoctorId) {
+      setCheckInError('Vui lòng chọn bác sĩ phụ trách tiếp nhận.');
+      return;
+    }
+
+    let targetPatientId: number;
+
+    setIsSubmittingCheckIn(true);
     try {
-      const d = new Date(isoStr);
-      return d.toLocaleString('vi-VN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
+      if (receptionMode === 'existing') {
+        if (!selectedPatient) {
+          setCheckInError('Vui lòng tìm và chọn một bệnh nhân đã có hồ sơ trong hệ thống.');
+          setIsSubmittingCheckIn(false);
+          return;
+        }
+        targetPatientId = selectedPatient.id;
+      } else {
+        // Validate new patient fields
+        if (!newFullName.trim()) {
+          setCheckInError('Vui lòng nhập họ và tên bệnh nhân.');
+          setIsSubmittingCheckIn(false);
+          return;
+        }
+        if (!newPhone.trim()) {
+          setCheckInError('Vui lòng nhập số điện thoại bệnh nhân.');
+          setIsSubmittingCheckIn(false);
+          return;
+        }
+        if (duplicateWarnings.length > 0 && !duplicateOverride) {
+          setCheckInError(
+            'Hệ thống phát hiện hồ sơ có thể bị trùng lặp. Vui lòng kiểm tra lại danh sách trùng lặp bên dưới hoặc đánh dấu xác nhận để tiếp tục.'
+          );
+          setIsSubmittingCheckIn(false);
+          return;
+        }
+
+        // Create new patient record
+        const newPatientRes = await createPatient({
+          full_name: newFullName.trim(),
+          phone: newPhone.trim(),
+          date_of_birth: newDob || undefined,
+          gender: newGender,
+          address: newAddress.trim() || undefined,
+          notes: newNotes.trim() || undefined,
+          status: 'ACTIVE',
+        });
+        targetPatientId = newPatientRes.data.id;
+      }
+
+      // Format Queue string and initial clinical notes
+      const queuePrefix = `[Tiếp đón lễ tân - STT: #${String(todayQueueNumber).padStart(2, '0')}]`;
+      const fullNotes = checkInNotes.trim()
+        ? `${queuePrefix} ${checkInNotes.trim()}`
+        : queuePrefix;
+
+      const selectedService = services.find((s) => s.id === Number(checkInServiceId));
+      const unitPrice = selectedService ? Number(selectedService.price) : 0;
+
+      // 1-Click Check-in creating Visit with status SCHEDULED (waiting in queue)
+      const visitRes = await createVisit({
+        patient_id: targetPatientId,
+        employee_id: Number(checkInDoctorId),
+        service_id: Number(checkInServiceId),
+        visit_date: new Date().toISOString(),
+        quantity: 1,
+        unit_price: unitPrice,
+        discount_amount: 0,
+        status: 'SCHEDULED',
+        notes: fullNotes,
       });
-    } catch {
-      return isoStr;
+
+      const patientName =
+        receptionMode === 'existing'
+          ? selectedPatient?.full_name
+          : newFullName.trim();
+      const successMsg = `Đã tiếp đón thành công bệnh nhân ${patientName}! Lượt khám #${visitRes.data?.visit_code || ''} (STT: #${String(todayQueueNumber).padStart(2, '0')}) với trạng thái Chờ khám.`;
+
+      toast.success(successMsg, 'Tiếp đón thành công');
+      setActionSuccess(successMsg);
+      setIsReceptionModalOpen(false);
+      resetReceptionForm();
+      loadVisits();
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Tiếp đón thất bại. Vui lòng kiểm tra lại thông tin.';
+      setCheckInError(msg);
+      toast.error(msg, 'Lỗi tiếp đón');
+    } finally {
+      setIsSubmittingCheckIn(false);
     }
   };
 
@@ -294,13 +530,26 @@ function VisitsListContent() {
         description="Theo dõi danh sách tiếp nhận, khám chữa bệnh, sử dụng gói và lập hồ sơ bệnh án"
         actions={
           canCreate ? (
-            <Link
-              href="/visits/new"
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm"
-            >
-              <span>➕</span>
-              <span>Tạo lượt khám mới</span>
-            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  resetReceptionForm();
+                  setIsReceptionModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm"
+              >
+                <Zap className="h-4 w-4" />
+                <span>Tiếp đón nhanh tại quầy</span>
+              </button>
+              <Link
+                href="/visits/new"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm"
+              >
+                <span>➕</span>
+                <span>Tạo lượt khám</span>
+              </Link>
+            </div>
           ) : undefined
         }
       />
@@ -806,6 +1055,456 @@ function VisitsListContent() {
           )}
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Fast Reception Desk Check-in Modal */}
+      <Dialog
+        open={isReceptionModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsReceptionModalOpen(false);
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+              <Zap className="h-5 w-5 shrink-0" />
+              <DialogTitle className="text-xl">
+                Tiếp đón bệnh nhân nhanh tại Quầy Lễ tân
+              </DialogTitle>
+            </div>
+            <DialogDescription>
+              Tra cứu thông tin bệnh nhân cũ hoặc tạo mới tức thời, kiểm tra cảnh báo trùng lặp và cấp số thứ tự chờ khám (STT: #{String(todayQueueNumber).padStart(2, '0')}).
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleConfirmCheckIn} className="space-y-5 pt-2">
+            {/* Mode Selector Tabs */}
+            <div className="flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setReceptionMode('existing');
+                  setCheckInError(null);
+                }}
+                className={`flex-1 py-2 text-xs sm:text-sm font-semibold rounded-md transition-all flex items-center justify-center gap-2 ${
+                  receptionMode === 'existing'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <UserCheck className="h-4 w-4" />
+                <span>Bệnh nhân cũ (Đã có hồ sơ)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setReceptionMode('new');
+                  setCheckInError(null);
+                }}
+                className={`flex-1 py-2 text-xs sm:text-sm font-semibold rounded-md transition-all flex items-center justify-center gap-2 ${
+                  receptionMode === 'new'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>Bệnh nhân mới (Lần đầu đến khám)</span>
+              </button>
+            </div>
+
+            {/* Error Banner */}
+            {checkInError && (
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-lg text-rose-800 dark:text-rose-300 text-sm flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>{checkInError}</span>
+              </div>
+            )}
+
+            {/* Mode 1: Bệnh nhân cũ */}
+            {receptionMode === 'existing' && (
+              <div className="space-y-3">
+                <FormField
+                  label="Tìm kiếm bệnh nhân"
+                  hint="Nhập Số điện thoại, CCCD/CMND, Mã BN hoặc Họ tên"
+                  required
+                >
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Gõ SĐT (ví dụ: 0912...), CCCD hoặc tên bệnh nhân..."
+                      value={patientSearchTerm}
+                      onChange={(e) => {
+                        setPatientSearchTerm(e.target.value);
+                        setSelectedPatient(null);
+                      }}
+                      className="w-full pl-9 pr-8 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                    {patientSearchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPatientSearchTerm('');
+                          setMatchedPatients([]);
+                          setSelectedPatient(null);
+                        }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </FormField>
+
+                {/* Search in progress */}
+                {isSearchingPatients && (
+                  <div className="text-xs text-slate-500 flex items-center gap-2 py-1">
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                    <span>Đang tra cứu hồ sơ bệnh nhân...</span>
+                  </div>
+                )}
+
+                {/* Match Results list */}
+                {!selectedPatient && matchedPatients.length > 0 && (
+                  <div className="border border-slate-200 dark:border-slate-700 rounded-lg divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900 shadow-sm max-h-48 overflow-y-auto">
+                    {matchedPatients.map((p) => (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          setSelectedPatient(p);
+                          setPatientSearchTerm('');
+                          setMatchedPatients([]);
+                        }}
+                        className="p-2.5 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer flex items-center justify-between transition-colors"
+                      >
+                        <div>
+                          <div className="font-semibold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                            <span>{p.full_name}</span>
+                            <span className="text-xs font-mono font-normal text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                              {p.patient_code}
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-3">
+                            <span>SĐT: {p.phone || 'Chưa có'}</span>
+                            {p.date_of_birth && <span>NS: {p.date_of_birth}</span>}
+                            <span>Giới tính: {p.gender === 'MALE' ? 'Nam' : p.gender === 'FEMALE' ? 'Nữ' : 'Khác'}</span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="px-2.5 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                        >
+                          Chọn
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Selected Patient Card */}
+                {selectedPatient ? (
+                  <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-slate-900 dark:text-white">
+                          {selectedPatient.full_name}
+                        </span>
+                        <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300">
+                          {selectedPatient.patient_code}
+                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                          {selectedPatient.gender === 'MALE' ? 'Nam' : selectedPatient.gender === 'FEMALE' ? 'Nữ' : 'Khác'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400 flex flex-wrap gap-x-4">
+                        <span>📞 {selectedPatient.phone || 'Chưa cập nhật SĐT'}</span>
+                        {selectedPatient.date_of_birth && (
+                          <span>🎂 {selectedPatient.date_of_birth}</span>
+                        )}
+                        {selectedPatient.address && (
+                          <span>📍 {selectedPatient.address}</span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPatient(null)}
+                      className="text-xs text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 underline shrink-0 px-2"
+                    >
+                      Đổi bệnh nhân
+                    </button>
+                  </div>
+                ) : (
+                  !isSearchingPatients &&
+                  patientSearchTerm.length >= 2 &&
+                  matchedPatients.length === 0 && (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between">
+                      <span>Không tìm thấy hồ sơ nào khớp với từ khóa &ldquo;{patientSearchTerm}&rdquo;.</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReceptionMode('new');
+                          if (/^0\d{8,10}$/.test(patientSearchTerm.trim())) {
+                            setNewPhone(patientSearchTerm.trim());
+                          } else {
+                            setNewFullName(patientSearchTerm.trim());
+                          }
+                        }}
+                        className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        + Tạo hồ sơ mới ngay
+                      </button>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+
+            {/* Mode 2: Bệnh nhân mới */}
+            {receptionMode === 'new' && (
+              <div className="space-y-3.5 p-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <FormField label="Họ và tên bệnh nhân" required>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Nguyễn Văn A..."
+                      value={newFullName}
+                      onChange={(e) => {
+                        setNewFullName(e.target.value);
+                        setDuplicateOverride(false);
+                      }}
+                      className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </FormField>
+
+                  <FormField label="Số điện thoại liên hệ" required>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="0912345678"
+                      value={newPhone}
+                      onChange={(e) => {
+                        setNewPhone(e.target.value);
+                        setDuplicateOverride(false);
+                      }}
+                      className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </FormField>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <FormField label="Ngày sinh">
+                    <input
+                      type="date"
+                      value={newDob}
+                      onChange={(e) => {
+                        setNewDob(e.target.value);
+                        setDuplicateOverride(false);
+                      }}
+                      className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </FormField>
+
+                  <FormField label="Giới tính" required>
+                    <select
+                      value={newGender}
+                      onChange={(e) => setNewGender(e.target.value as 'MALE' | 'FEMALE' | 'OTHER')}
+                      className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    >
+                      <option value="MALE">Nam</option>
+                      <option value="FEMALE">Nữ</option>
+                      <option value="OTHER">Khác</option>
+                    </select>
+                  </FormField>
+                </div>
+
+                <FormField label="Địa chỉ cư trú (tùy chọn)">
+                  <input
+                    type="text"
+                    placeholder="Số nhà, đường, phường/xã, quận/huyện..."
+                    value={newAddress}
+                    onChange={(e) => setNewAddress(e.target.value)}
+                    className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </FormField>
+
+                <FormField label="Tiền sử dị ứng / Ghi chú ban đầu (tùy chọn)">
+                  <input
+                    type="text"
+                    placeholder="Dị ứng kháng sinh penicillin, hen suyễn, tiểu đường..."
+                    value={newNotes}
+                    onChange={(e) => setNewNotes(e.target.value)}
+                    className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </FormField>
+
+                {/* Duplicate Checking Indicator */}
+                {isCheckingDuplicates && (
+                  <div className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5 py-1">
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+                    <span>Đang kiểm tra trùng lặp hồ sơ trên hệ thống...</span>
+                  </div>
+                )}
+
+                {/* DUPLICATE WARNING ALERT BANNER */}
+                {duplicateWarnings.length > 0 && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 rounded-xl space-y-2">
+                    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-semibold text-xs sm:text-sm">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <span>CẢNH BÁO TRÙNG LẶP HỒ SƠ BỆNH NHÂN</span>
+                    </div>
+
+                    {duplicateWarnings.map((warning, wIdx) => (
+                      <div key={wIdx} className="space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
+                        <p className="font-medium">• {warning.message}</p>
+                        {warning.matched_patients && warning.matched_patients.length > 0 && (
+                          <div className="bg-white/80 dark:bg-slate-900/80 rounded-lg p-2 border border-amber-200 dark:border-amber-800 space-y-1.5">
+                            <p className="font-semibold text-slate-700 dark:text-slate-300">
+                              Hồ sơ đã có trong hệ thống:
+                            </p>
+                            {warning.matched_patients.map((mp) => (
+                              <div
+                                key={mp.id}
+                                className="flex items-center justify-between gap-2 p-1.5 bg-amber-50/60 dark:bg-amber-950/40 rounded border border-amber-200/50 dark:border-amber-800/50"
+                              >
+                                <div>
+                                  <span className="font-bold text-slate-900 dark:text-white">
+                                    {mp.full_name}
+                                  </span>{' '}
+                                  <span className="font-mono text-xs text-blue-600">
+                                    ({mp.patient_code})
+                                  </span>{' '}
+                                  <span className="text-slate-500">
+                                    - SĐT: {mp.phone}
+                                    {mp.date_of_birth && ` - NS: ${mp.date_of_birth}`}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedPatient(mp as Patient);
+                                    setReceptionMode('existing');
+                                    setDuplicateWarnings([]);
+                                    setDuplicateOverride(false);
+                                  }}
+                                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shrink-0"
+                                >
+                                  Sử dụng hồ sơ này
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    <label className="flex items-center gap-2 pt-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={duplicateOverride}
+                        onChange={(e) => setDuplicateOverride(e.target.checked)}
+                        className="h-4 w-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                      />
+                      <span className="text-xs font-medium text-amber-900 dark:text-amber-200">
+                        Xác nhận vẫn tạo hồ sơ mới (Ví dụ người thân/gia đình dùng chung số điện thoại)
+                      </span>
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Phân luồng phòng khám chuyên khoa & Bác sĩ */}
+            <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center justify-between">
+                <span>Phân luồng Chuyên khoa & Bác sĩ Khám</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">
+                  STT Chờ khám: #{String(todayQueueNumber).padStart(2, '0')}
+                </span>
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <FormField label="Dịch vụ / Chuyên khoa khám" required>
+                  <select
+                    value={checkInServiceId}
+                    onChange={(e) => setCheckInServiceId(e.target.value ? Number(e.target.value) : '')}
+                    required
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  >
+                    <option value="">-- Chọn dịch vụ khám --</option>
+                    {services.map((srv) => (
+                      <option key={srv.id} value={srv.id}>
+                        {srv.name} ({formatMoney(srv.price)})
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+
+                <FormField label="Bác sĩ tiếp nhận thăm khám" required>
+                  <select
+                    value={checkInDoctorId}
+                    onChange={(e) => setCheckInDoctorId(e.target.value ? Number(e.target.value) : '')}
+                    required
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  >
+                    <option value="">-- Chọn bác sĩ phụ trách --</option>
+                    {employees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.full_name} ({emp.employee_code}) - {emp.position || 'Bác sĩ'}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+
+              <FormField
+                label="Lý do khám / Triệu chứng ban đầu (tùy chọn)"
+                hint="Ghi chú ban đầu từ quầy tiếp đón"
+              >
+                <input
+                  type="text"
+                  placeholder="Ví dụ: Đau đầu, sốt nhẹ 2 ngày, khám sức khỏe tổng quát..."
+                  value={checkInNotes}
+                  onChange={(e) => setCheckInNotes(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </FormField>
+
+              {/* Status Info Box */}
+              <div className="p-2.5 rounded-lg bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex items-center justify-between text-xs text-blue-800 dark:text-blue-300">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Trạng thái tiếp nhận:</span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 font-semibold font-mono">
+                    ⏳ Chờ khám (WAITING / SCHEDULED)
+                  </span>
+                </div>
+                <div>
+                  STT cấp: <strong className="font-mono text-sm">#{String(todayQueueNumber).padStart(2, '0')}</strong>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <button
+                type="button"
+                disabled={isSubmittingCheckIn}
+                onClick={() => setIsReceptionModalOpen(false)}
+                className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg disabled:opacity-50"
+              >
+                Hủy bỏ
+              </button>
+              <FormSubmitButton
+                isSubmitting={isSubmittingCheckIn}
+                loadingText="Đang tiếp nhận..."
+                submitText="⚡ Xác nhận tiếp đón & Cấp số khám"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              />
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
