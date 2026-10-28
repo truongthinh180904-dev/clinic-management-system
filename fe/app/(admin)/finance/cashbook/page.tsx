@@ -43,6 +43,7 @@ import {
 } from 'recharts';
 
 import { formatCurrency, formatDate, formatDateTime, cn } from '@/lib/utils';
+import { toast } from '@/components/ui/toast';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import {
@@ -417,14 +418,17 @@ export default function FinanceCashbookPage() {
       setOpenNewTxDialog(false);
       setNewTxAmount('');
       setNewTxDesc('');
+      const msg = `Đã lập phiếu ${newTxType === 'IN' ? 'thu' : 'chi'} quỹ ${res.data.transaction_code} (${formatCurrency(amountNum)}) thành công.`;
       setFeedbackMessage({
         type: 'success',
-        text: `Đã lập phiếu ${newTxType === 'IN' ? 'thu' : 'chi'} quỹ ${res.data.transaction_code} (${formatCurrency(amountNum)}) thành công.`,
+        text: msg,
       });
+      toast.success(msg, 'Ghi sổ quỹ thành công');
       loadData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi tạo giao dịch sổ quỹ.';
       setFeedbackMessage({ type: 'error', text: msg });
+      toast.error(msg, 'Lỗi ghi sổ quỹ');
     } finally {
       setIsSubmittingTx(false);
     }
@@ -457,14 +461,17 @@ export default function FinanceCashbookPage() {
       setOpenNewExpenseDialog(false);
       setNewExpAmount('');
       setNewExpDesc('');
+      const msg = `Đã tạo phiếu chi ${res.data.expense_code}. Phiếu đang ở trạng thái CHỜ PHÊ DUYỆT.`;
       setFeedbackMessage({
         type: 'success',
-        text: `Đã tạo phiếu chi ${res.data.expense_code}. Phiếu đang ở trạng thái CHỜ PHÊ DUYỆT.`,
+        text: msg,
       });
+      toast.success(msg, 'Tạo phiếu chi thành công');
       loadData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi tạo phiếu chi.';
       setFeedbackMessage({ type: 'error', text: msg });
+      toast.error(msg, 'Lỗi tạo phiếu chi');
     } finally {
       setIsSubmittingExp(false);
     }
@@ -478,14 +485,17 @@ export default function FinanceCashbookPage() {
 
     try {
       const res = await approveExpense(exp.id);
+      const msg = `Đã phê duyệt thành công phiếu chi ${res.data.expense_code}. Sổ quỹ đã được tự động cập nhật giảm ${formatCurrency(res.data.amount)}.`;
       setFeedbackMessage({
         type: 'success',
-        text: `Đã phê duyệt thành công phiếu chi ${res.data.expense_code}. Sổ quỹ đã được tự động cập nhật giảm ${formatCurrency(res.data.amount)}.`,
+        text: msg,
       });
+      toast.success(msg, 'Phê duyệt phiếu chi');
       loadData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi phê duyệt phiếu chi.';
       setFeedbackMessage({ type: 'error', text: msg });
+      toast.error(msg, 'Lỗi phê duyệt');
     }
   };
 
@@ -504,14 +514,17 @@ export default function FinanceCashbookPage() {
       setOpenRejectDialog(false);
       setSelectedExpense(null);
       setRejectReason('');
+      const msg = `Đã từ chối phiếu chi ${res.data.expense_code}. Lý do: "${rejectReason.trim()}".`;
       setFeedbackMessage({
         type: 'info',
-        text: `Đã từ chối phiếu chi ${res.data.expense_code}. Lý do: "${rejectReason.trim()}".`,
+        text: msg,
       });
+      toast.info(msg, 'Từ chối phiếu chi');
       loadData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi từ chối phiếu chi.';
       setFeedbackMessage({ type: 'error', text: msg });
+      toast.error(msg, 'Lỗi từ chối phiếu chi');
     } finally {
       setIsSubmittingReject(false);
     }
@@ -537,14 +550,17 @@ export default function FinanceCashbookPage() {
       setOpenNewCategoryDialog(false);
       setCatName('');
       setCatDesc('');
+      const msg = `Thêm nhóm chi phí "${res.data.name}" thành công.`;
       setFeedbackMessage({
         type: 'success',
-        text: `Thêm nhóm chi phí "${res.data.name}" thành công.`,
+        text: msg,
       });
+      toast.success(msg, 'Thêm danh mục chi phí');
       loadData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi thêm danh mục chi phí.';
       setFeedbackMessage({ type: 'error', text: msg });
+      toast.error(msg, 'Lỗi thêm danh mục');
     } finally {
       setIsSubmittingCat(false);
     }
@@ -568,14 +584,17 @@ export default function FinanceCashbookPage() {
       });
       setOpenEditCatDialog(false);
       setSelectedCategory(null);
+      const msg = `Cập nhật danh mục "${res.data.name}" thành công.`;
       setFeedbackMessage({
         type: 'success',
-        text: `Cập nhật danh mục "${res.data.name}" thành công.`,
+        text: msg,
       });
+      toast.success(msg, 'Cập nhật danh mục');
       loadData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi cập nhật danh mục chi phí.';
       setFeedbackMessage({ type: 'error', text: msg });
+      toast.error(msg, 'Lỗi cập nhật danh mục');
     } finally {
       setIsSubmittingCat(false);
     }
@@ -1708,10 +1727,11 @@ export default function FinanceCashbookPage() {
             {/* Ngày giao dịch */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Thời gian thực hiện
+                Thời gian thực hiện <span className="text-rose-500">*</span>
               </Label>
               <Input
                 type="datetime-local"
+                required
                 value={newTxDate}
                 onChange={(e) => setNewTxDate(e.target.value)}
                 className="h-9 text-xs"
@@ -1739,6 +1759,7 @@ export default function FinanceCashbookPage() {
                 size="sm"
                 onClick={() => setOpenNewTxDialog(false)}
                 className="text-xs"
+                disabled={isSubmittingTx}
               >
                 Hủy bỏ
               </Button>
@@ -1746,9 +1767,16 @@ export default function FinanceCashbookPage() {
                 type="submit"
                 size="sm"
                 disabled={isSubmittingTx}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5"
               >
-                {isSubmittingTx ? 'Đang ghi quỹ...' : 'Xác nhận ghi sổ quỹ'}
+                {isSubmittingTx ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    Đang ghi quỹ...
+                  </>
+                ) : (
+                  'Xác nhận ghi sổ quỹ'
+                )}
               </Button>
             </DialogFooter>
           </form>
@@ -1823,10 +1851,11 @@ export default function FinanceCashbookPage() {
             {/* Ngày chi */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Ngày phát sinh chi phí
+                Ngày phát sinh chi phí <span className="text-rose-500">*</span>
               </Label>
               <Input
                 type="date"
+                required
                 value={newExpDate}
                 onChange={(e) => setNewExpDate(e.target.value)}
                 className="h-9 text-xs"
@@ -1854,6 +1883,7 @@ export default function FinanceCashbookPage() {
                 size="sm"
                 onClick={() => setOpenNewExpenseDialog(false)}
                 className="text-xs"
+                disabled={isSubmittingExp}
               >
                 Hủy bỏ
               </Button>
@@ -1861,9 +1891,16 @@ export default function FinanceCashbookPage() {
                 type="submit"
                 size="sm"
                 disabled={isSubmittingExp}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5"
               >
-                {isSubmittingExp ? 'Đang gửi...' : 'Gửi đề xuất chi'}
+                {isSubmittingExp ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    Đang gửi...
+                  </>
+                ) : (
+                  'Gửi đề xuất chi'
+                )}
               </Button>
             </DialogFooter>
           </form>
@@ -1905,6 +1942,7 @@ export default function FinanceCashbookPage() {
                 size="sm"
                 onClick={() => setOpenRejectDialog(false)}
                 className="text-xs"
+                disabled={isSubmittingReject}
               >
                 Hủy
               </Button>
@@ -1912,9 +1950,16 @@ export default function FinanceCashbookPage() {
                 type="submit"
                 size="sm"
                 disabled={isSubmittingReject}
-                className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold"
+                className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold gap-1.5"
               >
-                {isSubmittingReject ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+                {isSubmittingReject ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  'Xác nhận từ chối'
+                )}
               </Button>
             </DialogFooter>
           </form>
@@ -2092,6 +2137,7 @@ export default function FinanceCashbookPage() {
                 size="sm"
                 onClick={() => setOpenNewCategoryDialog(false)}
                 className="text-xs"
+                disabled={isSubmittingCat}
               >
                 Hủy
               </Button>
@@ -2099,9 +2145,16 @@ export default function FinanceCashbookPage() {
                 type="submit"
                 size="sm"
                 disabled={isSubmittingCat}
-                className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold"
+                className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold gap-1.5"
               >
-                {isSubmittingCat ? 'Đang tạo...' : 'Tạo danh mục'}
+                {isSubmittingCat ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    Đang tạo...
+                  </>
+                ) : (
+                  'Tạo danh mục'
+                )}
               </Button>
             </DialogFooter>
           </form>
@@ -2164,6 +2217,7 @@ export default function FinanceCashbookPage() {
                 size="sm"
                 onClick={() => setOpenEditCatDialog(false)}
                 className="text-xs"
+                disabled={isSubmittingCat}
               >
                 Hủy
               </Button>
@@ -2171,9 +2225,16 @@ export default function FinanceCashbookPage() {
                 type="submit"
                 size="sm"
                 disabled={isSubmittingCat}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5"
               >
-                {isSubmittingCat ? 'Đang lưu...' : 'Lưu thay đổi'}
+                {isSubmittingCat ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    Đang lưu...
+                  </>
+                ) : (
+                  'Lưu thay đổi'
+                )}
               </Button>
             </DialogFooter>
           </form>

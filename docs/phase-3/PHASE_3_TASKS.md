@@ -105,7 +105,7 @@
 
 #### TASK `P3-005` (`F3-02-02`): Chuẩn hóa Toàn bộ Biểu mẫu (Form), Validation và Chống Submit Lặp
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-004`
 - **goal:** Chuẩn hóa toàn bộ các form nhập liệu (Bệnh nhân, Nhân viên, Dịch vụ, Lịch hẹn, Lượt khám, Bệnh án, Hóa đơn, Thu chi, Kho): bổ sung dấu sao nhận biết trường bắt buộc (`*`), nhóm thông tin logic (Grid 2 cột/3 cột hợp lý), hiển thị lỗi validation tại chân trường dữ liệu, hiển thị loading spinner khi gửi form, vô hiệu hóa nút submit để ngăn gửi đúp (`isSubmitting`), và thông báo toast kết quả.
 - **scope:** Toàn bộ các component Modal / Sheet / Form nhập liệu trong `fe/app/(admin)/*`.

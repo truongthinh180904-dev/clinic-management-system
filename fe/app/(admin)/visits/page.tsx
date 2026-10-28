@@ -19,6 +19,8 @@ import {
 } from '@/types/visit';
 import { PaginationMeta } from '@/types/auth';
 import { Employee } from '@/types/employee';
+import { toast } from '@/components/ui/toast';
+import { FormField, FormSubmitButton } from '@/components/ui/form-field';
 
 function VisitsListContent() {
   const { hasPermission, hasRole } = useAuth();
@@ -144,18 +146,15 @@ function VisitsListContent() {
         targetStatus,
         statusNote || undefined
       );
-      setActionSuccess(
-        `Đã cập nhật trạng thái lượt khám #${statusModalVisit.visit_code} sang ${VISIT_STATUS_MAP[targetStatus]?.label || targetStatus}`
-      );
+      const msg = `Đã cập nhật trạng thái lượt khám #${statusModalVisit.visit_code} sang ${VISIT_STATUS_MAP[targetStatus]?.label || targetStatus}`;
+      setActionSuccess(msg);
+      toast.success(msg, 'Cập nhật trạng thái');
       setStatusModalVisit(null);
       setStatusNote('');
       loadVisits();
     } catch (err) {
-      if (err instanceof ApiError) {
-        alert(`Lỗi cập nhật: ${err.message}`);
-      } else {
-        alert('Cập nhật trạng thái thất bại.');
-      }
+      const msg = err instanceof ApiError ? err.message : 'Cập nhật trạng thái thất bại.';
+      toast.error(msg, 'Lỗi cập nhật');
     } finally {
       setIsSubmittingStatus(false);
     }
@@ -168,18 +167,15 @@ function VisitsListContent() {
     setIsSubmittingCancel(true);
     try {
       await cancelVisit(cancelModalVisit.id, cancelReason || undefined);
-      setActionSuccess(
-        `Đã hủy lượt khám #${cancelModalVisit.visit_code} thành công.`
-      );
+      const msg = `Đã hủy lượt khám #${cancelModalVisit.visit_code} thành công.`;
+      setActionSuccess(msg);
+      toast.success(msg, 'Hủy lượt khám');
       setCancelModalVisit(null);
       setCancelReason('');
       loadVisits();
     } catch (err) {
-      if (err instanceof ApiError) {
-        alert(`Lỗi hủy lượt khám: ${err.message}`);
-      } else {
-        alert('Hủy lượt khám thất bại.');
-      }
+      const msg = err instanceof ApiError ? err.message : 'Hủy lượt khám thất bại.';
+      toast.error(msg, 'Lỗi hủy lượt khám');
     } finally {
       setIsSubmittingCancel(false);
     }
@@ -624,58 +620,56 @@ function VisitsListContent() {
       {statusModalVisit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-900 rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 dark:border-slate-800">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
               Cập nhật trạng thái lượt khám #{statusModalVisit.visit_code}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Bệnh nhân: {statusModalVisit.patient?.full_name}
+              Bệnh nhân: <span className="font-semibold text-slate-800 dark:text-slate-200">{statusModalVisit.patient?.full_name}</span>
             </p>
             <form onSubmit={handleConfirmStatusChange} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">
-                  Trạng thái mới
-                </label>
+              <FormField
+                label="Trạng thái mới"
+                required
+              >
                 <select
                   value={targetStatus}
                   onChange={(e) => setTargetStatus(e.target.value as VisitStatus)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 >
                   <option value="SCHEDULED">SCHEDULED - Đã lên lịch</option>
                   <option value="IN_PROGRESS">IN_PROGRESS - Đang khám</option>
                   <option value="COMPLETED">COMPLETED - Hoàn thành khám</option>
                   <option value="CANCELLED">CANCELLED - Hủy lượt khám</option>
                 </select>
-              </div>
+              </FormField>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">
-                  Ghi chú cập nhật (tùy chọn)
-                </label>
+              <FormField
+                label="Ghi chú cập nhật (tùy chọn)"
+                hint="Ghi chú lâm sàng hoặc lý do điều chuyển"
+              >
                 <textarea
                   rows={2}
                   value={statusNote}
                   onChange={(e) => setStatusNote(e.target.value)}
                   placeholder="Nhập ghi chú chuyển trạng thái nếu có..."
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
-              </div>
+              </FormField>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   disabled={isSubmittingStatus}
                   onClick={() => setStatusModalVisit(null)}
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg disabled:opacity-50"
                 >
                   Đóng
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingStatus}
-                  className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
-                >
-                  {isSubmittingStatus ? 'Đang lưu...' : 'Xác nhận cập nhật'}
-                </button>
+                <FormSubmitButton
+                  isSubmitting={isSubmittingStatus}
+                  loadingText="Đang lưu..."
+                  submitText="Xác nhận cập nhật"
+                />
               </div>
             </form>
           </div>
@@ -686,43 +680,44 @@ function VisitsListContent() {
       {cancelModalVisit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-900 rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 dark:border-slate-800">
-            <h3 className="text-lg font-bold text-rose-600 dark:text-rose-400 mb-2">
+            <h3 className="text-lg font-bold text-rose-600 dark:text-rose-400 mb-1">
               Hủy lượt khám #{cancelModalVisit.visit_code}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Bệnh nhân: {cancelModalVisit.patient?.full_name}. Lưu ý: Nếu lượt khám có sử dụng gói dịch vụ, lượt sử dụng sẽ được hoàn lại an toàn vào gói của bệnh nhân.
+              Bệnh nhân: <span className="font-semibold text-slate-800 dark:text-slate-200">{cancelModalVisit.patient?.full_name}</span>. Lưu ý: Nếu lượt khám có sử dụng gói dịch vụ, lượt sử dụng sẽ được hoàn lại an toàn vào gói của bệnh nhân.
             </p>
             <form onSubmit={handleConfirmCancel} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">
-                  Lý do hủy
-                </label>
+              <FormField
+                label="Lý do hủy lượt khám"
+                required
+                hint="Nhập lý do chi tiết để lưu vết kiểm toán phòng khám"
+              >
                 <textarea
                   rows={3}
                   required
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   placeholder="Nhập lý do hủy lượt khám (ví dụ: Bệnh nhân đổi lịch, hủy hẹn, yêu cầu hoàn gói...)"
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-rose-500"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none"
                 />
-              </div>
+              </FormField>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   disabled={isSubmittingCancel}
                   onClick={() => setCancelModalVisit(null)}
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg disabled:opacity-50"
                 >
                   Đóng
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingCancel || !cancelReason.trim()}
-                  className="px-4 py-2 text-sm font-medium bg-rose-600 hover:bg-rose-700 text-white rounded-lg disabled:opacity-50"
-                >
-                  {isSubmittingCancel ? 'Đang hủy...' : 'Xác nhận hủy'}
-                </button>
+                <FormSubmitButton
+                  variant="destructive"
+                  isSubmitting={isSubmittingCancel}
+                  disabled={!cancelReason.trim()}
+                  loadingText="Đang hủy..."
+                  submitText="Xác nhận hủy"
+                />
               </div>
             </form>
           </div>

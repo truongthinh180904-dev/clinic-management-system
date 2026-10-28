@@ -26,6 +26,8 @@ import {
 } from '@/types/package';
 import { Patient } from '@/types/patient';
 import { PaginationMeta } from '@/types/auth';
+import { toast } from '@/components/ui/toast';
+import { FormField, FormSubmitButton, FormAlert } from '@/components/ui/form-field';
 
 const PACKAGE_STATUS_MAP: Record<PackageStatus, { label: string; badgeClass: string }> = {
   ACTIVE: {
@@ -235,15 +237,23 @@ function PackagesContent() {
         package_id: 0,
         purchase_date: new Date().toISOString().split('T')[0],
       });
+      toast.success(
+        `Đã kích hoạt cấp gói dịch vụ thành công cho bệnh nhân "${selectedPatient.full_name}".`,
+        'Cấp gói thành công'
+      );
       setActiveTab('assigned');
       fetchAssignedPackages();
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
         setAssignErrors(err.errors);
+        toast.error(err.message, 'Lỗi cấp gói');
       } else if (err instanceof ApiError) {
         setAssignErrors({ general: [err.message] });
+        toast.error(err.message, 'Lỗi cấp gói');
       } else {
-        setAssignErrors({ general: ['Có lỗi xảy ra khi cấp gói cho bệnh nhân.'] });
+        const msg = 'Có lỗi xảy ra khi cấp gói cho bệnh nhân.';
+        setAssignErrors({ general: [msg] });
+        toast.error(msg, 'Lỗi hệ thống');
       }
     } finally {
       setIsAssigning(false);
@@ -259,18 +269,24 @@ function PackagesContent() {
     try {
       if (editingCatalogPackage) {
         await updateServicePackage(editingCatalogPackage.id, catalogFormData);
+        toast.success(`Đã cập nhật gói dịch vụ "${catalogFormData.name}".`, 'Cập nhật thành công');
       } else {
         await createServicePackage(catalogFormData);
+        toast.success(`Đã tạo gói dịch vụ mới "${catalogFormData.name}".`, 'Tạo gói thành công');
       }
       setIsCatalogModalOpen(false);
       fetchCatalogPackages();
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
         setCatalogFormErrors(err.errors);
+        toast.error(err.message || 'Dữ liệu không hợp lệ.', 'Lỗi xác thực');
       } else if (err instanceof ApiError) {
         setGlobalError(err.message);
+        toast.error(err.message, 'Lỗi lưu gói');
       } else {
-        setGlobalError('Có lỗi xảy ra khi lưu thông tin gói dịch vụ.');
+        const msg = 'Có lỗi xảy ra khi lưu thông tin gói dịch vụ.';
+        setGlobalError(msg);
+        toast.error(msg, 'Lỗi hệ thống');
       }
     } finally {
       setIsCatalogSubmitting(false);
@@ -851,17 +867,21 @@ function PackagesContent() {
             </div>
 
             {assignErrors?.general && (
-              <div className="p-3 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">
-                {assignErrors.general[0]}
-              </div>
+              <FormAlert
+                type="error"
+                title="Không thể cấp gói"
+                message={assignErrors.general[0]}
+                onDismiss={() => setAssignErrors(null)}
+              />
             )}
 
             <form onSubmit={handleAssignSubmit} className="space-y-4">
               {/* Patient Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Chọn bệnh nhân thụ hưởng <span className="text-rose-500">*</span>
-                </label>
+              <FormField
+                label="Chọn bệnh nhân thụ hưởng"
+                required
+                error={assignErrors?.patient}
+              >
                 {selectedPatient ? (
                   <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900">
                     <div>
@@ -912,16 +932,14 @@ function PackagesContent() {
                     </div>
                   </div>
                 )}
-                {assignErrors?.patient && (
-                  <p className="mt-1 text-xs text-rose-500">{assignErrors.patient[0]}</p>
-                )}
-              </div>
+              </FormField>
 
               {/* Package Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Chọn gói dịch vụ / Liệu trình <span className="text-rose-500">*</span>
-                </label>
+              <FormField
+                label="Chọn gói dịch vụ / Liệu trình"
+                required
+                error={assignErrors?.package_id}
+              >
                 <select
                   required
                   value={assignFormData.package_id || ''}
@@ -940,10 +958,7 @@ function PackagesContent() {
                       </option>
                     ))}
                 </select>
-                {assignErrors?.package_id && (
-                  <p className="mt-1 text-xs text-rose-500">{assignErrors.package_id[0]}</p>
-                )}
-              </div>
+              </FormField>
 
               {/* Package Details Preview */}
               {selectedPackageForAssign && (
@@ -972,10 +987,10 @@ function PackagesContent() {
               )}
 
               {/* Purchase Date */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Ngày mua / Kích hoạt gói
-                </label>
+              <FormField
+                label="Ngày mua / Kích hoạt gói"
+                required
+              >
                 <input
                   type="date"
                   value={assignFormData.purchase_date || ''}
@@ -984,23 +999,22 @@ function PackagesContent() {
                   }
                   className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
                 />
-              </div>
+              </FormField>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsAssignModalOpen(false)}
-                  className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  disabled={isAssigning}
+                  className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
                 >
                   Hủy
                 </button>
-                <button
-                  type="submit"
-                  disabled={isAssigning}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isAssigning ? 'Đang cấp gói...' : 'Xác nhận cấp gói'}
-                </button>
+                <FormSubmitButton
+                  isSubmitting={isAssigning}
+                  loadingText="Đang cấp gói..."
+                  submitText="Xác nhận cấp gói"
+                />
               </div>
             </form>
           </div>
@@ -1025,10 +1039,11 @@ function PackagesContent() {
 
             <form onSubmit={handleCatalogSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Mã gói (tùy chọn)
-                  </label>
+                <FormField
+                  label="Mã gói"
+                  hint="PKG-0001 (tùy chọn)"
+                  error={catalogFormErrors?.package_code}
+                >
                   <input
                     type="text"
                     value={catalogFormData.package_code || ''}
@@ -1038,15 +1053,12 @@ function PackagesContent() {
                     placeholder="PKG-0001"
                     className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:border-blue-500 focus:outline-none"
                   />
-                  {catalogFormErrors?.package_code && (
-                    <p className="mt-1 text-xs text-rose-500">{catalogFormErrors.package_code[0]}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Trạng thái
-                  </label>
+                <FormField
+                  label="Trạng thái"
+                  required
+                >
                   <select
                     value={catalogFormData.status || 'ACTIVE'}
                     onChange={(e) =>
@@ -1061,13 +1073,14 @@ function PackagesContent() {
                     <option value="INACTIVE">Tạm ngưng</option>
                     <option value="LOCKED">Đã khóa</option>
                   </select>
-                </div>
+                </FormField>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Tên gói dịch vụ <span className="text-rose-500">*</span>
-                </label>
+              <FormField
+                label="Tên gói dịch vụ"
+                required
+                error={catalogFormErrors?.name}
+              >
                 <input
                   type="text"
                   required
@@ -1076,16 +1089,14 @@ function PackagesContent() {
                   placeholder="Ví dụ: Liệu trình trị mụn 10 buổi, Gói khám thai..."
                   className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
                 />
-                {catalogFormErrors?.name && (
-                  <p className="mt-1 text-xs text-rose-500">{catalogFormErrors.name[0]}</p>
-                )}
-              </div>
+              </FormField>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Giá niêm yết <span className="text-rose-500">*</span>
-                  </label>
+                <FormField
+                  label="Giá niêm yết"
+                  required
+                  error={catalogFormErrors?.price}
+                >
                   <input
                     type="number"
                     min="0"
@@ -1097,15 +1108,13 @@ function PackagesContent() {
                     }
                     className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:border-blue-500 focus:outline-none"
                   />
-                  {catalogFormErrors?.price && (
-                    <p className="mt-1 text-xs text-rose-500">{catalogFormErrors.price[0]}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Tổng số buổi <span className="text-rose-500">*</span>
-                  </label>
+                <FormField
+                  label="Tổng số buổi"
+                  required
+                  error={catalogFormErrors?.total_sessions}
+                >
                   <input
                     type="number"
                     min="1"
@@ -1119,15 +1128,13 @@ function PackagesContent() {
                     }
                     className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:border-blue-500 focus:outline-none"
                   />
-                  {catalogFormErrors?.total_sessions && (
-                    <p className="mt-1 text-xs text-rose-500">{catalogFormErrors.total_sessions[0]}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Hạn dùng (ngày) <span className="text-rose-500">*</span>
-                  </label>
+                <FormField
+                  label="Hạn dùng (ngày)"
+                  required
+                  error={catalogFormErrors?.validity_days}
+                >
                   <input
                     type="number"
                     min="1"
@@ -1141,16 +1148,13 @@ function PackagesContent() {
                     }
                     className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:border-blue-500 focus:outline-none"
                   />
-                  {catalogFormErrors?.validity_days && (
-                    <p className="mt-1 text-xs text-rose-500">{catalogFormErrors.validity_days[0]}</p>
-                  )}
-                </div>
+                </FormField>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Mô tả quyền lợi và điều kiện gói
-                </label>
+              <FormField
+                label="Mô tả quyền lợi và điều kiện gói"
+                error={catalogFormErrors?.description}
+              >
                 <textarea
                   rows={3}
                   value={catalogFormData.description || ''}
@@ -1160,23 +1164,22 @@ function PackagesContent() {
                   placeholder="Ghi chú các dịch vụ bao gồm trong gói, điều kiện hủy/hoàn buổi..."
                   className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
                 />
-              </div>
+              </FormField>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsCatalogModalOpen(false)}
-                  className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  disabled={isCatalogSubmitting}
+                  className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
                 >
                   Hủy
                 </button>
-                <button
-                  type="submit"
-                  disabled={isCatalogSubmitting}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {isCatalogSubmitting ? 'Đang lưu...' : editingCatalogPackage ? 'Lưu cập nhật' : 'Tạo gói'}
-                </button>
+                <FormSubmitButton
+                  isSubmitting={isCatalogSubmitting}
+                  loadingText="Đang lưu..."
+                  submitText={editingCatalogPackage ? 'Lưu cập nhật' : 'Tạo gói'}
+                />
               </div>
             </form>
           </div>

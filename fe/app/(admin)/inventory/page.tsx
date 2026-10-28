@@ -29,6 +29,7 @@ import {
 
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatDate, formatDateTime, cn } from '@/lib/utils';
+import { toast } from '@/components/ui/toast';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import {
@@ -293,7 +294,9 @@ export default function InventoryPage() {
           status: formProductStatus,
         };
         await updateProduct(editingProduct.id, payload);
-        setSuccessMsg(`Cập nhật sản phẩm "${formProductName}" thành công.`);
+        const successText = `Cập nhật sản phẩm "${formProductName}" thành công.`;
+        setSuccessMsg(successText);
+        toast.success(successText, 'Cập nhật sản phẩm');
       } else {
         const initStock = Number(formProductInitialStock) || 0;
         const payload: CreateProductInput = {
@@ -305,7 +308,9 @@ export default function InventoryPage() {
           status: formProductStatus,
         };
         await createProduct(payload);
-        setSuccessMsg(`Thêm sản phẩm "${formProductName}" thành công.`);
+        const successText = `Thêm sản phẩm "${formProductName}" thành công.`;
+        setSuccessMsg(successText);
+        toast.success(successText, 'Thêm sản phẩm');
       }
 
       setIsProductModalOpen(false);
@@ -315,6 +320,7 @@ export default function InventoryPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Đã có lỗi xảy ra khi lưu sản phẩm.';
       setProductFormError(msg);
+      toast.error(msg, 'Lỗi lưu sản phẩm');
     } finally {
       setProductSubmitting(false);
     }
@@ -325,12 +331,15 @@ export default function InventoryPage() {
     const nextStatus: ProductStatus = product.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
       await updateProductStatus(product.id, nextStatus);
-      setSuccessMsg(`Đã đổi trạng thái "${product.name}" sang ${nextStatus === 'ACTIVE' ? 'Kích hoạt' : 'Tạm dừng'}.`);
+      const statusText = `Đã đổi trạng thái "${product.name}" sang ${nextStatus === 'ACTIVE' ? 'Kích hoạt' : 'Tạm dừng'}.`;
+      setSuccessMsg(statusText);
+      toast.success(statusText, 'Cập nhật trạng thái');
       fetchProducts();
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Không thể cập nhật trạng thái.';
       setErrorMsg(msg);
+      toast.error(msg, 'Lỗi cập nhật');
     }
   };
 
@@ -415,11 +424,11 @@ export default function InventoryPage() {
 
       await createInventoryTransaction(payload);
 
-      setSuccessMsg(
-        `Thực hiện ${
-          formTxType === 'IN' ? 'Nhập kho' : formTxType === 'OUT' ? 'Xuất kho' : 'Điều chỉnh kho'
-        } thành công cho "${txSelectedProduct?.name}". Tồn mới: ${stockCalculation.projectedStock} ${txSelectedProduct?.unit}.`
-      );
+      const txSuccessText = `Thực hiện ${
+        formTxType === 'IN' ? 'Nhập kho' : formTxType === 'OUT' ? 'Xuất kho' : 'Điều chỉnh kho'
+      } thành công cho "${txSelectedProduct?.name}". Tồn mới: ${stockCalculation.projectedStock} ${txSelectedProduct?.unit}.`;
+      setSuccessMsg(txSuccessText);
+      toast.success(txSuccessText, 'Biến động kho thành công');
 
       setIsTxModalOpen(false);
       fetchProducts();
@@ -429,6 +438,7 @@ export default function InventoryPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Đã có lỗi xảy ra khi thực hiện giao dịch kho.';
       setTxFormError(msg);
+      toast.error(msg, 'Lỗi giao dịch kho');
     } finally {
       setTxSubmitting(false);
     }
@@ -1172,7 +1182,7 @@ export default function InventoryPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="minimum_stock" className="text-xs font-semibold">
-                  Định mức tồn tối thiểu (Min)
+                  Định mức tồn tối thiểu (Min) <span className="text-rose-500">*</span>
                 </Label>
                 <Input
                   id="minimum_stock"
@@ -1477,11 +1487,12 @@ export default function InventoryPage() {
             {/* 4. Ngày giao dịch & Ghi chú */}
             <div className="space-y-1.5">
               <Label htmlFor="tx_date" className="text-xs font-semibold">
-                Thời gian giao dịch
+                Thời gian giao dịch <span className="text-rose-500">*</span>
               </Label>
               <Input
                 id="tx_date"
                 type="datetime-local"
+                required
                 value={formTxDate}
                 onChange={(e) => setFormTxDate(e.target.value)}
                 className="text-xs sm:text-sm"

@@ -33,8 +33,8 @@
 - **Kế hoạch triển khai (Plan):** [`docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md)
 - **Quản trị rủi ro (Risk Register):** [`docs/phase-3/PHASE_3_RISK_REGISTER.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_RISK_REGISTER.md)
 - **Total tasks in Phase 3:** `30 Tasks` (`P3-001` → `P3-030` thuộc 10 Features `F3-01` → `F3-10`)
-- **Completed (`DONE`):** `5 / 30` Tasks (`16.7%`)
-- **Remaining (`PENDING`):** `25 / 30` Tasks (`83.3%`)
+- **Completed (`DONE`):** `6 / 30` Tasks (`20.0%`)
+- **Remaining (`PENDING`):** `24 / 30` Tasks (`80.0%`)
 - **Cấu hình Model Phân công (`agy v1.4.7`):**
   - **Planner:** `gemini-3.8-flash-high`
   - **Coder:** `gemini-3.8-flash-high`
@@ -52,7 +52,7 @@
 | `P3-002` | `F3-01` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `docs/phase-3/PHASE_3_AUDIT_REPORT.md` | Khảo sát Frontend UI/UX, Bảng dữ liệu & Tests |
 | `P3-003` | `F3-01` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `docs/phase-3/PHASE_3_TASKS.md` | Thẩm tra Logic nghiệp vụ tiềm ẩn & Hoàn tất Docs Phase 3 |
 | `P3-004` | `F3-02` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-004.md` | Chuẩn hóa bảng dữ liệu chống dồn cột (`whitespace-nowrap`) |
-| `P3-005` | `F3-02` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-005.md` | Chuẩn hóa Form, validation & loading spinner chống submit lặp |
+| `P3-005` | `F3-02` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-005.md` | Chuẩn hóa Form, validation & loading spinner chống submit lặp |
 | `P3-006` | `F3-02` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-006.md` | Chuẩn hóa cấu trúc trang danh sách (List Page Pattern 8 khối) |
 | `P3-007` | `F3-02` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-007.md` | Chuẩn hóa Dialog xác nhận thao tác và Modal nghiệp vụ |
 | `P3-008` | `F3-02` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-008.md` | Tối ưu Responsive Desktop/Tablet/Mobile & Accessibility |

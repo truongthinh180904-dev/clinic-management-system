@@ -26,6 +26,14 @@ import {
 import { Employee } from '@/types/employee';
 import { Patient } from '@/types/patient';
 import { Service } from '@/types/service';
+import { toast } from '@/components/ui/toast';
+import {
+  FormField,
+  FormSection,
+  FormSubmitButton,
+  FormAlert,
+} from '@/components/ui/form-field';
+import { User, Calendar, Clock, Stethoscope, AlertTriangle } from 'lucide-react';
 
 function AppointmentsContent() {
   const { hasPermission, hasRole } = useAuth();
@@ -263,17 +271,22 @@ function AppointmentsContent() {
     try {
       await createAppointment(createForm);
       setIsCreateModalOpen(false);
-      setActionSuccess('Đặt lịch hẹn khám thành công!');
+      const msg = 'Đặt lịch hẹn khám thành công!';
+      setActionSuccess(msg);
+      toast.success(msg, 'Thành công');
       setTimeout(() => setActionSuccess(null), 4000);
       fetchAppointments();
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 409) {
           // CONFLICT ERROR HANDLING
-          setConflictError(
+          const conflictMsg =
             err.message ||
-              'Xung đột khung giờ: Nhân viên/Bác sĩ đã có lịch hẹn khác trong khung giờ này trên cùng ngày khám. Vui lòng chọn khung giờ hoặc nhân viên khác.'
-          );
+            'Xung đột khung giờ: Nhân viên/Bác sĩ đã có lịch hẹn khác trong khung giờ này trên cùng ngày khám. Vui lòng chọn khung giờ hoặc nhân viên khác.';
+          setConflictError(conflictMsg);
+          toast.warning(conflictMsg, 'Trùng lịch bác sĩ');
+        } else {
+          toast.error(err.message, 'Lỗi tạo lịch hẹn');
         }
         if (err.errors) {
           setFormErrors(err.errors);
@@ -281,7 +294,9 @@ function AppointmentsContent() {
           setConflictError(err.message);
         }
       } else {
-        setConflictError('Có lỗi hệ thống xảy ra khi đặt lịch. Vui lòng thử lại.');
+        const errorMsg = 'Có lỗi hệ thống xảy ra khi đặt lịch. Vui lòng thử lại.';
+        setConflictError(errorMsg);
+        toast.error(errorMsg, 'Lỗi hệ thống');
       }
     } finally {
       setIsSubmitting(false);
@@ -327,17 +342,22 @@ function AppointmentsContent() {
       await updateAppointment(selectedAppointment.id, editForm);
       setIsEditModalOpen(false);
       setSelectedAppointment(null);
-      setActionSuccess('Cập nhật thông tin lịch hẹn thành công!');
+      const msg = 'Cập nhật thông tin lịch hẹn thành công!';
+      setActionSuccess(msg);
+      toast.success(msg, 'Thành công');
       setTimeout(() => setActionSuccess(null), 4000);
       fetchAppointments();
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 409) {
           // CONFLICT ERROR HANDLING
-          setConflictError(
+          const conflictMsg =
             err.message ||
-              'Xung đột khung giờ: Bác sĩ đã có lịch hẹn khác trong khung giờ này trên cùng ngày khám. Vui lòng chọn khung giờ hoặc nhân viên khác.'
-          );
+            'Xung đột khung giờ: Bác sĩ đã có lịch hẹn khác trong khung giờ này trên cùng ngày khám. Vui lòng chọn khung giờ hoặc nhân viên khác.';
+          setConflictError(conflictMsg);
+          toast.warning(conflictMsg, 'Trùng lịch bác sĩ');
+        } else {
+          toast.error(err.message, 'Lỗi cập nhật lịch hẹn');
         }
         if (err.errors) {
           setFormErrors(err.errors);
@@ -345,7 +365,9 @@ function AppointmentsContent() {
           setConflictError(err.message);
         }
       } else {
-        setConflictError('Có lỗi xảy ra khi cập nhật lịch hẹn. Vui lòng thử lại.');
+        const errorMsg = 'Có lỗi xảy ra khi cập nhật lịch hẹn. Vui lòng thử lại.';
+        setConflictError(errorMsg);
+        toast.error(errorMsg, 'Lỗi hệ thống');
       }
     } finally {
       setIsSubmitting(false);
@@ -369,15 +391,14 @@ function AppointmentsContent() {
       await cancelAppointment(selectedAppointment.id, cancelReason);
       setIsCancelModalOpen(false);
       setSelectedAppointment(null);
-      setActionSuccess('Đã hủy lịch hẹn thành công.');
+      const msg = 'Đã hủy lịch hẹn thành công.';
+      setActionSuccess(msg);
+      toast.success(msg, 'Đã hủy lịch');
       setTimeout(() => setActionSuccess(null), 4000);
       fetchAppointments();
     } catch (err) {
-      if (err instanceof ApiError) {
-        alert(err.message);
-      } else {
-        alert('Không thể hủy lịch hẹn.');
-      }
+      const msg = err instanceof ApiError ? err.message : 'Không thể hủy lịch hẹn.';
+      toast.error(msg, 'Lỗi hủy lịch');
     } finally {
       setIsSubmitting(false);
     }
@@ -390,15 +411,14 @@ function AppointmentsContent() {
   ) => {
     try {
       await updateAppointmentStatus(appt.id, status);
-      setActionSuccess(`Đã chuyển trạng thái lịch hẹn sang: ${status}`);
+      const msg = `Đã chuyển trạng thái lịch hẹn sang: ${status}`;
+      setActionSuccess(msg);
+      toast.success(msg, 'Cập nhật trạng thái');
       setTimeout(() => setActionSuccess(null), 3000);
       fetchAppointments();
     } catch (err) {
-      if (err instanceof ApiError) {
-        alert(err.message);
-      } else {
-        alert('Không thể cập nhật trạng thái.');
-      }
+      const msg = err instanceof ApiError ? err.message : 'Không thể cập nhật trạng thái.';
+      toast.error(msg, 'Lỗi cập nhật');
     }
   };
 
@@ -413,15 +433,14 @@ function AppointmentsContent() {
     }
     try {
       await deleteAppointment(appt.id);
-      setActionSuccess('Đã xóa lịch hẹn thành công.');
+      const msg = 'Đã xóa lịch hẹn thành công.';
+      setActionSuccess(msg);
+      toast.success(msg, 'Xóa lịch hẹn');
       setTimeout(() => setActionSuccess(null), 3000);
       fetchAppointments();
     } catch (err) {
-      if (err instanceof ApiError) {
-        alert(err.message);
-      } else {
-        alert('Không thể xóa lịch hẹn.');
-      }
+      const msg = err instanceof ApiError ? err.message : 'Không thể xóa lịch hẹn.';
+      toast.error(msg, 'Lỗi xóa lịch hẹn');
     }
   };
 
@@ -955,273 +974,264 @@ function AppointmentsContent() {
 
             {/* CONFLICT ERROR ALERT BANNER */}
             {conflictError && (
-              <div className="mt-4 rounded-xl border-l-4 border-amber-500 bg-amber-50 p-4 text-amber-900 shadow-sm dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-400">
-                <div className="flex items-start gap-3">
-                  <span className="text-xl">⚠️</span>
+              <FormAlert
+                type="warning"
+                title="Phát hiện xung đột lịch hẹn bác sĩ!"
+                message={
                   <div>
-                    <h4 className="font-bold text-sm">
-                      Phát hiện xung đột lịch hẹn!
-                    </h4>
-                    <p className="mt-0.5 text-xs leading-relaxed">
-                      {conflictError}
-                    </p>
-                    <p className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-300">
-                      Gợi ý: Hãy chọn một bác sĩ khác hoặc điều chỉnh khung giờ
-                      khám (start_time / end_time) để tránh bị chồng lấn.
+                    <p>{conflictError}</p>
+                    <p className="mt-1 text-[11px] opacity-80">
+                      Gợi ý: Hãy chọn một bác sĩ khác hoặc điều chỉnh khung giờ khám (từ giờ - đến giờ) để tránh bị chồng lấn.
                     </p>
                   </div>
-                </div>
-              </div>
+                }
+                className="mt-4"
+                onDismiss={() => setConflictError(null)}
+              />
             )}
 
-            <form onSubmit={handleCreateSubmit} className="mt-4 space-y-4">
-              {/* Patient Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Bệnh nhân <span className="text-rose-500">*</span>
-                </label>
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={patientSearchQuery}
-                    onChange={(e) => handleSearchPatients(e.target.value)}
-                    placeholder="Gõ tên hoặc SĐT bệnh nhân để tìm kiếm nhanh..."
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
-                  {isSearchingPatients && (
-                    <p className="text-xs text-slate-400">Đang tìm bệnh nhân...</p>
-                  )}
-                  <select
-                    value={createForm.patient_id}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        patient_id: Number(e.target.value),
-                      }))
-                    }
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                      formErrors?.patient_id
-                        ? 'border-rose-500 bg-rose-50/20'
-                        : 'border-slate-300 dark:border-slate-700'
-                    }`}
+            <form onSubmit={handleCreateSubmit} className="mt-4 space-y-5">
+              {/* Nhóm 1: Người khám & Bác sĩ */}
+              <FormSection
+                title="Bệnh nhân & Bác sĩ tiếp nhận"
+                description="Chọn hồ sơ bệnh nhân và bác sĩ phụ trách khám"
+                icon={User}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    label="Bệnh nhân đặt lịch"
+                    required
+                    error={formErrors?.patient_id}
                   >
-                    <option value={0}>-- Chọn bệnh nhân từ danh sách --</option>
-                    {patients.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.full_name} ({p.patient_code} - {p.phone || 'Không có SĐT'})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {formErrors?.patient_id && (
-                  <p className="mt-1 text-xs text-rose-500">
-                    {formErrors.patient_id[0]}
-                  </p>
-                )}
-              </div>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={patientSearchQuery}
+                        onChange={(e) => handleSearchPatients(e.target.value)}
+                        placeholder="Gõ tên hoặc SĐT để lọc nhanh..."
+                        className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
+                      />
+                      {isSearchingPatients && (
+                        <p className="text-[11px] text-slate-400">Đang tìm bệnh nhân...</p>
+                      )}
+                      <select
+                        value={createForm.patient_id}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            patient_id: Number(e.target.value),
+                          }))
+                        }
+                        className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
+                          formErrors?.patient_id
+                            ? 'border-rose-500 bg-rose-50/20'
+                            : 'border-slate-300 dark:border-slate-700'
+                        }`}
+                      >
+                        <option value={0}>-- Chọn bệnh nhân từ danh sách --</option>
+                        {patients.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.full_name} ({p.patient_code} - {p.phone || 'Không có SĐT'})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </FormField>
 
-              {/* Doctor / Employee Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Bác sĩ / Nhân viên tiếp nhận <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={createForm.employee_id}
-                  onChange={(e) =>
-                    setCreateForm((prev) => ({
-                      ...prev,
-                      employee_id: Number(e.target.value),
-                    }))
-                  }
-                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                    formErrors?.employee_id || conflictError
-                      ? 'border-amber-500 bg-amber-50/20 ring-1 ring-amber-400'
-                      : 'border-slate-300 dark:border-slate-700'
-                  }`}
-                >
-                  <option value={0}>-- Chọn bác sĩ --</option>
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.full_name} ({emp.position || emp.employee_code})
-                    </option>
-                  ))}
-                </select>
-                {formErrors?.employee_id && (
-                  <p className="mt-1 text-xs text-rose-500">
-                    {formErrors.employee_id[0]}
-                  </p>
-                )}
-              </div>
-
-              {/* Service Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Dịch vụ khám <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={createForm.service_id}
-                  onChange={(e) => {
-                    const sid = Number(e.target.value);
-                    setCreateForm((prev) => ({ ...prev, service_id: sid }));
-                    updateEndTimeFromService(sid, createForm.start_time, false);
-                  }}
-                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                    formErrors?.service_id
-                      ? 'border-rose-500 bg-rose-50/20'
-                      : 'border-slate-300 dark:border-slate-700'
-                  }`}
-                >
-                  <option value={0}>-- Chọn dịch vụ --</option>
-                  {services.map((srv) => (
-                    <option key={srv.id} value={srv.id}>
-                      {srv.name} ({srv.duration_minutes} phút -{' '}
-                      {new Intl.NumberFormat('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND',
-                      }).format(srv.price)}
-                      )
-                    </option>
-                  ))}
-                </select>
-                {formErrors?.service_id && (
-                  <p className="mt-1 text-xs text-rose-500">
-                    {formErrors.service_id[0]}
-                  </p>
-                )}
-              </div>
-
-              {/* Date & Time Slot Grid */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Ngày khám <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={createForm.appointment_date}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        appointment_date: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
-                  {formErrors?.appointment_date && (
-                    <p className="mt-1 text-xs text-rose-500">
-                      {formErrors.appointment_date[0]}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Từ giờ <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    value={createForm.start_time}
-                    onChange={(e) => {
-                      const st = e.target.value;
-                      setCreateForm((prev) => ({ ...prev, start_time: st }));
-                      updateEndTimeFromService(createForm.service_id, st, false);
-                    }}
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                      conflictError || formErrors?.time_slot
-                        ? 'border-amber-500 bg-amber-50/20'
-                        : 'border-slate-300 dark:border-slate-700'
-                    }`}
-                  />
-                  {formErrors?.start_time && (
-                    <p className="mt-1 text-xs text-rose-500">
-                      {formErrors.start_time[0]}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Đến giờ <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    value={createForm.end_time}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        end_time: e.target.value,
-                      }))
-                    }
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                      conflictError || formErrors?.end_time || formErrors?.time_slot
-                        ? 'border-amber-500 bg-amber-50/20'
-                        : 'border-slate-300 dark:border-slate-700'
-                    }`}
-                  />
-                  {formErrors?.end_time && (
-                    <p className="mt-1 text-xs text-rose-500">
-                      {formErrors.end_time[0]}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Status & Notes */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Trạng thái ban đầu
-                  </label>
-                  <select
-                    value={createForm.status}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        status: e.target.value as AppointmentStatus,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  <FormField
+                    label="Bác sĩ / Nhân viên tiếp nhận"
+                    required
+                    error={formErrors?.employee_id}
                   >
-                    <option value="CONFIRMED">Đã xác nhận</option>
-                    <option value="PENDING">Chờ xác nhận</option>
-                  </select>
+                    <select
+                      value={createForm.employee_id}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          employee_id: Number(e.target.value),
+                        }))
+                      }
+                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
+                        formErrors?.employee_id || conflictError
+                          ? 'border-amber-500 bg-amber-50/20 ring-1 ring-amber-400'
+                          : 'border-slate-300 dark:border-slate-700'
+                      }`}
+                    >
+                      <option value={0}>-- Chọn bác sĩ tiếp nhận --</option>
+                      {employees.map((emp) => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.full_name} ({emp.position || emp.employee_code})
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
                 </div>
+              </FormSection>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Ghi chú / Triệu chứng ban đầu
-                  </label>
-                  <input
-                    type="text"
-                    value={createForm.notes || ''}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        notes: e.target.value,
-                      }))
-                    }
-                    placeholder="Triệu chứng, yêu cầu riêng..."
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
+              {/* Nhóm 2: Dịch vụ & Khung giờ */}
+              <FormSection
+                title="Dịch vụ & Khung thời gian khám"
+                description="Hệ thống tự động tính giờ kết thúc dựa theo thời lượng của gói/dịch vụ"
+                icon={Clock}
+              >
+                <div className="space-y-4">
+                  <FormField
+                    label="Dịch vụ khám"
+                    required
+                    error={formErrors?.service_id}
+                  >
+                    <select
+                      value={createForm.service_id}
+                      onChange={(e) => {
+                        const sid = Number(e.target.value);
+                        setCreateForm((prev) => ({ ...prev, service_id: sid }));
+                        updateEndTimeFromService(sid, createForm.start_time, false);
+                      }}
+                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
+                        formErrors?.service_id
+                          ? 'border-rose-500 bg-rose-50/20'
+                          : 'border-slate-300 dark:border-slate-700'
+                      }`}
+                    >
+                      <option value={0}>-- Chọn dịch vụ --</option>
+                      {services.map((srv) => (
+                        <option key={srv.id} value={srv.id}>
+                          {srv.name} ({srv.duration_minutes} phút -{' '}
+                          {new Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND',
+                          }).format(srv.price)}
+                          )
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <FormField
+                      label="Ngày hẹn khám"
+                      required
+                      error={formErrors?.appointment_date}
+                    >
+                      <input
+                        type="date"
+                        value={createForm.appointment_date}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            appointment_date: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </FormField>
+
+                    <FormField
+                      label="Từ giờ"
+                      required
+                      error={formErrors?.start_time}
+                    >
+                      <input
+                        type="time"
+                        value={createForm.start_time}
+                        onChange={(e) => {
+                          const st = e.target.value;
+                          setCreateForm((prev) => ({ ...prev, start_time: st }));
+                          updateEndTimeFromService(createForm.service_id, st, false);
+                        }}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
+                          conflictError || formErrors?.time_slot
+                            ? 'border-amber-500 bg-amber-50/20'
+                            : 'border-slate-300 dark:border-slate-700'
+                        }`}
+                      />
+                    </FormField>
+
+                    <FormField
+                      label="Đến giờ"
+                      required
+                      error={formErrors?.end_time || formErrors?.time_slot}
+                    >
+                      <input
+                        type="time"
+                        value={createForm.end_time}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            end_time: e.target.value,
+                          }))
+                        }
+                        className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
+                          conflictError || formErrors?.end_time || formErrors?.time_slot
+                            ? 'border-amber-500 bg-amber-50/20'
+                            : 'border-slate-300 dark:border-slate-700'
+                        }`}
+                      />
+                    </FormField>
+                  </div>
                 </div>
-              </div>
+              </FormSection>
+
+              {/* Nhóm 3: Trạng thái & Ghi chú */}
+              <FormSection
+                title="Trạng thái & Ghi chú tiếp đón"
+                description="Ghi nhận triệu chứng sơ bộ hoặc yêu cầu của người bệnh"
+                icon={Stethoscope}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    label="Trạng thái ban đầu"
+                    required
+                  >
+                    <select
+                      value={createForm.status}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          status: e.target.value as AppointmentStatus,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    >
+                      <option value="CONFIRMED">Đã xác nhận</option>
+                      <option value="PENDING">Chờ xác nhận</option>
+                    </select>
+                  </FormField>
+
+                  <FormField
+                    label="Ghi chú / Triệu chứng ban đầu"
+                  >
+                    <input
+                      type="text"
+                      value={createForm.notes || ''}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          notes: e.target.value,
+                        }))
+                      }
+                      placeholder="Triệu chứng, yêu cầu riêng..."
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    />
+                  </FormField>
+                </div>
+              </FormSection>
 
               {/* Modal Buttons */}
               <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  disabled={isSubmitting}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-50"
                 >
                   Hủy bỏ
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Đang kiểm tra & lưu...' : 'Xác nhận đặt lịch'}
-                </button>
+                <FormSubmitButton
+                  isSubmitting={isSubmitting}
+                  loadingText="Đang kiểm tra & lưu..."
+                  submitText="Xác nhận đặt lịch"
+                />
               </div>
             </form>
           </div>
@@ -1251,210 +1261,217 @@ function AppointmentsContent() {
 
             {/* CONFLICT ERROR ALERT BANNER */}
             {conflictError && (
-              <div className="mt-4 rounded-xl border-l-4 border-amber-500 bg-amber-50 p-4 text-amber-900 shadow-sm dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-400">
-                <div className="flex items-start gap-3">
-                  <span className="text-xl">⚠️</span>
+              <FormAlert
+                type="warning"
+                title="Phát hiện xung đột lịch hẹn!"
+                message={
                   <div>
-                    <h4 className="font-bold text-sm">
-                      Phát hiện xung đột lịch hẹn!
-                    </h4>
-                    <p className="mt-0.5 text-xs leading-relaxed">
-                      {conflictError}
-                    </p>
-                    <p className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-300">
-                      Gợi ý: Khung giờ đã chọn bị trùng với lịch hẹn khác của bác
-                      sĩ. Hãy chọn giờ khác hoặc chọn bác sĩ khác.
+                    <p>{conflictError}</p>
+                    <p className="mt-1 text-[11px] opacity-80">
+                      Gợi ý: Khung giờ đã chọn bị trùng với lịch hẹn khác của bác sĩ. Hãy chọn giờ khác hoặc chọn bác sĩ khác.
                     </p>
                   </div>
-                </div>
-              </div>
+                }
+                className="mt-4"
+                onDismiss={() => setConflictError(null)}
+              />
             )}
 
-            <form onSubmit={handleEditSubmit} className="mt-4 space-y-4">
-              {/* Doctor Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Bác sĩ / Nhân viên tiếp nhận <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={editForm.employee_id}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({
-                      ...prev,
-                      employee_id: Number(e.target.value),
-                    }))
-                  }
-                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                    conflictError
-                      ? 'border-amber-500 bg-amber-50/20'
-                      : 'border-slate-300 dark:border-slate-700'
-                  }`}
-                >
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.full_name} ({emp.position || emp.employee_code})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Service Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Dịch vụ khám
-                </label>
-                <select
-                  value={editForm.service_id}
-                  onChange={(e) => {
-                    const sid = Number(e.target.value);
-                    setEditForm((prev) => ({ ...prev, service_id: sid }));
-                    updateEndTimeFromService(
-                      sid,
-                      editForm.start_time || '08:30',
-                      true
-                    );
-                  }}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                >
-                  {services.map((srv) => (
-                    <option key={srv.id} value={srv.id}>
-                      {srv.name} ({srv.duration_minutes} phút -{' '}
-                      {new Intl.NumberFormat('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND',
-                      }).format(srv.price)}
-                      )
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Date & Time Slot Grid */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Ngày khám
-                  </label>
-                  <input
-                    type="date"
-                    value={editForm.appointment_date || ''}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        appointment_date: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Từ giờ
-                  </label>
-                  <input
-                    type="time"
-                    value={editForm.start_time || ''}
-                    onChange={(e) => {
-                      const st = e.target.value;
-                      setEditForm((prev) => ({ ...prev, start_time: st }));
-                      if (editForm.service_id) {
-                        updateEndTimeFromService(editForm.service_id, st, true);
-                      }
-                    }}
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                      conflictError
-                        ? 'border-amber-500 bg-amber-50/20'
-                        : 'border-slate-300 dark:border-slate-700'
-                    }`}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Đến giờ
-                  </label>
-                  <input
-                    type="time"
-                    value={editForm.end_time || ''}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        end_time: e.target.value,
-                      }))
-                    }
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                      conflictError || formErrors?.end_time
-                        ? 'border-amber-500 bg-amber-50/20'
-                        : 'border-slate-300 dark:border-slate-700'
-                    }`}
-                  />
-                  {formErrors?.end_time && (
-                    <p className="mt-1 text-xs text-rose-500">
-                      {formErrors.end_time[0]}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Status & Notes */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Trạng thái
-                  </label>
-                  <select
-                    value={editForm.status}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        status: e.target.value as AppointmentStatus,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            <form onSubmit={handleEditSubmit} className="mt-4 space-y-5">
+              <FormSection
+                title="Phụ trách & Dịch vụ"
+                description="Điều chỉnh bác sĩ khám hoặc gói dịch vụ điều trị"
+                icon={User}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    label="Bác sĩ / Nhân viên tiếp nhận"
+                    required
+                    error={conflictError ? 'Khung giờ này bị trùng lịch' : undefined}
                   >
-                    <option value="PENDING">Chờ xác nhận</option>
-                    <option value="CONFIRMED">Đã xác nhận</option>
-                    <option value="COMPLETED">Đã khám xong</option>
-                    <option value="CANCELLED">Đã hủy</option>
-                    <option value="NO_SHOW">Không đến</option>
-                  </select>
-                </div>
+                    <select
+                      value={editForm.employee_id}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          employee_id: Number(e.target.value),
+                        }))
+                      }
+                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
+                        conflictError
+                          ? 'border-amber-500 bg-amber-50/20'
+                          : 'border-slate-300 dark:border-slate-700'
+                      }`}
+                    >
+                      {employees.map((emp) => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.full_name} ({emp.position || emp.employee_code})
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Ghi chú
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.notes || ''}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        notes: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
+                  <FormField
+                    label="Dịch vụ khám"
+                  >
+                    <select
+                      value={editForm.service_id}
+                      onChange={(e) => {
+                        const sid = Number(e.target.value);
+                        setEditForm((prev) => ({ ...prev, service_id: sid }));
+                        updateEndTimeFromService(
+                          sid,
+                          editForm.start_time || '08:30',
+                          true
+                        );
+                      }}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    >
+                      {services.map((srv) => (
+                        <option key={srv.id} value={srv.id}>
+                          {srv.name} ({srv.duration_minutes} phút -{' '}
+                          {new Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND',
+                          }).format(srv.price)}
+                          )
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
                 </div>
-              </div>
+              </FormSection>
+
+              <FormSection
+                title="Thời gian hẹn khám"
+                description="Khung giờ khám mới của lượt tiếp nhận"
+                icon={Clock}
+              >
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <FormField
+                    label="Ngày khám"
+                    required
+                  >
+                    <input
+                      type="date"
+                      value={editForm.appointment_date || ''}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          appointment_date: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    />
+                  </FormField>
+
+                  <FormField
+                    label="Từ giờ"
+                    required
+                  >
+                    <input
+                      type="time"
+                      value={editForm.start_time || ''}
+                      onChange={(e) => {
+                        const st = e.target.value;
+                        setEditForm((prev) => ({ ...prev, start_time: st }));
+                        if (editForm.service_id) {
+                          updateEndTimeFromService(editForm.service_id, st, true);
+                        }
+                      }}
+                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
+                        conflictError
+                          ? 'border-amber-500 bg-amber-50/20'
+                          : 'border-slate-300 dark:border-slate-700'
+                      }`}
+                    />
+                  </FormField>
+
+                  <FormField
+                    label="Đến giờ"
+                    required
+                    error={formErrors?.end_time}
+                  >
+                    <input
+                      type="time"
+                      value={editForm.end_time || ''}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          end_time: e.target.value,
+                        }))
+                      }
+                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
+                        conflictError || formErrors?.end_time
+                          ? 'border-amber-500 bg-amber-50/20'
+                          : 'border-slate-300 dark:border-slate-700'
+                      }`}
+                    />
+                  </FormField>
+                </div>
+              </FormSection>
+
+              <FormSection
+                title="Trạng thái & Ghi chú"
+                description="Cập nhật tiến độ tiếp nhận bệnh nhân"
+                icon={Stethoscope}
+              >
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <FormField
+                    label="Trạng thái lịch"
+                    required
+                  >
+                    <select
+                      value={editForm.status}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          status: e.target.value as AppointmentStatus,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    >
+                      <option value="PENDING">Chờ xác nhận</option>
+                      <option value="CONFIRMED">Đã xác nhận</option>
+                      <option value="COMPLETED">Đã khám xong</option>
+                      <option value="CANCELLED">Đã hủy</option>
+                      <option value="NO_SHOW">Không đến</option>
+                    </select>
+                  </FormField>
+
+                  <FormField
+                    label="Ghi chú bổ sung"
+                  >
+                    <input
+                      type="text"
+                      value={editForm.notes || ''}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          notes: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    />
+                  </FormField>
+                </div>
+              </FormSection>
 
               {/* Modal Buttons */}
               <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  disabled={isSubmitting}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-50"
                 >
                   Hủy bỏ
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Đang kiểm tra trùng...' : 'Lưu thay đổi'}
-                </button>
+                <FormSubmitButton
+                  isSubmitting={isSubmitting}
+                  loadingText="Đang kiểm tra trùng..."
+                  submitText="Lưu thay đổi"
+                />
               </div>
             </form>
           </div>
@@ -1473,34 +1490,36 @@ function AppointmentsContent() {
             </p>
 
             <form onSubmit={handleCancelSubmit} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Lý do hủy lịch
-                </label>
+              <FormField
+                label="Lý do hủy lịch"
+                required
+                hint="Nhập lý do chi tiết để lưu vết kiểm toán (audit log)"
+              >
                 <textarea
                   rows={3}
+                  required
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   placeholder="Ví dụ: Bệnh nhân báo bận đột xuất, chuyển sang ngày khác..."
                   className="w-full rounded-lg border border-slate-300 p-3 text-sm focus:border-rose-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
-              </div>
+              </FormField>
 
               <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsCancelModalOpen(false)}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+                  disabled={isSubmitting}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 disabled:opacity-50"
                 >
                   Đóng
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Đang hủy...' : 'Xác nhận hủy'}
-                </button>
+                <FormSubmitButton
+                  variant="destructive"
+                  isSubmitting={isSubmitting}
+                  loadingText="Đang hủy..."
+                  submitText="Xác nhận hủy lịch"
+                />
               </div>
             </form>
           </div>

@@ -44,6 +44,7 @@ import {
 } from 'recharts';
 
 import { formatCurrency, formatDate, formatDateTime, cn } from '@/lib/utils';
+import { toast } from '@/components/ui/toast';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import {
@@ -289,7 +290,9 @@ export default function DebtManagementPage() {
       });
 
       if (res.data) {
-        setCollectSuccessMessage('Thu nợ thành công! Dữ liệu công nợ đã được cập nhật.');
+        const msg = `Thu nợ thành công ${formatCurrency(amountNum)} cho hóa đơn ${collectInvoice.invoice_code}!`;
+        setCollectSuccessMessage(msg);
+        toast.success(msg, 'Thu hồi công nợ');
 
         // Refresh Summary & Patients list
         fetchSummary();
@@ -312,6 +315,7 @@ export default function DebtManagementPage() {
       const msg =
         err instanceof Error ? err.message : 'Có lỗi xảy ra khi thực hiện thu nợ. Vui lòng thử lại.';
       setCollectError(msg);
+      toast.error(msg, 'Lỗi thu nợ');
     } finally {
       setCollectSubmitting(false);
     }

@@ -28,6 +28,7 @@ import {
 
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatCurrency, formatDate, formatDateTime, cn } from '@/lib/utils';
+import { toast } from '@/components/ui/toast';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import {
@@ -269,12 +270,15 @@ export default function InvoicesPage() {
 
       await createInvoice(payload);
       setIsCreateOpen(false);
-      setSuccessMsg('Lập hóa đơn mới thành công.');
+      const msg = 'Lập hóa đơn mới thành công.';
+      setSuccessMsg(msg);
+      toast.success(msg, 'Thành công');
       fetchInvoices();
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Có lỗi khi lập hóa đơn.';
       setCreateError(msg);
+      toast.error(msg, 'Lỗi lập hóa đơn');
     } finally {
       setCreateSubmitting(false);
     }
@@ -311,12 +315,15 @@ export default function InvoicesPage() {
 
       await createInvoicePayment(selectedInvoice.id, payload);
       setIsPaymentOpen(false);
-      setSuccessMsg(`Đã thu thành công ${formatCurrency(amount)} cho hóa đơn ${selectedInvoice.invoice_code}.`);
+      const msg = `Đã thu thành công ${formatCurrency(amount)} cho hóa đơn ${selectedInvoice.invoice_code}.`;
+      setSuccessMsg(msg);
+      toast.success(msg, 'Ghi nhận thanh toán');
       fetchInvoices();
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Có lỗi xảy ra khi ghi nhận thanh toán.';
       setPaymentError(msg);
+      toast.error(msg, 'Lỗi thanh toán');
     } finally {
       setPaymentSubmitting(false);
     }
@@ -336,12 +343,15 @@ export default function InvoicesPage() {
       });
 
       setIsCancelOpen(false);
-      setSuccessMsg(`Đã hủy hóa đơn ${selectedInvoice.invoice_code} thành công.`);
+      const msg = `Đã hủy hóa đơn ${selectedInvoice.invoice_code} thành công.`;
+      setSuccessMsg(msg);
+      toast.success(msg, 'Đã hủy hóa đơn');
       fetchInvoices();
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Không thể hủy hóa đơn.';
       setCancelError(msg);
+      toast.error(msg, 'Lỗi hủy hóa đơn');
     } finally {
       setCancelSubmitting(false);
     }
@@ -964,7 +974,9 @@ export default function InvoicesPage() {
 
             {/* Issued Date */}
             <div className="space-y-1.5">
-              <Label htmlFor="issuedAt">Ngày lập hóa đơn</Label>
+              <Label htmlFor="issuedAt">
+                Ngày lập hóa đơn <span className="text-rose-500">*</span>
+              </Label>
               <Input
                 id="issuedAt"
                 type="date"
@@ -1138,7 +1150,9 @@ export default function InvoicesPage() {
 
               {/* Payment Date & Time */}
               <div className="space-y-1.5">
-                <Label htmlFor="paymentDate">Thời gian thu tiền</Label>
+                <Label htmlFor="paymentDate">
+                  Thời gian thu tiền <span className="text-rose-500">*</span>
+                </Label>
                 <Input
                   id="paymentDate"
                   type="datetime-local"
@@ -1174,8 +1188,17 @@ export default function InvoicesPage() {
                   disabled={paymentSubmitting}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium gap-1.5"
                 >
-                  <CheckCircle2 className="h-4 w-4" />
-                  {paymentSubmitting ? 'Đang xử lý...' : 'Xác nhận thu tiền'}
+                  {paymentSubmitting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" />
+                      Xác nhận thu tiền
+                    </>
+                  )}
                 </Button>
               </DialogFooter>
             </form>
@@ -1218,9 +1241,12 @@ export default function InvoicesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="cancelReason">Lý do hủy hóa đơn</Label>
+                <Label htmlFor="cancelReason">
+                  Lý do hủy hóa đơn <span className="text-rose-500">*</span>
+                </Label>
                 <Textarea
                   id="cancelReason"
+                  required
                   placeholder="Nhập lý do hủy bỏ hóa đơn này..."
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
@@ -1240,10 +1266,17 @@ export default function InvoicesPage() {
                 <Button
                   type="submit"
                   variant="destructive"
-                  disabled={cancelSubmitting}
-                  className="font-medium"
+                  disabled={cancelSubmitting || !cancelReason.trim()}
+                  className="font-medium gap-1.5"
                 >
-                  {cancelSubmitting ? 'Đang hủy...' : 'Đồng ý hủy hóa đơn'}
+                  {cancelSubmitting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Đang hủy...
+                    </>
+                  ) : (
+                    'Đồng ý hủy hóa đơn'
+                  )}
                 </Button>
               </DialogFooter>
             </form>

@@ -108,7 +108,7 @@
 
 ### TASK `P3-005` (`F3-02-02`): Chuẩn hóa Toàn bộ Biểu mẫu (Form), Validation và Chống Submit Lặp
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-004`
 - **goal:** Chuẩn hóa toàn bộ các form nhập liệu: bổ sung dấu sao bắt buộc (`*`), nhóm thông tin logic, hiển thị lỗi validation dưới từng trường, hiển thị loading spinner khi gửi form, vô hiệu hóa nút submit ngăn gửi lặp (`isSubmitting`), và thông báo toast kết quả.
 - **scope:** Toàn bộ modal/sheet nhập liệu trong `fe/app/(admin)/*`.

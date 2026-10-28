@@ -16,6 +16,14 @@ import {
   EmployeeStatus,
 } from '@/types/employee';
 import { PaginationMeta } from '@/types/auth';
+import { toast } from '@/components/ui/toast';
+import {
+  FormField,
+  FormSection,
+  FormSubmitButton,
+  FormAlert,
+} from '@/components/ui/form-field';
+import { User, Briefcase, FileText } from 'lucide-react';
 
 const DEPARTMENTS = [
   'Tất cả phòng ban',
@@ -129,14 +137,16 @@ export default function EmployeesPage() {
     if (!canUpdate) return;
     try {
       await updateEmployeeStatus(employee.id, newStatus);
-      setActionSuccess(`Đã cập nhật trạng thái nhân viên ${employee.full_name} thành ${STATUS_MAP[newStatus].label}.`);
+      const msg = `Đã cập nhật trạng thái nhân viên ${employee.full_name} thành ${STATUS_MAP[newStatus].label}.`;
+      setActionSuccess(msg);
+      toast.success(msg, 'Cập nhật trạng thái');
       setEmployees((prev) =>
         prev.map((item) => (item.id === employee.id ? { ...item, status: newStatus } : item))
       );
       setTimeout(() => setActionSuccess(null), 4000);
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Lỗi cập nhật trạng thái.';
-      alert(msg);
+      toast.error(msg, 'Lỗi cập nhật');
     }
   };
 
@@ -149,12 +159,14 @@ export default function EmployeesPage() {
 
     try {
       await deleteEmployee(employee.id);
-      setActionSuccess(`Đã xóa thành công nhân viên ${employee.full_name}.`);
+      const msg = `Đã xóa thành công nhân viên ${employee.full_name}.`;
+      setActionSuccess(msg);
+      toast.success(msg, 'Xóa nhân viên');
       setTimeout(() => setActionSuccess(null), 4000);
       fetchEmployees(page);
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Không thể xóa nhân viên.';
-      alert(`Lỗi: ${msg}`);
+      toast.error(msg, 'Lỗi xóa nhân viên');
     }
   };
 
@@ -196,18 +208,22 @@ export default function EmployeesPage() {
 
       const res = await createEmployee(payload);
       setIsModalOpen(false);
-      setActionSuccess(`Đã tạo thành công nhân viên "${res.data.full_name}" (Mã: ${res.data.employee_code}).`);
+      const msg = `Đã tạo thành công nhân viên "${res.data.full_name}" (Mã: ${res.data.employee_code}).`;
+      setActionSuccess(msg);
+      toast.success(msg, 'Thêm nhân viên thành công');
       setTimeout(() => setActionSuccess(null), 5000);
       setPage(1);
       fetchEmployees(1);
     } catch (err) {
       if (err instanceof ApiError) {
         setModalGeneralError(err.message);
+        toast.error(err.message, 'Lỗi tạo nhân viên');
         if (err.errors) {
           setModalErrors(err.errors);
         }
       } else {
         setModalGeneralError('Đã xảy ra lỗi không xác định.');
+        toast.error('Đã xảy ra lỗi không xác định.', 'Lỗi hệ thống');
       }
     } finally {
       setIsSubmitting(false);
@@ -574,212 +590,212 @@ export default function EmployeesPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleCreateSubmit} className="p-6 space-y-5">
               {modalGeneralError && (
-                <div className="rounded-lg bg-rose-50 dark:bg-rose-950/50 p-3.5 border border-rose-200 dark:border-rose-900 text-sm text-rose-800 dark:text-rose-300">
-                  {modalGeneralError}
-                </div>
+                <FormAlert
+                  type="error"
+                  title="Không thể tạo nhân viên mới"
+                  message={modalGeneralError}
+                  onDismiss={() => setModalGeneralError(null)}
+                />
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Full name */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Họ và tên <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
+              {/* Nhóm 1: Thông tin cá nhân */}
+              <FormSection
+                title="Thông tin cá nhân & Định danh"
+                description="Họ tên, ngày sinh, giới tính và thông tin liên hệ của nhân sự"
+                icon={User}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    label="Họ và tên nhân viên"
                     required
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    placeholder="Nguyễn Văn A"
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  {modalErrors?.full_name && (
-                    <p className="mt-1 text-xs text-rose-500">{modalErrors.full_name[0]}</p>
-                  )}
-                </div>
-
-                {/* Employee code */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Mã nhân viên (để trống tự sinh)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.employee_code || ''}
-                    onChange={(e) => setFormData({ ...formData, employee_code: e.target.value })}
-                    placeholder="NV-000001"
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  {modalErrors?.employee_code && (
-                    <p className="mt-1 text-xs text-rose-500">{modalErrors.employee_code[0]}</p>
-                  )}
-                </div>
-
-                {/* Phone */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Số điện thoại
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone || ''}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="0987654321"
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  {modalErrors?.phone && (
-                    <p className="mt-1 text-xs text-rose-500">{modalErrors.phone[0]}</p>
-                  )}
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Địa chỉ email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email || ''}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="nhanvien@qlpk.vn"
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  {modalErrors?.email && (
-                    <p className="mt-1 text-xs text-rose-500">{modalErrors.email[0]}</p>
-                  )}
-                </div>
-
-                {/* Date of birth */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Ngày sinh
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.date_of_birth || ''}
-                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  {modalErrors?.date_of_birth && (
-                    <p className="mt-1 text-xs text-rose-500">{modalErrors.date_of_birth[0]}</p>
-                  )}
-                </div>
-
-                {/* Gender */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Giới tính
-                  </label>
-                  <select
-                    value={formData.gender || 'MALE'}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'MALE' | 'FEMALE' | 'OTHER' })}
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    error={modalErrors?.full_name}
                   >
-                    <option value="MALE">Nam</option>
-                    <option value="FEMALE">Nữ</option>
-                    <option value="OTHER">Khác</option>
-                  </select>
-                </div>
+                    <input
+                      type="text"
+                      required
+                      value={formData.full_name}
+                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      placeholder="Nguyễn Văn A"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
 
-                {/* Department */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Phòng ban
-                  </label>
-                  <input
-                    type="text"
-                    list="dept-list"
-                    value={formData.department || ''}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    placeholder="VD: Khám bệnh"
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  <datalist id="dept-list">
-                    {DEPARTMENTS.slice(1).map((d) => (
-                      <option key={d} value={d} />
-                    ))}
-                  </datalist>
-                </div>
-
-                {/* Position */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Chức vụ
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.position || ''}
-                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                    placeholder="VD: Bác sĩ chuyên khoa, Điều dưỡng..."
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Hire Date */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Ngày vào làm
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.hire_date || ''}
-                    onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Trạng thái
-                  </label>
-                  <select
-                    value={formData.status || 'ACTIVE'}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as EmployeeStatus })}
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  <FormField
+                    label="Mã nhân viên"
+                    hint="NV-000001 (để trống tự sinh)"
+                    error={modalErrors?.employee_code}
                   >
-                    <option value="ACTIVE">Đang làm việc</option>
-                    <option value="INACTIVE">Tạm nghỉ</option>
-                    <option value="LOCKED">Đã nghỉ việc</option>
-                  </select>
-                </div>
-              </div>
+                    <input
+                      type="text"
+                      value={formData.employee_code || ''}
+                      onChange={(e) => setFormData({ ...formData, employee_code: e.target.value })}
+                      placeholder="NV-000001"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                    />
+                  </FormField>
 
-              {/* Notes */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Ghi chú
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.notes || ''}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Ghi chú về văn bằng, chứng chỉ hành nghề, phân công..."
-                  className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
+                  <FormField
+                    label="Số điện thoại"
+                    error={modalErrors?.phone}
+                  >
+                    <input
+                      type="tel"
+                      value={formData.phone || ''}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="0987654321"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
+
+                  <FormField
+                    label="Địa chỉ email"
+                    error={modalErrors?.email}
+                  >
+                    <input
+                      type="email"
+                      value={formData.email || ''}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="nhanvien@qlpk.vn"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
+
+                  <FormField
+                    label="Ngày sinh"
+                    error={modalErrors?.date_of_birth}
+                  >
+                    <input
+                      type="date"
+                      value={formData.date_of_birth || ''}
+                      onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
+
+                  <FormField
+                    label="Giới tính"
+                    required
+                    error={modalErrors?.gender}
+                  >
+                    <select
+                      value={formData.gender || 'MALE'}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'MALE' | 'FEMALE' | 'OTHER' })}
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="MALE">Nam</option>
+                      <option value="FEMALE">Nữ</option>
+                      <option value="OTHER">Khác</option>
+                    </select>
+                  </FormField>
+                </div>
+              </FormSection>
+
+              {/* Nhóm 2: Vị trí công tác */}
+              <FormSection
+                title="Vị trí công tác & Phòng ban"
+                description="Bộ phận, chức danh và tình trạng công tác"
+                icon={Briefcase}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    label="Phòng ban"
+                    error={modalErrors?.department}
+                  >
+                    <input
+                      type="text"
+                      list="dept-list"
+                      value={formData.department || ''}
+                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                      placeholder="VD: Khám bệnh, Dược..."
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <datalist id="dept-list">
+                      {DEPARTMENTS.slice(1).map((d) => (
+                        <option key={d} value={d} />
+                      ))}
+                    </datalist>
+                  </FormField>
+
+                  <FormField
+                    label="Chức vụ / Chức danh"
+                    error={modalErrors?.position}
+                  >
+                    <input
+                      type="text"
+                      value={formData.position || ''}
+                      onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                      placeholder="VD: Bác sĩ chuyên khoa, Điều dưỡng, Dược sĩ..."
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
+
+                  <FormField
+                    label="Ngày vào làm"
+                    error={modalErrors?.hire_date}
+                  >
+                    <input
+                      type="date"
+                      value={formData.hire_date || ''}
+                      onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
+
+                  <FormField
+                    label="Trạng thái làm việc"
+                    required
+                    error={modalErrors?.status}
+                  >
+                    <select
+                      value={formData.status || 'ACTIVE'}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as EmployeeStatus })}
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="ACTIVE">Đang làm việc</option>
+                      <option value="INACTIVE">Tạm nghỉ</option>
+                      <option value="LOCKED">Đã nghỉ việc</option>
+                    </select>
+                  </FormField>
+                </div>
+              </FormSection>
+
+              {/* Nhóm 3: Ghi chú */}
+              <FormSection
+                title="Ghi chú hồ sơ"
+                description="Thông tin chứng chỉ hành nghề, bằng cấp chuyên môn nếu có"
+                icon={FileText}
+              >
+                <FormField
+                  label="Ghi chú bổ sung"
+                  error={modalErrors?.notes}
+                >
+                  <textarea
+                    rows={2}
+                    value={formData.notes || ''}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Ghi chú về văn bằng, chứng chỉ hành nghề CCHN, phân công đặc thù..."
+                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </FormField>
+              </FormSection>
 
               {/* Actions */}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
                   disabled={isSubmitting}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                  className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
                 >
-                  {isSubmitting && (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  )}
-                  <span>{isSubmitting ? 'Đang lưu...' : 'Tạo nhân viên'}</span>
+                  Hủy bỏ
                 </button>
+                <FormSubmitButton
+                  isSubmitting={isSubmitting}
+                  loadingText="Đang lưu nhân sự..."
+                  submitText="Tạo nhân viên"
+                />
               </div>
             </form>
           </div>

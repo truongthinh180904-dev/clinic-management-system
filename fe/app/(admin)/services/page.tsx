@@ -17,6 +17,8 @@ import {
   ServiceStatus,
 } from '@/types/service';
 import { PaginationMeta } from '@/types/auth';
+import { toast } from '@/components/ui/toast';
+import { FormField, FormSubmitButton, FormAlert } from '@/components/ui/form-field';
 
 const STATUS_MAP: Record<ServiceStatus, { label: string; badgeClass: string }> = {
   ACTIVE: {
@@ -133,18 +135,23 @@ export default function ServicesPage() {
     try {
       if (editingService) {
         await updateService(editingService.id, formData);
+        toast.success(`Đã cập nhật dịch vụ "${formData.name}".`, 'Cập nhật thành công');
       } else {
         await createService(formData);
+        toast.success(`Đã thêm dịch vụ mới "${formData.name}".`, 'Tạo mới thành công');
       }
       setIsModalOpen(false);
       fetchServices();
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
         setFormErrors(err.errors);
+        toast.error(err.message || 'Dữ liệu nhập không hợp lệ.', 'Lỗi xác thực');
       } else if (err instanceof ApiError) {
         setError(err.message);
+        toast.error(err.message, 'Lỗi thao tác');
       } else {
         setError('Có lỗi xảy ra khi lưu thông tin dịch vụ.');
+        toast.error('Có lỗi xảy ra khi lưu thông tin dịch vụ.', 'Lỗi hệ thống');
       }
     } finally {
       setIsSubmitting(false);
@@ -156,9 +163,14 @@ export default function ServicesPage() {
     const nextStatus: ServiceStatus = service.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
       await updateServiceStatus(service.id, nextStatus);
+      toast.success(
+        `Đã chuyển trạng thái dịch vụ "${service.name}" sang ${STATUS_MAP[nextStatus].label}.`,
+        'Thành công'
+      );
       fetchServices();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Không thể cập nhật trạng thái');
+      const msg = err instanceof Error ? err.message : 'Không thể cập nhật trạng thái';
+      toast.error(msg, 'Lỗi cập nhật');
     }
   };
 
@@ -168,9 +180,11 @@ export default function ServicesPage() {
 
     try {
       await deleteService(service.id);
+      toast.success(`Đã xóa dịch vụ "${service.name}".`, 'Đã xóa');
       fetchServices();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Không thể xóa dịch vụ');
+      const msg = err instanceof Error ? err.message : 'Không thể xóa dịch vụ';
+      toast.error(msg, 'Lỗi xóa dịch vụ');
     }
   };
 
@@ -418,27 +432,35 @@ export default function ServicesPage() {
             </div>
 
             <form onSubmit={handleFormSubmit} className="space-y-4">
+              {error && (
+                <FormAlert
+                  type="error"
+                  title="Lỗi xử lý"
+                  message={error}
+                  onDismiss={() => setError(null)}
+                />
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Mã dịch vụ (tùy chọn)
-                  </label>
+                <FormField
+                  label="Mã dịch vụ"
+                  hint="DV-0001 (tự sinh nếu để trống)"
+                  error={formErrors?.service_code}
+                >
                   <input
                     type="text"
                     value={formData.service_code || ''}
                     onChange={(e) => setFormData({ ...formData, service_code: e.target.value })}
-                    placeholder="DV-0001 (tự sinh nếu trống)"
+                    placeholder="DV-0001"
                     className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:border-blue-500 focus:outline-none"
                   />
-                  {formErrors?.service_code && (
-                    <p className="mt-1 text-xs text-rose-500">{formErrors.service_code[0]}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Trạng thái
-                  </label>
+                <FormField
+                  label="Trạng thái"
+                  required
+                  error={formErrors?.status}
+                >
                   <select
                     value={formData.status || 'ACTIVE'}
                     onChange={(e) =>
@@ -450,31 +472,30 @@ export default function ServicesPage() {
                     <option value="INACTIVE">Tạm ngưng</option>
                     <option value="LOCKED">Đã khóa</option>
                   </select>
-                </div>
+                </FormField>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Tên dịch vụ <span className="text-rose-500">*</span>
-                </label>
+              <FormField
+                label="Tên dịch vụ khám"
+                required
+                error={formErrors?.name}
+              >
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Ví dụ: Khám tổng quát, Lấy cao răng..."
+                  placeholder="Ví dụ: Khám tổng quát, Lấy cao răng, Siêu âm bụng..."
                   className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
                 />
-                {formErrors?.name && (
-                  <p className="mt-1 text-xs text-rose-500">{formErrors.name[0]}</p>
-                )}
-              </div>
+              </FormField>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Giá niêm yết (VNĐ) <span className="text-rose-500">*</span>
-                  </label>
+                <FormField
+                  label="Giá niêm yết (VNĐ)"
+                  required
+                  error={formErrors?.price}
+                >
                   <input
                     type="number"
                     min="0"
@@ -484,15 +505,13 @@ export default function ServicesPage() {
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                     className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:border-blue-500 focus:outline-none"
                   />
-                  {formErrors?.price && (
-                    <p className="mt-1 text-xs text-rose-500">{formErrors.price[0]}</p>
-                  )}
-                </div>
+                </FormField>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Thời lượng (phút) <span className="text-rose-500">*</span>
-                  </label>
+                <FormField
+                  label="Thời lượng dự kiến (phút)"
+                  required
+                  error={formErrors?.duration_minutes}
+                >
                   <input
                     type="number"
                     min="1"
@@ -503,16 +522,13 @@ export default function ServicesPage() {
                     }
                     className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:border-blue-500 focus:outline-none"
                   />
-                  {formErrors?.duration_minutes && (
-                    <p className="mt-1 text-xs text-rose-500">{formErrors.duration_minutes[0]}</p>
-                  )}
-                </div>
+                </FormField>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Mô tả chi tiết / Chỉ định
-                </label>
+              <FormField
+                label="Mô tả chi tiết / Chỉ định điều trị"
+                error={formErrors?.description}
+              >
                 <textarea
                   rows={3}
                   value={formData.description || ''}
@@ -520,23 +536,22 @@ export default function ServicesPage() {
                   placeholder="Ghi chú quy trình thực hiện, vật tư tiêu hao nếu có..."
                   className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
                 />
-              </div>
+              </FormField>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  disabled={isSubmitting}
+                  className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
                 >
                   Hủy
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Đang lưu...' : editingService ? 'Lưu cập nhật' : 'Tạo dịch vụ'}
-                </button>
+                <FormSubmitButton
+                  isSubmitting={isSubmitting}
+                  loadingText="Đang lưu..."
+                  submitText={editingService ? 'Lưu cập nhật' : 'Tạo dịch vụ'}
+                />
               </div>
             </form>
           </div>

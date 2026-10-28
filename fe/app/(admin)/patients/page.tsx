@@ -19,6 +19,14 @@ import {
   PatientStatus,
 } from '@/types/patient';
 import { PaginationMeta } from '@/types/auth';
+import { toast } from '@/components/ui/toast';
+import {
+  FormField,
+  FormSection,
+  FormSubmitButton,
+  FormAlert,
+} from '@/components/ui/form-field';
+import { User, Phone, FileHeart } from 'lucide-react';
 
 const STATUS_MAP: Record<PatientStatus, { label: string; badgeClass: string }> = {
   ACTIVE: {
@@ -129,14 +137,16 @@ export default function PatientsPage() {
     if (!canUpdate) return;
     try {
       await updatePatientStatus(patient.id, newStatus);
-      setActionSuccess(`Đã cập nhật trạng thái bệnh nhân "${patient.full_name}" thành ${STATUS_MAP[newStatus]?.label || newStatus}.`);
+      const msg = `Đã cập nhật trạng thái bệnh nhân "${patient.full_name}" thành ${STATUS_MAP[newStatus]?.label || newStatus}.`;
+      setActionSuccess(msg);
+      toast.success(msg, 'Cập nhật trạng thái');
       setPatients((prev) =>
         prev.map((item) => (item.id === patient.id ? { ...item, status: newStatus } : item))
       );
       setTimeout(() => setActionSuccess(null), 4000);
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Lỗi cập nhật trạng thái bệnh nhân.';
-      alert(msg);
+      toast.error(msg, 'Lỗi cập nhật');
     }
   };
 
@@ -149,12 +159,14 @@ export default function PatientsPage() {
 
     try {
       await deletePatient(patient.id);
-      setActionSuccess(`Đã xóa thành công hồ sơ bệnh nhân "${patient.full_name}".`);
+      const msg = `Đã xóa thành công hồ sơ bệnh nhân "${patient.full_name}".`;
+      setActionSuccess(msg);
+      toast.success(msg, 'Xóa bệnh nhân');
       setTimeout(() => setActionSuccess(null), 4000);
       fetchPatients(page);
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Không thể xóa hồ sơ bệnh nhân.';
-      alert(`Lỗi: ${msg}`);
+      toast.error(msg, 'Lỗi xóa bệnh nhân');
     }
   };
 
@@ -232,12 +244,14 @@ export default function PatientsPage() {
 
       if (res.duplicate_warnings && res.duplicate_warnings.length > 0) {
         setPersistedWarnings(res.duplicate_warnings);
-        setActionSuccess(
-          `Đã tạo hồ sơ bệnh nhân "${res.data.full_name}" (${res.data.patient_code}). Lưu ý: Có cảnh báo trùng lặp thông tin với hồ sơ khác.`
-        );
+        const msg = `Đã tạo hồ sơ bệnh nhân "${res.data.full_name}" (${res.data.patient_code}). Lưu ý: Có cảnh báo trùng lặp thông tin với hồ sơ khác.`;
+        setActionSuccess(msg);
+        toast.warning(msg, 'Cảnh báo trùng lặp thông tin');
       } else {
         setPersistedWarnings(null);
-        setActionSuccess(`Đã tạo thành công hồ sơ bệnh nhân "${res.data.full_name}" (Mã BN: ${res.data.patient_code}).`);
+        const msg = `Đã tạo thành công hồ sơ bệnh nhân "${res.data.full_name}" (Mã BN: ${res.data.patient_code}).`;
+        setActionSuccess(msg);
+        toast.success(msg, 'Thêm bệnh nhân thành công');
         setTimeout(() => setActionSuccess(null), 5000);
       }
 
@@ -246,11 +260,13 @@ export default function PatientsPage() {
     } catch (err) {
       if (err instanceof ApiError) {
         setModalGeneralError(err.message);
+        toast.error(err.message, 'Lỗi tạo hồ sơ');
         if (err.errors) {
           setModalErrors(err.errors);
         }
       } else {
         setModalGeneralError('Đã xảy ra lỗi không xác định.');
+        toast.error('Đã xảy ra lỗi không xác định.', 'Lỗi kết nối');
       }
     } finally {
       setIsSubmitting(false);
@@ -636,11 +652,14 @@ export default function PatientsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleCreateSubmit} className="p-6 space-y-5">
               {modalGeneralError && (
-                <div className="rounded-lg bg-rose-50 dark:bg-rose-950/50 p-3.5 border border-rose-200 dark:border-rose-900 text-sm text-rose-800 dark:text-rose-300">
-                  {modalGeneralError}
-                </div>
+                <FormAlert
+                  type="error"
+                  title="Không thể tạo hồ sơ bệnh nhân"
+                  message={modalGeneralError}
+                  onDismiss={() => setModalGeneralError(null)}
+                />
               )}
 
               {/* Duplicate Warnings Banner in Modal */}
@@ -651,7 +670,7 @@ export default function PatientsPage() {
                     <span>Cảnh báo: Hồ sơ trùng lặp có thể đã tồn tại!</span>
                   </div>
                   <p className="text-xs text-amber-700 dark:text-amber-300">
-                    Hệ thống phát hiện các hồ sơ có số điện thoại hoặc họ tên và ngày sinh tương đồng. Bạn vẫn có thể tiếp tục bấm &ldquo;Tạo hồ sơ&rdquo; nếu đây là bệnh nhân riêng biệt.
+                    Hệ thống phát hiện các hồ sơ có số điện thoại hoặc họ tên và ngày sinh tương đồng. Bạn vẫn có thể tiếp tục bấm &ldquo;Tạo hồ sơ bệnh nhân&rdquo; nếu đây là bệnh nhân riêng biệt.
                   </p>
                   {modalDuplicateWarnings.map((w, idx) => (
                     <div key={idx} className="text-xs bg-amber-100/60 dark:bg-amber-900/40 p-2.5 rounded-lg space-y-1">
@@ -666,213 +685,214 @@ export default function PatientsPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Full Name */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Họ và tên bệnh nhân <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
+              {/* Nhóm 1: Thông tin cá nhân cơ bản */}
+              <FormSection
+                title="Thông tin định danh cơ bản"
+                description="Họ tên, ngày sinh và giới tính phục vụ hồ sơ khám chữa bệnh"
+                icon={User}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    label="Họ và tên bệnh nhân"
                     required
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    onBlur={handleCheckDuplicate}
-                    placeholder="Nguyễn Văn A"
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  {modalErrors?.full_name && (
-                    <p className="mt-1 text-xs text-rose-500">{modalErrors.full_name[0]}</p>
-                  )}
-                </div>
+                    error={modalErrors?.full_name}
+                  >
+                    <input
+                      type="text"
+                      required
+                      value={formData.full_name}
+                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      onBlur={handleCheckDuplicate}
+                      placeholder="Nguyễn Văn A"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
 
-                {/* Patient Code */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Mã bệnh nhân (để trống tự sinh BNxxxxxx)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.patient_code || ''}
-                    onChange={(e) => setFormData({ ...formData, patient_code: e.target.value })}
-                    placeholder="BN000001"
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
-                  />
-                  {modalErrors?.patient_code && (
-                    <p className="mt-1 text-xs text-rose-500">{modalErrors.patient_code[0]}</p>
-                  )}
-                </div>
+                  <FormField
+                    label="Mã bệnh nhân"
+                    hint="Để trống hệ thống sẽ tự sinh BNxxxxxx"
+                    error={modalErrors?.patient_code}
+                  >
+                    <input
+                      type="text"
+                      value={formData.patient_code || ''}
+                      onChange={(e) => setFormData({ ...formData, patient_code: e.target.value })}
+                      placeholder="BN000001"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                    />
+                  </FormField>
 
-                {/* Phone */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Số điện thoại
-                    </label>
-                    <button
-                      type="button"
-                      onClick={handleCheckDuplicate}
-                      disabled={isCheckingDuplicate || !formData.phone}
-                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-40"
+                  <FormField
+                    label="Ngày sinh"
+                    error={modalErrors?.date_of_birth}
+                  >
+                    <input
+                      type="date"
+                      value={formData.date_of_birth || ''}
+                      onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                      onBlur={handleCheckDuplicate}
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
+
+                  <FormField
+                    label="Giới tính"
+                    required
+                    error={modalErrors?.gender}
+                  >
+                    <select
+                      value={formData.gender || 'MALE'}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     >
-                      {isCheckingDuplicate ? 'Đang kiểm tra...' : '🔍 Tra cứu trùng'}
-                    </button>
-                  </div>
-                  <input
-                    type="tel"
-                    value={formData.phone || ''}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    onBlur={handleCheckDuplicate}
-                    placeholder="0987654321"
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  {modalErrors?.phone && (
-                    <p className="mt-1 text-xs text-rose-500">{modalErrors.phone[0]}</p>
-                  )}
-                </div>
+                      <option value="MALE">Nam</option>
+                      <option value="FEMALE">Nữ</option>
+                      <option value="OTHER">Khác</option>
+                    </select>
+                  </FormField>
 
-                {/* Email */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email || ''}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="benhnhan@gmail.com"
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  {modalErrors?.email && (
-                    <p className="mt-1 text-xs text-rose-500">{modalErrors.email[0]}</p>
-                  )}
-                </div>
-
-                {/* Date of Birth */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Ngày sinh
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.date_of_birth || ''}
-                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                    onBlur={handleCheckDuplicate}
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  {modalErrors?.date_of_birth && (
-                    <p className="mt-1 text-xs text-rose-500">{modalErrors.date_of_birth[0]}</p>
-                  )}
-                </div>
-
-                {/* Gender */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Giới tính
-                  </label>
-                  <select
-                    value={formData.gender || 'MALE'}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  <FormField
+                    label="Trạng thái hồ sơ"
+                    required
+                    error={modalErrors?.status}
                   >
-                    <option value="MALE">Nam</option>
-                    <option value="FEMALE">Nữ</option>
-                    <option value="OTHER">Khác</option>
-                  </select>
+                    <select
+                      value={formData.status || 'ACTIVE'}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as PatientStatus })}
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="ACTIVE">Đang theo dõi</option>
+                      <option value="INACTIVE">Tạm ngưng</option>
+                      <option value="LOCKED">Đã khóa</option>
+                    </select>
+                  </FormField>
                 </div>
+              </FormSection>
 
-                {/* Address */}
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Địa chỉ thường trú
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.address || ''}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành..."
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Emergency Contact Name */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Người liên hệ khẩn cấp
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.emergency_contact_name || ''}
-                    onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })}
-                    placeholder="Họ tên người thân"
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Emergency Contact Phone */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    SĐT người liên hệ khẩn cấp
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.emergency_contact_phone || ''}
-                    onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
-                    placeholder="0912345678"
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Trạng thái hồ sơ
-                  </label>
-                  <select
-                    value={formData.status || 'ACTIVE'}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as PatientStatus })}
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              {/* Nhóm 2: Thông tin liên hệ & Cư trú */}
+              <FormSection
+                title="Thông tin liên lạc & Địa chỉ"
+                description="Số điện thoại dùng để nhận tin nhắn lịch hẹn và đối chiếu"
+                icon={Phone}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    label="Số điện thoại"
+                    error={modalErrors?.phone}
+                    hint={
+                      <button
+                        type="button"
+                        onClick={handleCheckDuplicate}
+                        disabled={isCheckingDuplicate || !formData.phone}
+                        className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-40"
+                      >
+                        {isCheckingDuplicate ? 'Đang kiểm tra...' : '🔍 Tra cứu trùng số điện thoại'}
+                      </button>
+                    }
                   >
-                    <option value="ACTIVE">Đang theo dõi</option>
-                    <option value="INACTIVE">Tạm ngưng</option>
-                    <option value="LOCKED">Đã khóa</option>
-                  </select>
-                </div>
-              </div>
+                    <input
+                      type="tel"
+                      value={formData.phone || ''}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onBlur={handleCheckDuplicate}
+                      placeholder="0987654321"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
 
-              {/* Notes */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Tiền sử dị ứng & Ghi chú chung
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.notes || ''}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Tiền sử dị ứng thuốc, bệnh lý nền mạn tính, lưu ý tiếp đón..."
-                  className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
+                  <FormField
+                    label="Email"
+                    error={modalErrors?.email}
+                  >
+                    <input
+                      type="email"
+                      value={formData.email || ''}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="benhnhan@gmail.com"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
+
+                  <FormField
+                    label="Địa chỉ thường trú"
+                    className="sm:col-span-2"
+                    error={modalErrors?.address}
+                  >
+                    <input
+                      type="text"
+                      value={formData.address || ''}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành..."
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
+                </div>
+              </FormSection>
+
+              {/* Nhóm 3: Người thân & Ghi chú y tế */}
+              <FormSection
+                title="Người thân khẩn cấp & Tiền sử bệnh"
+                description="Thông tin hỗ trợ trường hợp cần báo tin khẩn cấp và dị ứng"
+                icon={FileHeart}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    label="Người liên hệ khẩn cấp"
+                    error={modalErrors?.emergency_contact_name}
+                  >
+                    <input
+                      type="text"
+                      value={formData.emergency_contact_name || ''}
+                      onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })}
+                      placeholder="Họ tên người thân (bố/mẹ/vợ/chồng...)"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
+
+                  <FormField
+                    label="SĐT người liên hệ khẩn cấp"
+                    error={modalErrors?.emergency_contact_phone}
+                  >
+                    <input
+                      type="tel"
+                      value={formData.emergency_contact_phone || ''}
+                      onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
+                      placeholder="0912345678"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
+
+                  <FormField
+                    label="Tiền sử dị ứng & Ghi chú chung"
+                    className="sm:col-span-2"
+                    error={modalErrors?.notes}
+                  >
+                    <textarea
+                      rows={2}
+                      value={formData.notes || ''}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="Tiền sử dị ứng thuốc (Penicillin, NSAID...), bệnh nền mãn tính, lưu ý tiếp đón..."
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
+                </div>
+              </FormSection>
 
               {/* Modal Actions */}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
                   disabled={isSubmitting}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                  className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
                 >
-                  {isSubmitting && (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  )}
-                  <span>{isSubmitting ? 'Đang lưu...' : 'Tạo hồ sơ bệnh nhân'}</span>
+                  Hủy bỏ
                 </button>
+                <FormSubmitButton
+                  isSubmitting={isSubmitting}
+                  loadingText="Đang lưu hồ sơ..."
+                  submitText="Tạo hồ sơ bệnh nhân"
+                />
               </div>
             </form>
           </div>
