@@ -42,6 +42,12 @@ import {
   Pie,
 } from 'recharts';
 
+import {
+  DonutChart,
+  PaymentMethodChart,
+  ExpenseCategoryChart,
+  AppointmentDistributionChart,
+} from '@/components/charts';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
@@ -686,123 +692,89 @@ export default function ReportsPage() {
                     <CardDescription>Phân bổ chi phí theo danh mục khoản chi</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {financialData.expenses_by_category && financialData.expenses_by_category.length > 0 ? (
-                      <div className="space-y-4">
-                        <div className="h-[200px] w-full">
-                          {isMounted && (
-                            <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <Pie
-                                  data={financialData.expenses_by_category}
-                                  dataKey="total_amount"
-                                  nameKey="category_name"
-                                  cx="50%"
-                                  cy="50%"
-                                  innerRadius={45}
-                                  outerRadius={80}
-                                  paddingAngle={3}
-                                >
-                                  {financialData.expenses_by_category.map((_, index) => (
-                                    <Cell
-                                      key={`cell-${index}`}
-                                      fill={PIE_COLORS[index % PIE_COLORS.length]}
-                                    />
-                                  ))}
-                                </Pie>
-                                <Tooltip
-                                  formatter={(val: any) => formatCurrency(Number(val))}
-                                />
-                              </PieChart>
-                            </ResponsiveContainer>
-                          )}
-                        </div>
-                        <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
-                          {financialData.expenses_by_category.map((cat, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-xs">
-                              <div className="flex items-center space-x-2 truncate">
-                                <span
-                                  className="h-2.5 w-2.5 rounded-full shrink-0"
-                                  style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }}
-                                />
-                                <span className="font-medium truncate">{cat.category_name}</span>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <span className="font-semibold">{formatCurrency(cat.total_amount)}</span>
-                                <span className="text-slate-400 ml-1.5">({cat.percentage}%)</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex h-[280px] items-center justify-center text-sm text-slate-400">
-                        Chưa có khoản chi nào trong kỳ này
-                      </div>
-                    )}
+                    <ExpenseCategoryChart
+                      data={financialData.expenses_by_category}
+                      title=""
+                      description=""
+                      height={210}
+                      legendPosition="bottom"
+                    />
                   </CardContent>
                 </Card>
               </div>
 
               {/* By Payment Method & Daily Detail Table */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Payment Methods Table */}
+                {/* Payment Methods Card with Donut Chart and Detail Table */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base font-semibold flex items-center space-x-2">
                       <Wallet className="h-5 w-5 text-emerald-600" />
-                      <span>Thu - Chi theo Phương thức Thanh toán</span>
+                      <span>Cơ cấu & Bảng Thu - Chi theo Kênh Thanh toán</span>
                     </CardTitle>
-                    <CardDescription>Chi tiết luồng tiền qua Tiền mặt, Chuyển khoản và Thẻ</CardDescription>
+                    <CardDescription>Trực quan hóa tỷ trọng luồng tiền qua Tiền mặt, Chuyển khoản, Thẻ và Bảo hiểm</CardDescription>
                   </CardHeader>
-                  <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Phương thức</TableHead>
-                          <TableHead className="text-right">Thực thu (IN)</TableHead>
-                          <TableHead className="text-right">Chi phí (OUT)</TableHead>
-                          <TableHead className="text-right">Dòng tiền ròng</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {financialData.by_payment_method.map((item, idx) => {
-                          const methodName =
-                            item.payment_method === 'CASH'
-                              ? 'Tiền mặt'
-                              : item.payment_method === 'BANK_TRANSFER'
-                              ? 'Chuyển khoản'
-                              : item.payment_method === 'CARD'
-                              ? 'Thẻ / POS'
-                              : item.payment_method;
+                  <CardContent className="space-y-6">
+                    <PaymentMethodChart
+                      data={financialData.by_payment_method}
+                      mode="collected"
+                      title=""
+                      description=""
+                      height={200}
+                      legendPosition="bottom"
+                    />
+                    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="whitespace-nowrap">Phương thức</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">Thực thu (IN)</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">Chi phí (OUT)</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">Dòng tiền ròng</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {financialData.by_payment_method.map((item, idx) => {
+                            const methodName =
+                              item.payment_method === 'CASH'
+                                ? 'Tiền mặt'
+                                : item.payment_method === 'BANK_TRANSFER'
+                                ? 'Chuyển khoản'
+                                : item.payment_method === 'CARD'
+                                ? 'Thẻ / POS'
+                                : item.payment_method === 'INSURANCE'
+                                ? 'Bảo hiểm Y tế'
+                                : item.payment_method;
 
-                          return (
-                            <TableRow key={idx}>
-                              <TableCell className="font-medium">
-                                <div className="flex items-center space-x-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {methodName}
-                                  </Badge>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right text-emerald-600 font-semibold">
-                                {formatCurrency(item.collected_amount)}
-                              </TableCell>
-                              <TableCell className="text-right text-amber-600 font-semibold">
-                                {formatCurrency(item.expense_amount)}
-                              </TableCell>
-                              <TableCell
-                                className={cn(
-                                  'text-right font-bold',
-                                  item.net_amount >= 0 ? 'text-blue-600' : 'text-rose-600'
-                                )}
-                              >
-                                {formatCurrency(item.net_amount)}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                            return (
+                              <TableRow key={idx}>
+                                <TableCell className="font-medium whitespace-nowrap">
+                                  <div className="flex items-center space-x-2">
+                                    <Badge variant="outline" className="text-xs">
+                                      {methodName}
+                                    </Badge>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right text-emerald-600 font-semibold whitespace-nowrap font-mono">
+                                  {formatCurrency(item.collected_amount)}
+                                </TableCell>
+                                <TableCell className="text-right text-amber-600 font-semibold whitespace-nowrap font-mono">
+                                  {formatCurrency(item.expense_amount)}
+                                </TableCell>
+                                <TableCell
+                                  className={cn(
+                                    'text-right font-bold whitespace-nowrap font-mono',
+                                    item.net_amount >= 0 ? 'text-blue-600' : 'text-rose-600'
+                                  )}
+                                >
+                                  {formatCurrency(item.net_amount)}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -920,33 +892,65 @@ export default function ReportsPage() {
                 />
               </div>
 
-              {/* Status Breakdown Bar */}
-              <Card className="p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                      Phân bổ Trạng thái Lượt khám trong kỳ
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Tổng số: {clinicalData.summary.total_visits} lượt tiếp nhận
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="success">
-                      Khám xong: {clinicalData.summary.completed_visits}
-                    </Badge>
-                    <Badge variant="info">
-                      Đang khám: {clinicalData.summary.in_progress_visits}
-                    </Badge>
-                    <Badge variant="warning">
-                      Chờ khám: {clinicalData.summary.scheduled_visits}
-                    </Badge>
-                    <Badge variant="destructive">
-                      Đã hủy: {clinicalData.summary.cancelled_visits}
-                    </Badge>
-                  </div>
-                </div>
-              </Card>
+              {/* Status Breakdown Bar & Donut Distribution Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Appointment Status Donut Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
+                      <Calendar className="h-5 w-5 text-indigo-600" />
+                      <span>Cơ cấu & Trạng thái Lịch hẹn Khám</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Tỷ lệ hoàn thành, đã hủy, và vắng mặt (No-Show) trong tổng số {clinicalData.summary.total_appointments || clinicalData.appointments?.total || 0} lịch hẹn
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AppointmentDistributionChart
+                      data={{
+                        total: clinicalData.summary.total_appointments || clinicalData.appointments?.total || 0,
+                        completed: clinicalData.summary.completed_appointments || clinicalData.appointments?.completed || 0,
+                        cancelled: clinicalData.summary.cancelled_appointments || clinicalData.appointments?.cancelled || 0,
+                        scheduled: clinicalData.summary.scheduled_appointments || clinicalData.appointments?.scheduled || 0,
+                        attendance_rate: clinicalData.summary.attendance_rate ?? clinicalData.appointments?.attendance_rate,
+                      }}
+                      title=""
+                      description=""
+                      height={210}
+                      legendPosition="bottom"
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Visit Status Donut Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base font-semibold flex items-center space-x-2">
+                      <Activity className="h-5 w-5 text-emerald-600" />
+                      <span>Phân bổ Tiến độ Lượt khám Lâm sàng</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Tỷ trọng các trạng thái ca khám trong tổng số {clinicalData.summary.total_visits} lượt tiếp nhận
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AppointmentDistributionChart
+                      data={{
+                        total: clinicalData.summary.total_visits,
+                        completed: clinicalData.summary.completed_visits,
+                        in_progress: clinicalData.summary.in_progress_visits,
+                        scheduled: clinicalData.summary.scheduled_visits,
+                        cancelled: clinicalData.summary.cancelled_visits,
+                        by_status: clinicalData.visits?.by_status,
+                      }}
+                      title=""
+                      description=""
+                      height={210}
+                      legendPosition="bottom"
+                    />
+                  </CardContent>
+                </Card>
+              </div>
 
               {/* Recharts: Clinical Trends & Doctor Performance */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

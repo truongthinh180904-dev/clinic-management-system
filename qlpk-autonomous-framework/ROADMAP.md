@@ -289,7 +289,7 @@
 
 ### TASK `P3-019` (`F3-06-01`): Chuẩn hóa Biểu đồ Tròn/Donut (Pie/Donut Chart) Biểu diễn Cơ cấu Doanh thu & Tỷ trọng
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-018`
 - **goal:** Nâng cấp Trung tâm Báo cáo và Dashboard: sử dụng biểu đồ Donut Chart từ thư viện `recharts` để trực quan hóa: (1) Cơ cấu phương thức thanh toán (Tiền mặt, Chuyển khoản, Thẻ, Bảo hiểm), (2) Tỷ trọng cơ cấu chi phí vận hành theo danh mục chi, (3) Phân bố trạng thái lịch hẹn (Hoàn thành, Đã hủy, Bỏ khám).
 - **scope:** `fe/app/(admin)/reports/page.tsx`, `fe/app/(admin)/dashboard/page.tsx`, `fe/components/charts/*`.

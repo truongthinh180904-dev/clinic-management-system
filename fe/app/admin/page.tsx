@@ -40,6 +40,7 @@ import {
 } from 'recharts';
 
 import { useAuth } from '@/lib/auth/auth-context';
+import { DonutChart, AppointmentDistributionChart } from '@/components/charts';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { StatCard } from '@/components/ui/stat-card';
 import {
@@ -651,66 +652,17 @@ export default function AdminDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="h-[200px] w-full">
-              {isMounted && visitStatusPieData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={visitStatusPieData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={80}
-                      paddingAngle={3}
-                    >
-                      {visitStatusPieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(val, name) => [`${val} lượt`, `${name}`]}
-                      contentStyle={{
-                        borderRadius: '8px',
-                        border: '1px solid #e2e8f0',
-                        fontSize: '12px',
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-slate-400">
-                  {loading ? 'Đang tải dữ liệu...' : 'Chưa có dữ liệu'}
-                </div>
-              )}
-            </div>
-
-            {/* Status Breakdown Legend List */}
-            <div className="mt-4 space-y-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-              {visitStatusPieData.map((item) => (
-                <div
-                  key={item.key}
-                  className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400"
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="font-medium text-slate-700 dark:text-slate-200">
-                      {item.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">
-                      {item.value}
-                    </span>
-                    <span className="text-slate-400">({item.percentage}%)</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <DonutChart
+              data={visitStatusPieData}
+              title=""
+              description=""
+              centerLabel={String(visitTrends?.total_visits ?? 0)}
+              centerSublabel="Lượt khám"
+              valueFormatter={(val) => `${val} lượt`}
+              height={200}
+              legendPosition="bottom"
+              emptyMessage={loading ? 'Đang tải dữ liệu...' : 'Chưa có dữ liệu'}
+            />
           </CardContent>
         </Card>
       </div>
