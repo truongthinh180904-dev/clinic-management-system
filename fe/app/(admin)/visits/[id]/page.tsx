@@ -27,6 +27,8 @@ import {
   MedicalRecordAuditLog,
   UpdateMedicalRecordInput,
 } from '@/types/medical-record';
+import { PatientFileManager } from '@/components/patient-files';
+
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -813,6 +815,19 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Medical Files Card */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
+            <PatientFileManager
+              patientId={visit.patient_id}
+              patientName={visit.patient?.full_name}
+              visitId={visit.id}
+              title={`Tệp y tế & Chẩn đoán hình ảnh ca khám #${visit.visit_code}`}
+              canUpload={canUpdateVisit && visit.status !== 'CANCELLED'}
+              canDelete={canUpdateVisit}
+              canView={true}
+            />
           </div>
         </div>
       </div>

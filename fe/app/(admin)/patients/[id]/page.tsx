@@ -26,7 +26,10 @@ import {
   PlusCircle,
   ArrowLeft,
   Lock,
+  FolderOpen,
 } from 'lucide-react';
+import { PatientFileManager } from '@/components/patient-files';
+
 import { useAuth } from '@/lib/auth/auth-context';
 import { ApiError } from '@/lib/api/client';
 import {
@@ -187,13 +190,29 @@ function PatientDetailContent({ patientId }: { patientId: string }) {
     hasRole('ADMIN') ||
     hasRole('RECEPTIONIST') ||
     hasRole('DOCTOR');
+  const canViewFiles =
+    hasPermission('patient_files.view') ||
+    hasRole('ADMIN') ||
+    hasRole('DOCTOR') ||
+    hasRole('RECEPTIONIST') ||
+    hasRole('MANAGER');
+  const canUploadFiles =
+    hasPermission('patient_files.upload') ||
+    canUpdate ||
+    hasRole('ADMIN') ||
+    hasRole('DOCTOR') ||
+    hasRole('MANAGER');
+  const canDeleteFiles =
+    hasPermission('patient_files.delete') ||
+    hasRole('ADMIN') ||
+    hasRole('MANAGER');
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Tab State: 'timeline' (Mặc định cho Bác sĩ) | 'profile' | 'packages'
-  const [activeTab, setActiveTab] = useState<'timeline' | 'profile' | 'packages'>('timeline');
+  // Tab State: 'timeline' (Mặc định cho Bác sĩ) | 'profile' | 'packages' | 'files'
+  const [activeTab, setActiveTab] = useState<'timeline' | 'profile' | 'packages' | 'files'>('timeline');
 
   // Form State
   const [formData, setFormData] = useState<UpdatePatientInput>({});
@@ -644,6 +663,18 @@ function PatientDetailContent({ patientId }: { patientId: string }) {
           <Heart className="h-4 w-4" />
           <span>Gói dịch vụ điều trị ({patient.patient_packages_count ?? 0})</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('files')}
+          className={`pb-3.5 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === 'files'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+        >
+          <FolderOpen className="h-4 w-4" />
+          <span>Tài liệu & Tệp y tế</span>
+        </button>
       </div>
 
       {/* Action Notification */}
@@ -950,6 +981,15 @@ function PatientDetailContent({ patientId }: { patientId: string }) {
                         </div>
 
                         <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab('files')}
+                            className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors inline-flex items-center gap-1"
+                            title="Xem và quản lý tệp đính kèm y tế của bệnh nhân"
+                          >
+                            <FolderOpen className="h-3.5 w-3.5 text-blue-500" />
+                            <span>Tệp y tế</span>
+                          </button>
                           {item.medical_record && (
                             <button
                               onClick={() => setSelectedVisitRecord(item)}
@@ -1422,6 +1462,19 @@ function PatientDetailContent({ patientId }: { patientId: string }) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* TAB 4: MEDICAL FILES */}
+      {activeTab === 'files' && (
+        <div className="space-y-4">
+          <PatientFileManager
+            patientId={patient.id}
+            patientName={patient.full_name}
+            canUpload={canUploadFiles}
+            canDelete={canDeleteFiles}
+            canView={canViewFiles}
+          />
         </div>
       )}
 

@@ -274,7 +274,7 @@
 
 ### TASK `P3-018` (`F3-05-05` / `F3-05-06`): Xây dựng Giao diện Quản lý và Xem trước Tệp Y tế trên Frontend
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-017`
 - **goal:** Xây dựng giao diện danh sách và tải lên tệp y tế trong trang chi tiết bệnh nhân (`fe/app/(admin)/patients/[id]/page.tsx`) và màn hình khám bệnh (`visits/page.tsx`): hỗ trợ kéo thả tệp, thanh tiến trình tải lên, hiển thị thumbnail ảnh thu nhỏ, modal xem trước hình ảnh phóng to hoặc mở xem PDF trực tiếp trong ứng dụng.
 - **scope:** `fe/components/patient-files/*`, `fe/app/(admin)/patients/[id]/page.tsx`, `fe/lib/api/patient-files.ts`.

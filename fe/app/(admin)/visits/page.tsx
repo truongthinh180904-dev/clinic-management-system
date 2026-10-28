@@ -60,7 +60,10 @@ import {
   UserCheck,
   UserPlus,
   AlertTriangle,
+  FolderOpen,
 } from 'lucide-react';
+import { PatientFileManager } from '@/components/patient-files';
+
 
 function VisitsListContent() {
   const searchParams = useSearchParams();
@@ -153,6 +156,10 @@ function VisitsListContent() {
   const [cancelModalVisit, setCancelModalVisit] = useState<Visit | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [isSubmittingCancel, setIsSubmittingCancel] = useState(false);
+
+  // File Manager Modal
+  const [selectedFileVisit, setSelectedFileVisit] = useState<Visit | null>(null);
+
 
   // Auto open fast check-in if query param present
   useEffect(() => {
@@ -892,6 +899,16 @@ function VisitsListContent() {
                             </Link>
                           )}
 
+                          <button
+                            type="button"
+                            onClick={() => setSelectedFileVisit(visit)}
+                            className="px-2.5 py-1.5 text-xs font-medium bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-md transition-colors inline-flex items-center gap-1"
+                            title="Quản lý và xem trước tệp y tế (X-quang, MRI, PDF)"
+                          >
+                            <FolderOpen className="h-3.5 w-3.5" />
+                            <span>Tệp y tế</span>
+                          </button>
+
                           {canUpdate && visit.status !== 'COMPLETED' && visit.status !== 'CANCELLED' && (
                             <button
                               onClick={() => {
@@ -1505,6 +1522,38 @@ function VisitsListContent() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Patient Files Dialog for Selected Visit */}
+      {selectedFileVisit && (
+        <Dialog
+          open={!!selectedFileVisit}
+          onOpenChange={(open) => !open && setSelectedFileVisit(null)}
+        >
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
+                <FolderOpen className="h-5 w-5 text-indigo-600" />
+                <span>Tài liệu & Tệp y tế — Ca khám {selectedFileVisit.visit_code}</span>
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                Bệnh nhân: {selectedFileVisit.patient?.full_name} ({selectedFileVisit.patient?.patient_code}) • Ngày khám: {formatDate(selectedFileVisit.visit_date)}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-2">
+              <PatientFileManager
+                patientId={selectedFileVisit.patient_id}
+                patientName={selectedFileVisit.patient?.full_name}
+                visitId={selectedFileVisit.id}
+                title={`Tệp y tế ca khám ${selectedFileVisit.visit_code}`}
+                canUpload={canUpdate && selectedFileVisit.status !== 'CANCELLED'}
+                canDelete={canUpdate}
+                compact={true}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

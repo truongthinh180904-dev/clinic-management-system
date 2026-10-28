@@ -26,15 +26,27 @@ export interface ToastItem {
   duration?: number;
 }
 
+export type ToastOptions = {
+  title?: string;
+  description?: string;
+  duration?: number;
+};
+
+export type ToastMethod = (
+  messageOrTitle: string,
+  titleOrOptions?: string | ToastOptions,
+  duration?: number
+) => void;
+
 interface ToastContextValue {
   toasts: ToastItem[];
   addToast: (toast: Omit<ToastItem, 'id'>) => void;
   removeToast: (id: string) => void;
   toast: {
-    success: (message: string, title?: string, duration?: number) => void;
-    error: (message: string, title?: string, duration?: number) => void;
-    warning: (message: string, title?: string, duration?: number) => void;
-    info: (message: string, title?: string, duration?: number) => void;
+    success: ToastMethod;
+    error: ToastMethod;
+    warning: ToastMethod;
+    info: ToastMethod;
   };
 }
 
@@ -42,25 +54,77 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 
 let globalToastHandler: ((toast: Omit<ToastItem, 'id'>) => void) | null = null;
 
+function normalizeToastPayload(
+  type: ToastType,
+  messageOrTitle: string,
+  titleOrOptions?: string | ToastOptions,
+  duration?: number
+): Omit<ToastItem, 'id'> {
+  const defaultDuration =
+    type === 'error' ? 5000 : type === 'warning' ? 4500 : 4000;
+
+  if (typeof titleOrOptions === 'object' && titleOrOptions !== null) {
+    return {
+      type,
+      message: titleOrOptions.description || messageOrTitle,
+      title:
+        titleOrOptions.title ||
+        (titleOrOptions.description ? messageOrTitle : undefined),
+      duration: titleOrOptions.duration ?? duration ?? defaultDuration,
+    };
+  }
+
+  return {
+    type,
+    message: messageOrTitle,
+    title: typeof titleOrOptions === 'string' ? titleOrOptions : undefined,
+    duration: duration ?? defaultDuration,
+  };
+}
+
 export const toast = {
-  success: (message: string, title?: string, duration = 4000) => {
+  success: (
+    messageOrTitle: string,
+    titleOrOptions?: string | ToastOptions,
+    duration?: number
+  ) => {
     if (globalToastHandler) {
-      globalToastHandler({ type: 'success', message, title, duration });
+      globalToastHandler(
+        normalizeToastPayload('success', messageOrTitle, titleOrOptions, duration)
+      );
     }
   },
-  error: (message: string, title?: string, duration = 5000) => {
+  error: (
+    messageOrTitle: string,
+    titleOrOptions?: string | ToastOptions,
+    duration?: number
+  ) => {
     if (globalToastHandler) {
-      globalToastHandler({ type: 'error', message, title, duration });
+      globalToastHandler(
+        normalizeToastPayload('error', messageOrTitle, titleOrOptions, duration)
+      );
     }
   },
-  warning: (message: string, title?: string, duration = 4500) => {
+  warning: (
+    messageOrTitle: string,
+    titleOrOptions?: string | ToastOptions,
+    duration?: number
+  ) => {
     if (globalToastHandler) {
-      globalToastHandler({ type: 'warning', message, title, duration });
+      globalToastHandler(
+        normalizeToastPayload('warning', messageOrTitle, titleOrOptions, duration)
+      );
     }
   },
-  info: (message: string, title?: string, duration = 4000) => {
+  info: (
+    messageOrTitle: string,
+    titleOrOptions?: string | ToastOptions,
+    duration?: number
+  ) => {
     if (globalToastHandler) {
-      globalToastHandler({ type: 'info', message, title, duration });
+      globalToastHandler(
+        normalizeToastPayload('info', messageOrTitle, titleOrOptions, duration)
+      );
     }
   },
 };
@@ -96,14 +160,30 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, [addToast]);
 
   const toastMethods = {
-    success: (msg: string, title?: string, dur?: number) =>
-      addToast({ type: 'success', message: msg, title, duration: dur }),
-    error: (msg: string, title?: string, dur?: number) =>
-      addToast({ type: 'error', message: msg, title, duration: dur }),
-    warning: (msg: string, title?: string, dur?: number) =>
-      addToast({ type: 'warning', message: msg, title, duration: dur }),
-    info: (msg: string, title?: string, dur?: number) =>
-      addToast({ type: 'info', message: msg, title, duration: dur }),
+    success: (
+      msg: string,
+      titleOrOptions?: string | ToastOptions,
+      dur?: number
+    ) =>
+      addToast(normalizeToastPayload('success', msg, titleOrOptions, dur)),
+    error: (
+      msg: string,
+      titleOrOptions?: string | ToastOptions,
+      dur?: number
+    ) =>
+      addToast(normalizeToastPayload('error', msg, titleOrOptions, dur)),
+    warning: (
+      msg: string,
+      titleOrOptions?: string | ToastOptions,
+      dur?: number
+    ) =>
+      addToast(normalizeToastPayload('warning', msg, titleOrOptions, dur)),
+    info: (
+      msg: string,
+      titleOrOptions?: string | ToastOptions,
+      dur?: number
+    ) =>
+      addToast(normalizeToastPayload('info', msg, titleOrOptions, dur)),
   };
 
   return (

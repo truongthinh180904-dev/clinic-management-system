@@ -107,3 +107,7 @@ export type {
   KpiQueryParams,
   KpiChartComparisonItem,
 } from './kpi';
+
+// Patient File types
+export type { PatientFile, PatientFileFilterParams } from './patient-file';
+

@@ -37,7 +37,10 @@ import {
   ShieldAlert,
   Stethoscope,
   User,
+  FolderOpen,
 } from 'lucide-react';
+import { PatientFileManager } from '@/components/patient-files';
+
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -111,7 +114,7 @@ function MedicalRecordContent({ visitId }: { visitId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'consultation' | 'preview' | 'history'>('consultation');
+  const [activeTab, setActiveTab] = useState<'consultation' | 'preview' | 'history' | 'files'>('consultation');
 
   // Audit Trail History State
   const [auditHistory, setAuditHistory] = useState<MedicalRecordAuditLog[]>([]);
@@ -476,6 +479,18 @@ function MedicalRecordContent({ visitId }: { visitId: string }) {
             >
               <span>📜</span>
               <span>Lịch sử sửa {auditHistory.length > 0 && `(${auditHistory.length})`}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('files')}
+              className={`px-3 py-1.5 rounded-md transition-all inline-flex items-center gap-1.5 ${
+                activeTab === 'files'
+                  ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              }`}
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              <span>Tệp y tế & X-quang</span>
             </button>
           </div>
 
@@ -1252,6 +1267,21 @@ function MedicalRecordContent({ visitId }: { visitId: string }) {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Main Tab 4: Clinical Files & X-Rays */}
+      {activeTab === 'files' && visit && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+          <PatientFileManager
+            patientId={visit.patient_id}
+            patientName={visit.patient?.full_name}
+            visitId={visit.id}
+            title={`Tệp y tế & Chẩn đoán hình ảnh — Ca khám ${visit.visit_code}`}
+            canUpload={visit.status !== 'CANCELLED'}
+            canDelete={canUpdateMedical || hasRole('ADMIN')}
+            canView={true}
+          />
         </div>
       )}
     </div>

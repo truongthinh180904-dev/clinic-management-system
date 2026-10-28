@@ -190,7 +190,7 @@ function AppointmentDetailContent({ appointmentId }: { appointmentId: string }) 
       await checkInAppointment(appointment.id);
       setActionSuccess('Tiếp nhận thành công! Lịch hẹn đã chuyển thành lượt khám.');
       setTimeout(() => setActionSuccess(null), 4000);
-      loadAppointment();
+      await fetchAppointmentDetail();
     } catch (err) {
       if (err instanceof ApiError) {
         alert(err.message);
