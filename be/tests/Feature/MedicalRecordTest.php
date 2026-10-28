@@ -267,4 +267,80 @@ class MedicalRecordTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_doctor_can_view_medical_record_audit_history_with_edit_reason(): void
+    {
+        $doctorUser = $this->createUserWithRole('DOCTOR');
+        [, $doctor, , $visit] = $this->createTestVisit(Visit::STATUS_IN_PROGRESS);
+
+        // 1. Create medical record
+        $createPayload = [
+            'doctor_id' => $doctor->id,
+            'diagnosis' => 'Chẩn đoán ban đầu: Viêm họng cấp',
+            'treatment' => 'Kháng sinh uống 5 ngày',
+        ];
+
+        $createRes = $this->authenticate($doctorUser)
+            ->postJson("/api/v1/visits/{$visit->id}/medical-record", $createPayload);
+        $createRes->assertStatus(201);
+
+        // 2. Update medical record with explicit edit_reason
+        $updatePayload = [
+            'diagnosis' => 'Chẩn đoán sửa đổi: Viêm phế quản co thắt',
+            'treatment' => 'Đổi phác đồ tiêm khí dung và theo dõi',
+            'edit_reason' => 'Bệnh nhân tái sốt và có cơn khó thở, điều chỉnh phác đồ',
+        ];
+
+        $updateRes = $this->authenticate($doctorUser)
+            ->putJson("/api/v1/visits/{$visit->id}/medical-record", $updatePayload);
+        $updateRes->assertStatus(200);
+
+        // 3. Fetch audit history
+        $historyRes = $this->authenticate($doctorUser)
+            ->getJson("/api/v1/visits/{$visit->id}/medical-record/history");
+
+        $historyRes->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.action', 'update')
+            ->assertJsonPath('data.0.edit_reason', 'Bệnh nhân tái sốt và có cơn khó thở, điều chỉnh phác đồ')
+            ->assertJsonPath('data.1.action', 'create');
+    }
+
+    public function test_unauthorized_user_cannot_update_or_view_medical_record_history(): void
+    {
+        $doctorUser = $this->createUserWithRole('DOCTOR');
+        $receptionistUser = $this->createUserWithRole('RECEPTIONIST');
+        [, $doctor, , $visit] = $this->createTestVisit(Visit::STATUS_COMPLETED);
+
+        $record = MedicalRecord::create([
+            'visit_id' => $visit->id,
+            'doctor_id' => $doctor->id,
+            'diagnosis' => 'Bệnh án bảo mật',
+        ]);
+
+        // Receptionist attempts update
+        $updateRes = $this->authenticate($receptionistUser)
+            ->putJson("/api/v1/visits/{$visit->id}/medical-record", [
+                'diagnosis' => 'Sửa bất hợp pháp',
+            ]);
+        $updateRes->assertStatus(403);
+
+        // Receptionist attempts viewing history
+        $historyRes = $this->authenticate($receptionistUser)
+            ->getJson("/api/v1/visits/{$visit->id}/medical-record/history");
+        $historyRes->assertStatus(403);
+    }
+
+    public function test_medical_record_history_returns_404_when_no_record_exists(): void
+    {
+        $doctorUser = $this->createUserWithRole('DOCTOR');
+        [, , , $visit] = $this->createTestVisit(Visit::STATUS_SCHEDULED);
+
+        $res = $this->authenticate($doctorUser)
+            ->getJson("/api/v1/visits/{$visit->id}/medical-record/history");
+
+        $res->assertStatus(404)
+            ->assertJsonPath('success', false);
+    }
 }

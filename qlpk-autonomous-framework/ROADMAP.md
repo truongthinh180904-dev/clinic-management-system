@@ -192,7 +192,7 @@
 
 ### TASK `P3-012` (`F3-03-05` / `F3-03-07` / `F3-03-08`): Phân quyền Nghiêm ngặt & Lưu vết Lịch sử Chỉnh sửa Bệnh án (Audit Trail)
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-011`
 - **goal:** Triển khai cơ chế bảo vệ tính toàn vẹn y bạ: Chỉ tài khoản có quyền `medical_records.update` mới được chỉnh sửa bệnh án; mọi thao tác chỉnh sửa bệnh án sau khi đã kết thúc lượt khám phải được ghi nhận vào bảng `audit_logs` kèm lý do chỉnh sửa; cung cấp API và giao diện xem lịch sử các lần sửa bệnh án.
 - **scope:** `be/app/Http/Controllers/Api/V1/MedicalRecordController.php`, `fe/app/(admin)/visits/*`.

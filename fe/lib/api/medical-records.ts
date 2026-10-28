@@ -3,6 +3,7 @@ import { ApiResponse } from '@/types/auth';
 import {
   CreateMedicalRecordInput,
   MedicalRecord,
+  MedicalRecordAuditLog,
   UpdateMedicalRecordInput,
 } from '@/types/medical-record';
 
@@ -13,6 +14,15 @@ export async function getVisitMedicalRecord(
   visitId: number | string
 ): Promise<ApiResponse<MedicalRecord>> {
   return apiClient.get<MedicalRecord>(`/visits/${visitId}/medical-record`);
+}
+
+/**
+ * Fetch audit trail history for a visit's medical record.
+ */
+export async function getVisitMedicalRecordHistory(
+  visitId: number | string
+): Promise<ApiResponse<MedicalRecordAuditLog[]>> {
+  return apiClient.get<MedicalRecordAuditLog[]>(`/visits/${visitId}/medical-record/history`);
 }
 
 /**
@@ -52,4 +62,13 @@ export async function updateMedicalRecord(
   data: UpdateMedicalRecordInput
 ): Promise<ApiResponse<MedicalRecord>> {
   return apiClient.put<MedicalRecord>(`/medical-records/${id}`, data);
+}
+
+/**
+ * Fetch audit trail history by medical record ID.
+ */
+export async function getMedicalRecordHistory(
+  id: number | string
+): Promise<ApiResponse<MedicalRecordAuditLog[]>> {
+  return apiClient.get<MedicalRecordAuditLog[]>(`/medical-records/${id}/history`);
 }

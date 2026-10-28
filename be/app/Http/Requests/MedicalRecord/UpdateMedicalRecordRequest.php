@@ -30,6 +30,8 @@ class UpdateMedicalRecordRequest extends FormRequest
             'result' => ['nullable', 'string'],
             'treatment' => ['nullable', 'string'],
             'follow_up_date' => ['nullable', 'date'],
+            'edit_reason' => ['nullable', 'string', 'max:500'],
+            'reason' => ['nullable', 'string', 'max:500'],
         ];
     }
 

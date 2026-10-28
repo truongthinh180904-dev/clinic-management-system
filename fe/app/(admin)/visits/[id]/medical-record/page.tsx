@@ -9,6 +9,7 @@ import { getVisit } from '@/lib/api/visits';
 import {
   createVisitMedicalRecord,
   getVisitMedicalRecord,
+  getVisitMedicalRecordHistory,
   updateVisitMedicalRecord,
 } from '@/lib/api/medical-records';
 import { getEmployees } from '@/lib/api/employees';
@@ -16,6 +17,7 @@ import { Visit, VISIT_STATUS_MAP } from '@/types/visit';
 import {
   CreateMedicalRecordInput,
   MedicalRecord,
+  MedicalRecordAuditLog,
   UpdateMedicalRecordInput,
 } from '@/types/medical-record';
 import { Employee } from '@/types/employee';
@@ -109,7 +111,12 @@ function MedicalRecordContent({ visitId }: { visitId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'consultation' | 'preview'>('consultation');
+  const [activeTab, setActiveTab] = useState<'consultation' | 'preview' | 'history'>('consultation');
+
+  // Audit Trail History State
+  const [auditHistory, setAuditHistory] = useState<MedicalRecordAuditLog[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [editReason, setEditReason] = useState('');
 
   // Form Fields
   const [formData, setFormData] = useState<CreateMedicalRecordInput>({
@@ -124,6 +131,19 @@ function MedicalRecordContent({ visitId }: { visitId: string }) {
 
   // Validation
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Load Audit Trail History
+  const loadHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const res = await getVisitMedicalRecordHistory(visitId);
+      setAuditHistory(res.data || []);
+    } catch (err) {
+      console.warn('Could not load medical record audit history:', err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
 
   // Load Visit, Medical Record & Doctors
   const loadData = async () => {
@@ -141,6 +161,7 @@ function MedicalRecordContent({ visitId }: { visitId: string }) {
         const recordRes = await getVisitMedicalRecord(visitId);
         recordData = recordRes.data;
         setMedicalRecord(recordData);
+        loadHistory();
       } catch (err) {
         if (err instanceof ApiError && (err.status === 404 || err.status === 400)) {
           setMedicalRecord(null);
@@ -244,10 +265,12 @@ function MedicalRecordContent({ visitId }: { visitId: string }) {
           result: formData.result?.trim() || null,
           treatment: formData.treatment?.trim() || null,
           follow_up_date: formData.follow_up_date || null,
+          edit_reason: editReason.trim() || undefined,
         };
         const res = await updateVisitMedicalRecord(visitId, payload);
         setMedicalRecord(res.data);
-        toast.success('Đã cập nhật hồ sơ bệnh án thành công.');
+        loadHistory();
+        toast.success('Đã cập nhật hồ sơ bệnh án thành công (đã ghi nhận Audit Log).');
       } else {
         // Create new record
         const payload: CreateMedicalRecordInput = {
@@ -261,6 +284,7 @@ function MedicalRecordContent({ visitId }: { visitId: string }) {
         };
         const res = await createVisitMedicalRecord(visitId, payload);
         setMedicalRecord(res.data);
+        loadHistory();
         // Automatically syncs visit status to COMPLETED
         if (visit) {
           setVisit({ ...visit, status: 'COMPLETED' });
@@ -437,6 +461,21 @@ function MedicalRecordContent({ visitId }: { visitId: string }) {
               }`}
             >
               Xem trước Phiếu Khám
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('history');
+                loadHistory();
+              }}
+              className={`px-3 py-1.5 rounded-md transition-all inline-flex items-center gap-1.5 ${
+                activeTab === 'history'
+                  ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              }`}
+            >
+              <span>📜</span>
+              <span>Lịch sử sửa {auditHistory.length > 0 && `(${auditHistory.length})`}</span>
             </button>
           </div>
 
@@ -777,6 +816,45 @@ function MedicalRecordContent({ visitId }: { visitId: string }) {
               </div>
             </div>
 
+            {/* Audit Trail Note & Reason (When editing existing record) */}
+            {medicalRecord && (
+              <div className="bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl p-5 shadow-sm space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🛡️</span>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200">
+                      Kiểm toán Y bạ & Lý do sửa đổi (Audit Trail)
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('history');
+                      loadHistory();
+                    }}
+                    className="text-xs text-amber-700 dark:text-amber-300 font-semibold underline hover:no-underline"
+                  >
+                    Xem toàn bộ lịch sử sửa →
+                  </button>
+                </div>
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  Lượt khám này đã có bệnh án. Mọi nội dung cập nhật sẽ được lưu vết kiểm toán vĩnh viễn theo chuẩn an toàn hồ sơ y khoa.
+                </p>
+                <div className="pt-2">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Lý do chỉnh sửa bệnh án:
+                  </label>
+                  <input
+                    type="text"
+                    value={editReason}
+                    onChange={(e) => setEditReason(e.target.value)}
+                    placeholder="VD: Điều chỉnh phác đồ theo kết quả xét nghiệm máu ngày..."
+                    className="w-full text-xs rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-950 px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Doctor in charge */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
               <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -1021,6 +1099,157 @@ function MedicalRecordContent({ visitId }: { visitId: string }) {
                   {selectedDoctor?.full_name || 'Bác sĩ phụ trách'}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Tab 3: Medical Record Audit Trail (P3-012) */}
+      {activeTab === 'history' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 gap-2">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>📜</span>
+                  <span>Nhật ký Kiểm toán & Lịch sử Chỉnh sửa Bệnh án</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Truy vết toàn vẹn dữ liệu lâm sàng y tế, lưu lại mọi lần tạo mới và cập nhật chẩn đoán/phác đồ của bác sĩ.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={loadHistory}
+                disabled={isLoadingHistory}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition-colors self-start sm:self-auto"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingHistory ? 'animate-spin' : ''}`} />
+                <span>Tải lại</span>
+              </button>
+            </div>
+
+            <div className="py-6">
+              {isLoadingHistory ? (
+                <div className="py-12 text-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-3 border-blue-600 border-t-transparent mx-auto"></div>
+                  <p className="mt-2 text-xs text-slate-500">Đang tải lịch sử lưu vết kiểm toán...</p>
+                </div>
+              ) : auditHistory.length === 0 ? (
+                <div className="py-12 text-center text-slate-500 text-sm">
+                  Chưa có dữ liệu ghi nhận lưu vết nào cho bệnh án này.
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {auditHistory.map((item) => {
+                    const isCreate = item.action === 'create';
+                    return (
+                      <div
+                        key={item.id}
+                        className="relative pl-6 sm:pl-8 before:absolute before:left-2 sm:before:left-3 before:top-3 before:bottom-0 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800 last:before:hidden"
+                      >
+                        <div
+                          className={`absolute left-0 sm:left-1 top-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 ${
+                            isCreate
+                              ? 'bg-emerald-500 border-emerald-200'
+                              : 'bg-amber-500 border-amber-200'
+                          }`}
+                        />
+                        <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 shadow-sm space-y-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-700/60 pb-3 text-xs">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full font-bold uppercase text-[11px] ${
+                                  isCreate
+                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                                }`}
+                              >
+                                {item.action_label || item.action}
+                              </span>
+                              <span className="font-bold text-slate-900 dark:text-white text-sm">
+                                {item.user_name}
+                              </span>
+                              {item.user_role && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300">
+                                  {item.user_role}
+                                </span>
+                              )}
+                            </div>
+                            <div className="font-mono text-slate-500 text-xs">
+                              {new Date(item.created_at).toLocaleString('vi-VN')}
+                              {item.ip_address && ` • IP: ${item.ip_address}`}
+                            </div>
+                          </div>
+
+                          {item.edit_reason && (
+                            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200">
+                              <span className="font-bold">Lý do điều chỉnh:</span> {item.edit_reason}
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                            {item.new_values?.diagnosis && (
+                              <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+                                <span className="block font-bold text-blue-700 dark:text-blue-400 mb-1">
+                                  Chẩn đoán xác định:
+                                </span>
+                                <span className="text-slate-900 dark:text-slate-100 font-semibold">
+                                  {item.new_values.diagnosis}
+                                </span>
+                              </div>
+                            )}
+
+                            {item.new_values?.treatment && (
+                              <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+                                <span className="block font-bold text-emerald-700 dark:text-emerald-400 mb-1">
+                                  Phác đồ & Đơn thuốc:
+                                </span>
+                                <span className="text-slate-900 dark:text-slate-100 whitespace-pre-line">
+                                  {item.new_values.treatment}
+                                </span>
+                              </div>
+                            )}
+
+                            {item.new_values?.indication && (
+                              <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+                                <span className="block font-bold text-purple-700 dark:text-purple-400 mb-1">
+                                  Chỉ định cận lâm sàng:
+                                </span>
+                                <span className="text-slate-900 dark:text-slate-100 whitespace-pre-line">
+                                  {item.new_values.indication}
+                                </span>
+                              </div>
+                            )}
+
+                            {item.new_values?.result && (
+                              <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+                                <span className="block font-bold text-indigo-700 dark:text-indigo-400 mb-1">
+                                  Kết quả lâm sàng:
+                                </span>
+                                <span className="text-slate-900 dark:text-slate-100 whitespace-pre-line">
+                                  {item.new_values.result}
+                                </span>
+                              </div>
+                            )}
+
+                            {item.new_values?.follow_up_date && (
+                              <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 md:col-span-2">
+                                <span className="font-bold text-amber-700 dark:text-amber-400 mr-2">
+                                  📅 Hẹn tái khám:
+                                </span>
+                                <span className="text-slate-900 dark:text-white font-semibold">
+                                  {new Date(item.new_values.follow_up_date).toLocaleDateString('vi-VN')}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

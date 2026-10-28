@@ -12,6 +12,7 @@ import {
 import {
   createVisitMedicalRecord,
   getVisitMedicalRecord,
+  getVisitMedicalRecordHistory,
   updateVisitMedicalRecord,
 } from '@/lib/api/medical-records';
 import {
@@ -23,6 +24,7 @@ import {
 import {
   CreateMedicalRecordInput,
   MedicalRecord,
+  MedicalRecordAuditLog,
   UpdateMedicalRecordInput,
 } from '@/types/medical-record';
 
@@ -94,8 +96,34 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
     treatment: '',
     follow_up_date: '',
   });
+  const [medicalEditReason, setMedicalEditReason] = useState('');
   const [isSubmittingMedical, setIsSubmittingMedical] = useState(false);
   const [medicalFormError, setMedicalFormError] = useState<string | null>(null);
+
+  // Medical Record Audit Trail History State
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [auditHistory, setAuditHistory] = useState<MedicalRecordAuditLog[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  // Load Medical Record Audit Trail
+  const handleOpenHistoryModal = async () => {
+    setIsHistoryModalOpen(true);
+    setIsLoadingHistory(true);
+    setHistoryError(null);
+    try {
+      const res = await getVisitMedicalRecordHistory(visitId);
+      setAuditHistory(res.data || []);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setHistoryError(err.message);
+      } else {
+        setHistoryError('Không thể tải lịch sử chỉnh sửa bệnh án.');
+      }
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
 
   // Load Visit Details
   const loadVisitData = async () => {
@@ -217,6 +245,7 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
     if (!medicalRecord) return;
     setIsEditingMedical(true);
     setMedicalFormError(null);
+    setMedicalEditReason('');
     setMedicalFormData({
       doctor_id: medicalRecord.doctor_id || visit?.employee_id || null,
       diagnosis: medicalRecord.diagnosis || '',
@@ -250,10 +279,11 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
           result: medicalFormData.result?.trim() || null,
           treatment: medicalFormData.treatment?.trim() || null,
           follow_up_date: medicalFormData.follow_up_date || null,
+          edit_reason: medicalEditReason.trim() || undefined,
         };
         const res = await updateVisitMedicalRecord(visitId, payload);
         setMedicalRecord(res.data);
-        setSuccessBanner('Đã cập nhật hồ sơ bệnh án thành công.');
+        setSuccessBanner('Đã cập nhật hồ sơ bệnh án thành công (đã ghi nhận Audit Log).');
       } else {
         const payload: CreateMedicalRecordInput = {
           doctor_id: medicalFormData.doctor_id,
@@ -628,14 +658,24 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
                   </Link>
 
                   {medicalRecord ? (
-                    canUpdateMedical && (
+                    <>
+                      {canUpdateMedical && (
+                        <button
+                          onClick={handleOpenEditMedical}
+                          className="px-3 py-1.5 text-xs font-semibold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg transition-colors"
+                        >
+                          ✏️ Sửa nhanh
+                        </button>
+                      )}
                       <button
-                        onClick={handleOpenEditMedical}
-                        className="px-3 py-1.5 text-xs font-semibold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg transition-colors"
+                        onClick={handleOpenHistoryModal}
+                        className="px-3 py-1.5 text-xs font-semibold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900 text-amber-700 dark:text-amber-300 rounded-lg transition-colors flex items-center gap-1 border border-amber-200 dark:border-amber-800 shadow-sm"
+                        title="Xem lịch sử các lần sửa bệnh án (Audit Trail)"
                       >
-                        ✏️ Sửa nhanh
+                        <span>📜</span>
+                        <span>Lịch sử sửa</span>
                       </button>
-                    )
+                    </>
                   ) : (
                     canCreateMedical && visit.status !== 'CANCELLED' && (
                       <button
@@ -1012,6 +1052,25 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
                 />
               </div>
 
+              {/* Edit Reason (Audit Trail Requirement) */}
+              {isEditingMedical && (
+                <div className="p-3 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg space-y-1">
+                  <label className="block text-xs font-bold uppercase text-amber-800 dark:text-amber-300">
+                    Lý do chỉnh sửa bệnh án <span className="font-normal text-amber-600 dark:text-amber-400">(Lưu vết Audit Log)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={medicalEditReason}
+                    onChange={(e) => setMedicalEditReason(e.target.value)}
+                    placeholder="VD: Cập nhật chẩn đoán/phác đồ sau khi có kết quả cận lâm sàng..."
+                    className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  />
+                  <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                    Lưu ý y bạ: Thay đổi này sẽ được lưu trữ vĩnh viễn trong Audit Trail của phòng khám kèm thời gian và định danh của bạn.
+                  </p>
+                </div>
+              )}
+
               {/* Submit Buttons */}
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
@@ -1041,6 +1100,162 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Medical Record Audit Trail History Modal */}
+      {isHistoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-xl max-w-3xl w-full p-6 shadow-xl border border-slate-200 dark:border-slate-800 my-8 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📜</span>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    Lịch sử chỉnh sửa Bệnh án (Audit Trail)
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Lượt khám: #{visit.visit_code} • Bệnh nhân: {visit.patient?.full_name}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsHistoryModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4 space-y-4">
+              {isLoadingHistory ? (
+                <div className="py-12 text-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-3 border-blue-600 border-t-transparent mx-auto"></div>
+                  <p className="mt-2 text-xs text-slate-500">Đang tải lịch sử lưu vết kiểm toán...</p>
+                </div>
+              ) : historyError ? (
+                <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-lg text-rose-800 dark:text-rose-300 text-xs">
+                  ⚠️ {historyError}
+                </div>
+              ) : auditHistory.length === 0 ? (
+                <div className="py-12 text-center text-slate-500 text-sm">
+                  Chưa có dữ liệu ghi nhận lưu vết nào cho bệnh án này.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {auditHistory.map((item, index) => {
+                    const isCreate = item.action === 'create';
+                    return (
+                      <div
+                        key={item.id}
+                        className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 space-y-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-700/60 pb-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-2 py-0.5 rounded font-bold uppercase text-[11px] ${
+                                isCreate
+                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                              }`}
+                            >
+                              {item.action_label || item.action}
+                            </span>
+                            <span className="font-semibold text-slate-900 dark:text-white">
+                              {item.user_name}
+                            </span>
+                            {item.user_role && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                {item.user_role}
+                              </span>
+                            )}
+                          </div>
+                          <div className="font-mono text-slate-500 text-[11px]">
+                            {formatDate(item.created_at)}
+                            {item.ip_address && ` • IP: ${item.ip_address}`}
+                          </div>
+                        </div>
+
+                        {item.edit_reason && (
+                          <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200">
+                            <strong>Lý do chỉnh sửa:</strong> {item.edit_reason}
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                          {item.new_values?.diagnosis && (
+                            <div className="p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+                              <span className="block font-semibold text-slate-500 mb-0.5">
+                                Chẩn đoán xác định:
+                              </span>
+                              <span className="text-slate-900 dark:text-slate-100 font-medium">
+                                {item.new_values.diagnosis}
+                              </span>
+                            </div>
+                          )}
+
+                          {item.new_values?.treatment && (
+                            <div className="p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+                              <span className="block font-semibold text-slate-500 mb-0.5">
+                                Hướng điều trị / Đơn thuốc:
+                              </span>
+                              <span className="text-slate-900 dark:text-slate-100 font-medium whitespace-pre-line">
+                                {item.new_values.treatment}
+                              </span>
+                            </div>
+                          )}
+
+                          {item.new_values?.indication && (
+                            <div className="p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+                              <span className="block font-semibold text-slate-500 mb-0.5">
+                                Chỉ định cận lâm sàng:
+                              </span>
+                              <span className="text-slate-900 dark:text-slate-100">
+                                {item.new_values.indication}
+                              </span>
+                            </div>
+                          )}
+
+                          {item.new_values?.result && (
+                            <div className="p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+                              <span className="block font-semibold text-slate-500 mb-0.5">
+                                Kết quả khám / Cận lâm sàng:
+                              </span>
+                              <span className="text-slate-900 dark:text-slate-100">
+                                {item.new_values.result}
+                              </span>
+                            </div>
+                          )}
+
+                          {item.new_values?.follow_up_date && (
+                            <div className="p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 md:col-span-2">
+                              <span className="font-semibold text-slate-500 mr-2">
+                                Hẹn ngày tái khám:
+                              </span>
+                              <span className="text-amber-700 dark:text-amber-400 font-bold">
+                                {new Date(item.new_values.follow_up_date).toLocaleDateString('vi-VN')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsHistoryModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}

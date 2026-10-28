@@ -361,6 +361,10 @@ Route::prefix('v1')->group(function (): void {
                 ->middleware('permission:medical_records.view')
                 ->name('api.v1.visits.medical-record.show');
 
+            Route::get('/history', [MedicalRecordController::class, 'history'])
+                ->middleware('permission:medical_records.view')
+                ->name('api.v1.visits.medical-record.history');
+
             Route::post('/', [MedicalRecordController::class, 'store'])
                 ->middleware('permission:medical_records.create')
                 ->name('api.v1.visits.medical-record.store');
@@ -374,6 +378,10 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/{medical_record}', [MedicalRecordController::class, 'showRecord'])
                 ->middleware('permission:medical_records.view')
                 ->name('api.v1.medical-records.show');
+
+            Route::get('/{medical_record}/history', [MedicalRecordController::class, 'recordHistory'])
+                ->middleware('permission:medical_records.view')
+                ->name('api.v1.medical-records.history');
 
             Route::match(['put', 'patch'], '/{medical_record}', [MedicalRecordController::class, 'updateRecord'])
                 ->middleware('permission:medical_records.update')
