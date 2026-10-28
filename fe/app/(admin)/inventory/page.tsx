@@ -761,18 +761,18 @@ export default function InventoryPage() {
           {/* Products Table */}
           <Card className="shadow-sm border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="min-w-[1050px]">
                 <TableHeader>
                   <TableRow className="bg-slate-50 dark:bg-slate-900/50">
-                    <TableHead className="w-28 font-semibold">Mã VT</TableHead>
-                    <TableHead className="font-semibold min-w-[200px]">Tên Dược phẩm / Vật tư</TableHead>
-                    <TableHead className="w-24 text-center font-semibold">Đơn vị</TableHead>
-                    <TableHead className="w-28 text-right font-semibold">Tồn hiện tại</TableHead>
-                    <TableHead className="w-28 text-right font-semibold">Định mức Min</TableHead>
-                    <TableHead className="w-40 font-semibold text-center">Tỷ lệ an toàn</TableHead>
-                    <TableHead className="w-36 text-center font-semibold">Trạng thái tồn</TableHead>
-                    <TableHead className="w-28 text-center font-semibold">Hiệu lực</TableHead>
-                    <TableHead className="w-44 text-right font-semibold">Thao tác kho</TableHead>
+                    <TableHead className="w-28 font-semibold whitespace-nowrap min-w-[100px]">Mã VT</TableHead>
+                    <TableHead className="font-semibold min-w-[200px] whitespace-nowrap">Tên Dược phẩm / Vật tư</TableHead>
+                    <TableHead className="w-24 text-center font-semibold whitespace-nowrap min-w-[80px]">Đơn vị</TableHead>
+                    <TableHead className="w-28 text-right font-semibold whitespace-nowrap min-w-[110px]">Tồn hiện tại</TableHead>
+                    <TableHead className="w-28 text-right font-semibold whitespace-nowrap min-w-[110px]">Định mức Min</TableHead>
+                    <TableHead className="w-40 font-semibold text-center whitespace-nowrap min-w-[150px]">Tỷ lệ an toàn</TableHead>
+                    <TableHead className="w-36 text-center font-semibold whitespace-nowrap min-w-[130px]">Trạng thái tồn</TableHead>
+                    <TableHead className="w-28 text-center font-semibold whitespace-nowrap min-w-[100px]">Hiệu lực</TableHead>
+                    <TableHead className="w-44 text-right font-semibold whitespace-nowrap min-w-[160px]">Thao tác kho</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -816,7 +816,7 @@ export default function InventoryPage() {
                             item.current_stock <= 0 && 'bg-rose-50/30 dark:bg-rose-950/10'
                           )}
                         >
-                          <TableCell className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">
+                          <TableCell className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                             {item.product_code}
                           </TableCell>
 
@@ -824,18 +824,18 @@ export default function InventoryPage() {
                             <div className="font-medium text-slate-900 dark:text-slate-100">
                               {item.name}
                             </div>
-                            <div className="text-[11px] text-slate-400">
+                            <div className="text-[11px] text-slate-400 whitespace-nowrap">
                               Tạo: {formatDate(item.created_at)}
                             </div>
                           </TableCell>
 
-                          <TableCell className="text-center">
+                          <TableCell className="text-center whitespace-nowrap">
                             <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-xs font-medium">
                               {item.unit}
                             </span>
                           </TableCell>
 
-                          <TableCell className="text-right font-mono font-bold text-sm">
+                          <TableCell className="text-right font-mono font-bold text-sm whitespace-nowrap">
                             <span
                               className={cn(
                                 current <= 0
@@ -849,12 +849,12 @@ export default function InventoryPage() {
                             </span>
                           </TableCell>
 
-                          <TableCell className="text-right font-mono text-xs text-slate-500">
+                          <TableCell className="text-right font-mono text-xs text-slate-500 whitespace-nowrap">
                             {min}
                           </TableCell>
 
-                          <TableCell>
-                            <div className="space-y-1">
+                          <TableCell className="whitespace-nowrap">
+                            <div className="space-y-1 w-32 mx-auto">
                               <div className="flex items-center justify-between text-[11px] text-slate-500">
                                 <span>{current}/{min}</span>
                                 <span>{ratio}%</span>
@@ -873,11 +873,11 @@ export default function InventoryPage() {
                             </div>
                           </TableCell>
 
-                          <TableCell className="text-center">
+                          <TableCell className="text-center whitespace-nowrap">
                             {renderStockBadge(item)}
                           </TableCell>
 
-                          <TableCell className="text-center">
+                          <TableCell className="text-center whitespace-nowrap">
                             <button
                               type="button"
                               onClick={() => handleToggleProductStatus(item)}
@@ -896,8 +896,8 @@ export default function InventoryPage() {
                             </button>
                           </TableCell>
 
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
+                          <TableCell className="text-right whitespace-nowrap">
+                            <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -994,17 +994,17 @@ export default function InventoryPage() {
           {/* Transactions Table */}
           <Card className="shadow-sm border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="min-w-[1050px]">
                 <TableHeader>
                   <TableRow className="bg-slate-50 dark:bg-slate-900/50">
-                    <TableHead className="w-36 font-semibold">Thời gian</TableHead>
-                    <TableHead className="w-32 font-semibold text-center">Loại giao dịch</TableHead>
-                    <TableHead className="w-28 font-semibold">Mã VT</TableHead>
-                    <TableHead className="font-semibold min-w-[200px]">Tên Thuốc / Vật tư y tế</TableHead>
-                    <TableHead className="w-28 text-right font-semibold">Số lượng</TableHead>
-                    <TableHead className="w-24 text-center font-semibold">Đơn vị</TableHead>
-                    <TableHead className="w-36 font-semibold">Loại chứng từ</TableHead>
-                    <TableHead className="w-36 font-semibold">Người lập phiếu</TableHead>
+                    <TableHead className="w-36 font-semibold whitespace-nowrap min-w-[140px]">Thời gian</TableHead>
+                    <TableHead className="w-32 font-semibold text-center whitespace-nowrap min-w-[130px]">Loại giao dịch</TableHead>
+                    <TableHead className="w-28 font-semibold whitespace-nowrap min-w-[100px]">Mã VT</TableHead>
+                    <TableHead className="font-semibold min-w-[200px] whitespace-nowrap">Tên Thuốc / Vật tư y tế</TableHead>
+                    <TableHead className="w-28 text-right font-semibold whitespace-nowrap min-w-[110px]">Số lượng</TableHead>
+                    <TableHead className="w-24 text-center font-semibold whitespace-nowrap min-w-[80px]">Đơn vị</TableHead>
+                    <TableHead className="w-36 font-semibold whitespace-nowrap min-w-[120px]">Loại chứng từ</TableHead>
+                    <TableHead className="w-36 font-semibold whitespace-nowrap min-w-[130px]">Người lập phiếu</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1044,15 +1044,15 @@ export default function InventoryPage() {
                           key={tx.id}
                           className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors"
                         >
-                          <TableCell className="text-xs text-slate-600 dark:text-slate-400">
+                          <TableCell className="text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap font-mono">
                             {formatDateTime(tx.transaction_date || tx.created_at)}
                           </TableCell>
 
-                          <TableCell className="text-center">
+                          <TableCell className="text-center whitespace-nowrap">
                             {renderTxTypeBadge(tx.transaction_type)}
                           </TableCell>
 
-                          <TableCell className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">
+                          <TableCell className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                             {tx.product_code || tx.product?.product_code || '---'}
                           </TableCell>
 
@@ -1060,7 +1060,7 @@ export default function InventoryPage() {
                             {tx.product_name || tx.product?.name || 'Mặt hàng'}
                           </TableCell>
 
-                          <TableCell className="text-right font-mono font-bold text-sm">
+                          <TableCell className="text-right font-mono font-bold text-sm whitespace-nowrap">
                             <span
                               className={cn(
                                 tx.transaction_type === 'IN' && 'text-emerald-600 dark:text-emerald-400',
@@ -1078,17 +1078,17 @@ export default function InventoryPage() {
                             </span>
                           </TableCell>
 
-                          <TableCell className="text-center text-xs text-slate-500">
+                          <TableCell className="text-center text-xs text-slate-500 whitespace-nowrap">
                             {tx.product_unit || tx.product?.unit || 'Đơn vị'}
                           </TableCell>
 
-                          <TableCell className="text-xs">
+                          <TableCell className="text-xs whitespace-nowrap">
                             <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 font-mono">
                               {tx.reference_type || 'MANUAL'}
                             </span>
                           </TableCell>
 
-                          <TableCell className="text-xs text-slate-600 dark:text-slate-400">
+                          <TableCell className="text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap">
                             {tx.creator?.name || tx.creator?.username || 'Hệ thống'}
                           </TableCell>
                         </TableRow>

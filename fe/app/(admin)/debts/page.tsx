@@ -714,17 +714,17 @@ export default function DebtManagementPage() {
 
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table>
+            <Table className="min-w-[950px]">
               <TableHeader>
                 <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                  <TableHead className="w-[240px]">Bệnh nhân</TableHead>
-                  <TableHead className="text-right">Tổng phát sinh</TableHead>
-                  <TableHead className="text-right">Đã thanh toán</TableHead>
-                  <TableHead className="text-right">Còn nợ</TableHead>
-                  <TableHead className="w-[180px]">Tiến độ thu hồi</TableHead>
-                  <TableHead className="text-center">Số HĐ nợ</TableHead>
-                  <TableHead>Ngày nợ gần nhất</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
+                  <TableHead className="w-[240px] min-w-[200px] font-semibold whitespace-nowrap">Bệnh nhân</TableHead>
+                  <TableHead className="text-right whitespace-nowrap min-w-[130px] font-semibold">Tổng phát sinh</TableHead>
+                  <TableHead className="text-right whitespace-nowrap min-w-[120px] font-semibold">Đã thanh toán</TableHead>
+                  <TableHead className="text-right whitespace-nowrap min-w-[120px] font-semibold">Còn nợ</TableHead>
+                  <TableHead className="w-[180px] whitespace-nowrap min-w-[160px] font-semibold">Tiến độ thu hồi</TableHead>
+                  <TableHead className="text-center whitespace-nowrap min-w-[100px] font-semibold">Số HĐ nợ</TableHead>
+                  <TableHead className="whitespace-nowrap min-w-[130px] font-semibold">Ngày nợ gần nhất</TableHead>
+                  <TableHead className="text-right whitespace-nowrap min-w-[170px] font-semibold">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -762,12 +762,12 @@ export default function DebtManagementPage() {
                     return (
                       <TableRow key={patient.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
                         {/* Patient info */}
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <div className="flex flex-col">
                             <span className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                               {patient.full_name}
                             </span>
-                            <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                            <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5 whitespace-nowrap">
                               <Badge variant="outline" className="text-[10px] py-0 px-1 font-mono">
                                 {patient.patient_code}
                               </Badge>
@@ -782,23 +782,23 @@ export default function DebtManagementPage() {
                         </TableCell>
 
                         {/* Total invoiced */}
-                        <TableCell className="text-right font-medium text-slate-800 dark:text-slate-200">
+                        <TableCell className="text-right font-mono font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
                           {formatCurrency(totalInvoiced)}
                         </TableCell>
 
                         {/* Total paid */}
-                        <TableCell className="text-right font-medium text-emerald-600">
+                        <TableCell className="text-right font-mono font-medium text-emerald-600 whitespace-nowrap">
                           {formatCurrency(totalPaid)}
                         </TableCell>
 
                         {/* Remaining debt */}
-                        <TableCell className="text-right font-bold text-rose-600">
+                        <TableCell className="text-right font-mono font-bold text-rose-600 whitespace-nowrap">
                           {formatCurrency(remainingDebt)}
                         </TableCell>
 
                         {/* Progress Bar */}
-                        <TableCell>
-                          <div className="space-y-1">
+                        <TableCell className="whitespace-nowrap">
+                          <div className="space-y-1 w-36">
                             <div className="flex items-center justify-between text-xs text-slate-500">
                               <span>Đã thu</span>
                               <span className="font-semibold text-slate-700 dark:text-slate-300">
@@ -820,20 +820,20 @@ export default function DebtManagementPage() {
                         </TableCell>
 
                         {/* Debt invoices count */}
-                        <TableCell className="text-center">
+                        <TableCell className="text-center whitespace-nowrap">
                           <Badge variant="secondary" className="font-semibold">
                             {patient.debt_invoices_count} HĐ
                           </Badge>
                         </TableCell>
 
                         {/* Latest debt date */}
-                        <TableCell className="text-xs text-slate-500">
+                        <TableCell className="text-xs text-slate-500 whitespace-nowrap font-mono">
                           {patient.latest_debt_date ? formatDate(patient.latest_debt_date) : '-'}
                         </TableCell>
 
                         {/* Actions */}
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
+                        <TableCell className="text-right whitespace-nowrap">
+                          <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
                             <Button
                               variant="outline"
                               size="sm"
@@ -1021,17 +1021,17 @@ export default function DebtManagementPage() {
 
                 {/* Tab 1: Invoices */}
                 <TabsContent value="invoices" className="pt-3">
-                  <div className="rounded-lg border overflow-hidden">
-                    <Table>
+                  <div className="rounded-lg border overflow-x-auto">
+                    <Table className="min-w-[750px]">
                       <TableHeader>
                         <TableRow className="bg-slate-50 dark:bg-slate-800">
-                          <TableHead>Mã HĐ</TableHead>
-                          <TableHead>Ngày lập</TableHead>
-                          <TableHead className="text-right">Tổng tiền</TableHead>
-                          <TableHead className="text-right">Đã trả</TableHead>
-                          <TableHead className="text-right">Còn nợ</TableHead>
-                          <TableHead className="text-center">Trạng thái</TableHead>
-                          <TableHead className="text-right">Thao tác</TableHead>
+                          <TableHead className="whitespace-nowrap min-w-[110px]">Mã HĐ</TableHead>
+                          <TableHead className="whitespace-nowrap min-w-[110px]">Ngày lập</TableHead>
+                          <TableHead className="text-right whitespace-nowrap min-w-[110px]">Tổng tiền</TableHead>
+                          <TableHead className="text-right whitespace-nowrap min-w-[110px]">Đã trả</TableHead>
+                          <TableHead className="text-right whitespace-nowrap min-w-[110px]">Còn nợ</TableHead>
+                          <TableHead className="text-center whitespace-nowrap min-w-[110px]">Trạng thái</TableHead>
+                          <TableHead className="text-right whitespace-nowrap min-w-[140px]">Thao tác</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1046,22 +1046,22 @@ export default function DebtManagementPage() {
                             const isDebt = Number(inv.remaining_amount) > 0;
                             return (
                               <TableRow key={inv.id} className="hover:bg-slate-50/50">
-                                <TableCell className="font-mono font-medium">
+                                <TableCell className="font-mono font-medium whitespace-nowrap">
                                   {inv.invoice_code}
                                 </TableCell>
-                                <TableCell className="text-xs text-slate-500">
+                                <TableCell className="text-xs text-slate-500 whitespace-nowrap font-mono">
                                   {formatDate(inv.issued_at)}
                                 </TableCell>
-                                <TableCell className="text-right font-medium">
+                                <TableCell className="text-right font-medium font-mono whitespace-nowrap">
                                   {formatCurrency(inv.total_amount)}
                                 </TableCell>
-                                <TableCell className="text-right font-medium text-emerald-600">
+                                <TableCell className="text-right font-medium text-emerald-600 font-mono whitespace-nowrap">
                                   {formatCurrency(inv.paid_amount)}
                                 </TableCell>
-                                <TableCell className="text-right font-bold text-rose-600">
+                                <TableCell className="text-right font-bold text-rose-600 font-mono whitespace-nowrap">
                                   {formatCurrency(inv.remaining_amount)}
                                 </TableCell>
-                                <TableCell className="text-center">
+                                <TableCell className="text-center whitespace-nowrap">
                                   {inv.status === 'PAID' && (
                                     <Badge variant="success">Đã tất toán</Badge>
                                   )}
@@ -1075,8 +1075,8 @@ export default function DebtManagementPage() {
                                     <Badge variant="secondary">Đã hủy</Badge>
                                   )}
                                 </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex items-center justify-end gap-2">
+                                <TableCell className="text-right whitespace-nowrap">
+                                  <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
                                     {isDebt && inv.status !== 'CANCELLED' && (
                                       <Button
                                         size="sm"
@@ -1111,17 +1111,17 @@ export default function DebtManagementPage() {
 
                 {/* Tab 2: Payments History */}
                 <TabsContent value="payments" className="pt-3">
-                  <div className="rounded-lg border overflow-hidden">
-                    <Table>
+                  <div className="rounded-lg border overflow-x-auto">
+                    <Table className="min-w-[800px]">
                       <TableHeader>
                         <TableRow className="bg-slate-50 dark:bg-slate-800">
-                          <TableHead>Mã phiếu thu</TableHead>
-                          <TableHead>Hóa đơn</TableHead>
-                          <TableHead>Thời gian</TableHead>
-                          <TableHead className="text-right">Số tiền thu</TableHead>
-                          <TableHead>Hình thức</TableHead>
-                          <TableHead>Người nhận</TableHead>
-                          <TableHead>Mã tham chiếu / Ghi chú</TableHead>
+                          <TableHead className="whitespace-nowrap min-w-[120px]">Mã phiếu thu</TableHead>
+                          <TableHead className="whitespace-nowrap min-w-[110px]">Hóa đơn</TableHead>
+                          <TableHead className="whitespace-nowrap min-w-[130px]">Thời gian</TableHead>
+                          <TableHead className="text-right whitespace-nowrap min-w-[110px]">Số tiền thu</TableHead>
+                          <TableHead className="whitespace-nowrap min-w-[110px]">Hình thức</TableHead>
+                          <TableHead className="whitespace-nowrap min-w-[130px]">Người nhận</TableHead>
+                          <TableHead className="min-w-[180px] whitespace-nowrap">Mã tham chiếu / Ghi chú</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1134,19 +1134,19 @@ export default function DebtManagementPage() {
                         ) : (
                           patientDetail.payments.map((pm) => (
                             <TableRow key={pm.id} className="hover:bg-slate-50/50">
-                              <TableCell className="font-mono font-medium text-xs">
+                              <TableCell className="font-mono font-medium text-xs whitespace-nowrap">
                                 {pm.payment_code}
                               </TableCell>
-                              <TableCell className="font-mono text-xs text-blue-600">
+                              <TableCell className="font-mono text-xs text-blue-600 whitespace-nowrap">
                                 {pm.invoice?.invoice_code || `#${pm.invoice_id}`}
                               </TableCell>
-                              <TableCell className="text-xs text-slate-500">
+                              <TableCell className="text-xs text-slate-500 whitespace-nowrap font-mono">
                                 {formatDateTime(pm.payment_date)}
                               </TableCell>
-                              <TableCell className="text-right font-bold text-emerald-600">
+                              <TableCell className="text-right font-bold text-emerald-600 font-mono whitespace-nowrap">
                                 {formatCurrency(pm.amount)}
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="whitespace-nowrap">
                                 <Badge variant="outline" className="text-xs">
                                   {pm.payment_method === 'CASH'
                                     ? 'Tiền mặt'
@@ -1155,7 +1155,7 @@ export default function DebtManagementPage() {
                                     : 'Thẻ POS'}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-xs text-slate-600 dark:text-slate-300">
+                              <TableCell className="text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
                                 {pm.receiver?.username || '-'}
                               </TableCell>
                               <TableCell className="text-xs text-slate-500">

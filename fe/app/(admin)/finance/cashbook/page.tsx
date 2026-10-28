@@ -1123,96 +1123,101 @@ export default function FinanceCashbookPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-32">Mã phiếu</TableHead>
-                    <TableHead className="w-24">Loại quỹ</TableHead>
-                    <TableHead className="w-36 text-right">Số tiền</TableHead>
-                    <TableHead className="w-32">Phương thức</TableHead>
-                    <TableHead className="w-36">Nguồn tham chiếu</TableHead>
-                    <TableHead className="w-40">Thời gian</TableHead>
-                    <TableHead className="w-44">Người thực hiện</TableHead>
-                    <TableHead>Diễn giải / Ghi chú</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedTransactions.length === 0 ? (
+              <div className="overflow-x-auto">
+                <Table className="min-w-[1000px]">
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8} className="h-36 text-center">
-                        <div className="flex flex-col items-center justify-center text-slate-400">
-                          <Wallet className="h-8 w-8 mb-2 stroke-1 opacity-50" />
-                          <p className="text-sm font-medium">Không tìm thấy giao dịch quỹ nào</p>
-                          <p className="text-xs">Thử đổi điều kiện lọc hoặc tạo giao dịch thu/chi mới</p>
-                        </div>
-                      </TableCell>
+                      <TableHead className="w-32 whitespace-nowrap min-w-[120px] font-semibold">Mã phiếu</TableHead>
+                      <TableHead className="w-24 whitespace-nowrap min-w-[100px] font-semibold">Loại quỹ</TableHead>
+                      <TableHead className="w-36 text-right whitespace-nowrap min-w-[120px] font-semibold">Số tiền</TableHead>
+                      <TableHead className="w-32 whitespace-nowrap min-w-[110px] font-semibold">Phương thức</TableHead>
+                      <TableHead className="w-36 whitespace-nowrap min-w-[130px] font-semibold">Nguồn tham chiếu</TableHead>
+                      <TableHead className="w-40 whitespace-nowrap min-w-[140px] font-semibold">Thời gian</TableHead>
+                      <TableHead className="w-44 whitespace-nowrap min-w-[150px] font-semibold">Người thực hiện</TableHead>
+                      <TableHead className="min-w-[200px] whitespace-nowrap font-semibold">Diễn giải / Ghi chú</TableHead>
                     </TableRow>
-                  ) : (
-                    paginatedTransactions.map((tx) => (
-                      <TableRow key={tx.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                        <TableCell className="font-semibold text-blue-600 dark:text-blue-400 text-xs">
-                          {tx.transaction_code}
-                        </TableCell>
-                        <TableCell>
-                          {tx.transaction_type === 'IN' ? (
-                            <Badge variant="success" className="gap-1 text-[11px] font-semibold">
-                              <ArrowUpRight className="h-3 w-3" /> Thu quỹ
-                            </Badge>
-                          ) : (
-                            <Badge variant="destructive" className="gap-1 text-[11px] font-semibold">
-                              <ArrowDownRight className="h-3 w-3" /> Chi quỹ
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            'text-right font-bold text-xs',
-                            tx.transaction_type === 'IN'
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-rose-600 dark:text-rose-400'
-                          )}
-                        >
-                          {tx.transaction_type === 'IN' ? '+' : '-'}
-                          {formatCurrency(tx.amount)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-[11px] font-medium">
-                            {tx.payment_method === 'CASH' && 'Tiền mặt'}
-                            {tx.payment_method === 'BANK_TRANSFER' && 'Chuyển khoản'}
-                            {tx.payment_method === 'CARD' && 'Quẹt thẻ'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs text-slate-600 dark:text-slate-300">
-                          {tx.reference_type === 'Payment' && (
-                            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-medium">
-                              Biên lai viện phí
-                            </span>
-                          )}
-                          {tx.reference_type === 'Expense' && (
-                            <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded text-[11px] font-medium">
-                              Phiếu chi đã duyệt
-                            </span>
-                          )}
-                          {(!tx.reference_type || tx.reference_type === 'Manual') && (
-                            <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[11px] font-medium">
-                              Nạp / Rút thủ công
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-xs text-slate-500">
-                          {formatDateTime(tx.transaction_date)}
-                        </TableCell>
-                        <TableCell className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                          {tx.creator?.employee?.full_name || tx.creator?.name || 'Quản lý phòng khám'}
-                        </TableCell>
-                        <TableCell className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate">
-                          {tx.description || '-'}
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedTransactions.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="h-36 text-center">
+                          <div className="flex flex-col items-center justify-center text-slate-400">
+                            <Wallet className="h-8 w-8 mb-2 stroke-1 opacity-50" />
+                            <p className="text-sm font-medium">Không tìm thấy giao dịch quỹ nào</p>
+                            <p className="text-xs">Thử đổi điều kiện lọc hoặc tạo giao dịch thu/chi mới</p>
+                          </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      paginatedTransactions.map((tx) => (
+                        <TableRow key={tx.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                          <TableCell className="font-semibold text-blue-600 dark:text-blue-400 text-xs font-mono whitespace-nowrap">
+                            {tx.transaction_code}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {tx.transaction_type === 'IN' ? (
+                              <Badge variant="success" className="gap-1 text-[11px] font-semibold">
+                                <ArrowUpRight className="h-3 w-3" /> Thu quỹ
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive" className="gap-1 text-[11px] font-semibold">
+                                <ArrowDownRight className="h-3 w-3" /> Chi quỹ
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell
+                            className={cn(
+                              'text-right font-bold text-xs font-mono whitespace-nowrap',
+                              tx.transaction_type === 'IN'
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-rose-600 dark:text-rose-400'
+                            )}
+                          >
+                            {tx.transaction_type === 'IN' ? '+' : '-'}
+                            {formatCurrency(tx.amount)}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge variant="outline" className="text-[11px] font-medium">
+                              {tx.payment_method === 'CASH' && 'Tiền mặt'}
+                              {tx.payment_method === 'BANK_TRANSFER' && 'Chuyển khoản'}
+                              {tx.payment_method === 'CARD' && 'Quẹt thẻ'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                            {tx.reference_type === 'Payment' && (
+                              <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-medium">
+                                Biên lai viện phí
+                              </span>
+                            )}
+                            {tx.reference_type === 'Expense' && (
+                              <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded text-[11px] font-medium">
+                                Phiếu chi đã duyệt
+                              </span>
+                            )}
+                            {(!tx.reference_type || tx.reference_type === 'Manual') && (
+                              <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[11px] font-medium">
+                                Nạp / Rút thủ công
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-xs text-slate-500 whitespace-nowrap font-mono">
+                            {formatDateTime(tx.transaction_date)}
+                          </TableCell>
+                          <TableCell className="text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap">
+                            {tx.creator?.employee?.full_name || tx.creator?.name || 'Quản lý phòng khám'}
+                          </TableCell>
+                          <TableCell
+                            className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate"
+                            title={tx.description || undefined}
+                          >
+                            {tx.description || '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
 
               {/* Pagination */}
               {totalTxPages > 1 && (
@@ -1325,123 +1330,128 @@ export default function FinanceCashbookPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-28">Mã phiếu</TableHead>
-                    <TableHead className="w-36">Danh mục</TableHead>
-                    <TableHead className="w-32 text-right">Số tiền</TableHead>
-                    <TableHead className="w-28">Phương thức</TableHead>
-                    <TableHead className="w-28">Ngày chi</TableHead>
-                    <TableHead className="w-36">Trạng thái duyệt</TableHead>
-                    <TableHead className="w-40">Người đề xuất</TableHead>
-                    <TableHead>Diễn giải</TableHead>
-                    <TableHead className="w-32 text-right">Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedExpenses.length === 0 ? (
+              <div className="overflow-x-auto">
+                <Table className="min-w-[1050px]">
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={9} className="h-36 text-center">
-                        <div className="flex flex-col items-center justify-center text-slate-400">
-                          <FileText className="h-8 w-8 mb-2 stroke-1 opacity-50" />
-                          <p className="text-sm font-medium">Không tìm thấy phiếu chi nào</p>
-                          <p className="text-xs">Nhấn &quot;Tạo phiếu chi&quot; để lập đề xuất chi mới</p>
-                        </div>
-                      </TableCell>
+                      <TableHead className="w-28 whitespace-nowrap min-w-[110px] font-semibold">Mã phiếu</TableHead>
+                      <TableHead className="w-36 whitespace-nowrap min-w-[130px] font-semibold">Danh mục</TableHead>
+                      <TableHead className="w-32 text-right whitespace-nowrap min-w-[120px] font-semibold">Số tiền</TableHead>
+                      <TableHead className="w-28 whitespace-nowrap min-w-[110px] font-semibold">Phương thức</TableHead>
+                      <TableHead className="w-28 whitespace-nowrap min-w-[110px] font-semibold">Ngày chi</TableHead>
+                      <TableHead className="w-36 whitespace-nowrap min-w-[130px] font-semibold">Trạng thái duyệt</TableHead>
+                      <TableHead className="w-40 whitespace-nowrap min-w-[140px] font-semibold">Người đề xuất</TableHead>
+                      <TableHead className="min-w-[200px] whitespace-nowrap font-semibold">Diễn giải</TableHead>
+                      <TableHead className="w-32 text-right whitespace-nowrap min-w-[140px] font-semibold">Thao tác</TableHead>
                     </TableRow>
-                  ) : (
-                    paginatedExpenses.map((exp) => (
-                      <TableRow key={exp.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                        <TableCell className="font-semibold text-blue-600 dark:text-blue-400 text-xs">
-                          {exp.expense_code}
-                        </TableCell>
-                        <TableCell className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                          {exp.category?.name || 'Chi phí chung'}
-                        </TableCell>
-                        <TableCell className="text-right font-bold text-xs text-rose-600 dark:text-rose-400">
-                          {formatCurrency(exp.amount)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-[11px] font-medium">
-                            {exp.payment_method === 'CASH' && 'Tiền mặt'}
-                            {exp.payment_method === 'BANK_TRANSFER' && 'Chuyển khoản'}
-                            {exp.payment_method === 'CARD' && 'Quẹt thẻ'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs text-slate-500">
-                          {formatDate(exp.expense_date)}
-                        </TableCell>
-                        <TableCell>
-                          {exp.approval_status === 'PENDING' && (
-                            <Badge variant="warning" className="gap-1 text-[11px] font-semibold">
-                              <Clock className="h-3 w-3" /> Chờ duyệt
-                            </Badge>
-                          )}
-                          {exp.approval_status === 'APPROVED' && (
-                            <Badge variant="success" className="gap-1 text-[11px] font-semibold">
-                              <CheckCircle2 className="h-3 w-3" /> Đã duyệt
-                            </Badge>
-                          )}
-                          {exp.approval_status === 'REJECTED' && (
-                            <Badge variant="destructive" className="gap-1 text-[11px] font-semibold">
-                              <XCircle className="h-3 w-3" /> Đã từ chối
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                          {exp.creator?.employee?.full_name || exp.creator?.name || 'Nhân viên'}
-                        </TableCell>
-                        <TableCell className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate">
-                          {exp.description || '-'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {exp.approval_status === 'PENDING' ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleApproveExpense(exp)}
-                                  className="h-7 w-7 p-0 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950"
-                                  title="Duyệt phiếu chi"
-                                >
-                                  <Check className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setSelectedExpense(exp);
-                                    setRejectReason('');
-                                    setOpenRejectDialog(true);
-                                  }}
-                                  className="h-7 w-7 p-0 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950"
-                                  title="Từ chối phiếu chi"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </Button>
-                              </>
-                            ) : null}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setSelectedExpense(exp);
-                                setOpenExpenseDetailDialog(true);
-                              }}
-                              className="h-7 w-7 p-0 text-slate-600 hover:bg-slate-100 dark:text-slate-400"
-                              title="Xem chi tiết phiếu chi"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedExpenses.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="h-36 text-center">
+                          <div className="flex flex-col items-center justify-center text-slate-400">
+                            <FileText className="h-8 w-8 mb-2 stroke-1 opacity-50" />
+                            <p className="text-sm font-medium">Không tìm thấy phiếu chi nào</p>
+                            <p className="text-xs">Nhấn &quot;Tạo phiếu chi&quot; để lập đề xuất chi mới</p>
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      paginatedExpenses.map((exp) => (
+                        <TableRow key={exp.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                          <TableCell className="font-semibold text-blue-600 dark:text-blue-400 text-xs font-mono whitespace-nowrap">
+                            {exp.expense_code}
+                          </TableCell>
+                          <TableCell className="text-xs font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                            {exp.category?.name || 'Chi phí chung'}
+                          </TableCell>
+                          <TableCell className="text-right font-bold text-xs text-rose-600 dark:text-rose-400 font-mono whitespace-nowrap">
+                            {formatCurrency(exp.amount)}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge variant="outline" className="text-[11px] font-medium">
+                              {exp.payment_method === 'CASH' && 'Tiền mặt'}
+                              {exp.payment_method === 'BANK_TRANSFER' && 'Chuyển khoản'}
+                              {exp.payment_method === 'CARD' && 'Quẹt thẻ'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-slate-500 whitespace-nowrap font-mono">
+                            {formatDate(exp.expense_date)}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {exp.approval_status === 'PENDING' && (
+                              <Badge variant="warning" className="gap-1 text-[11px] font-semibold">
+                                <Clock className="h-3 w-3" /> Chờ duyệt
+                              </Badge>
+                            )}
+                            {exp.approval_status === 'APPROVED' && (
+                              <Badge variant="success" className="gap-1 text-[11px] font-semibold">
+                                <CheckCircle2 className="h-3 w-3" /> Đã duyệt
+                              </Badge>
+                            )}
+                            {exp.approval_status === 'REJECTED' && (
+                              <Badge variant="destructive" className="gap-1 text-[11px] font-semibold">
+                                <XCircle className="h-3 w-3" /> Đã từ chối
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap">
+                            {exp.creator?.employee?.full_name || exp.creator?.name || 'Nhân viên'}
+                          </TableCell>
+                          <TableCell
+                            className="text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate"
+                            title={exp.description || undefined}
+                          >
+                            {exp.description || '-'}
+                          </TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <div className="inline-flex items-center justify-end gap-1 whitespace-nowrap">
+                              {exp.approval_status === 'PENDING' ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleApproveExpense(exp)}
+                                    className="h-7 w-7 p-0 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                                    title="Duyệt phiếu chi"
+                                  >
+                                    <Check className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setSelectedExpense(exp);
+                                      setRejectReason('');
+                                      setOpenRejectDialog(true);
+                                    }}
+                                    className="h-7 w-7 p-0 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950"
+                                    title="Từ chối phiếu chi"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </Button>
+                                </>
+                              ) : null}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedExpense(exp);
+                                  setOpenExpenseDetailDialog(true);
+                                }}
+                                className="h-7 w-7 p-0 text-slate-600 hover:bg-slate-100 dark:text-slate-400"
+                                title="Xem chi tiết phiếu chi"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
 
               {/* Pagination */}
               {totalExpPages > 1 && (
@@ -1522,75 +1532,77 @@ export default function FinanceCashbookPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12 text-center">#</TableHead>
-                    <TableHead className="w-56">Tên nhóm chi phí</TableHead>
-                    <TableHead>Mô tả chi tiết</TableHead>
-                    <TableHead className="w-32 text-center">Trạng thái</TableHead>
-                    <TableHead className="w-32 text-right">Số phiếu chi</TableHead>
-                    <TableHead className="w-40 text-right">Tổng tiền đã chi</TableHead>
-                    <TableHead className="w-24 text-right">Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCategories.length === 0 ? (
+              <div className="overflow-x-auto">
+                <Table className="min-w-[850px]">
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={7} className="h-32 text-center text-slate-400">
-                        Chưa có danh mục chi phí nào
-                      </TableCell>
+                      <TableHead className="w-12 text-center whitespace-nowrap min-w-[50px] font-semibold">#</TableHead>
+                      <TableHead className="w-56 whitespace-nowrap min-w-[180px] font-semibold">Tên nhóm chi phí</TableHead>
+                      <TableHead className="min-w-[200px] whitespace-nowrap font-semibold">Mô tả chi tiết</TableHead>
+                      <TableHead className="w-32 text-center whitespace-nowrap min-w-[110px] font-semibold">Trạng thái</TableHead>
+                      <TableHead className="w-32 text-right whitespace-nowrap min-w-[110px] font-semibold">Số phiếu chi</TableHead>
+                      <TableHead className="w-40 text-right whitespace-nowrap min-w-[130px] font-semibold">Tổng tiền đã chi</TableHead>
+                      <TableHead className="w-24 text-right whitespace-nowrap min-w-[90px] font-semibold">Thao tác</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredCategories.map((cat, idx) => (
-                      <TableRow key={cat.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                        <TableCell className="text-center text-xs text-slate-400 font-mono">
-                          {idx + 1}
-                        </TableCell>
-                        <TableCell className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                          {cat.name}
-                        </TableCell>
-                        <TableCell className="text-xs text-slate-600 dark:text-slate-400">
-                          {cat.description || '-'}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {cat.status === 'ACTIVE' ? (
-                            <Badge variant="success" className="text-[11px] font-semibold">
-                              Áp dụng
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-[11px] font-medium">
-                              Tạm dừng
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          {cat.expenses_count ?? 0} phiếu
-                        </TableCell>
-                        <TableCell className="text-right text-xs font-bold text-rose-600 dark:text-rose-400">
-                          {formatCurrency(cat.total_amount ?? 0)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setSelectedCategory(cat);
-                              setCatName(cat.name);
-                              setCatDesc(cat.description || '');
-                              setCatStatus(cat.status);
-                              setOpenEditCatDialog(true);
-                            }}
-                            className="h-7 px-2 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-medium"
-                          >
-                            Sửa
-                          </Button>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCategories.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-32 text-center text-slate-400">
+                          Chưa có danh mục chi phí nào
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      filteredCategories.map((cat, idx) => (
+                        <TableRow key={cat.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                          <TableCell className="text-center text-xs text-slate-400 font-mono whitespace-nowrap">
+                            {idx + 1}
+                          </TableCell>
+                          <TableCell className="text-xs font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                            {cat.name}
+                          </TableCell>
+                          <TableCell className="text-xs text-slate-600 dark:text-slate-400">
+                            {cat.description || '-'}
+                          </TableCell>
+                          <TableCell className="text-center whitespace-nowrap">
+                            {cat.status === 'ACTIVE' ? (
+                              <Badge variant="success" className="text-[11px] font-semibold">
+                                Áp dụng
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-[11px] font-medium">
+                                Tạm dừng
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right text-xs font-semibold text-slate-700 dark:text-slate-300 font-mono whitespace-nowrap">
+                            {cat.expenses_count ?? 0} phiếu
+                          </TableCell>
+                          <TableCell className="text-right text-xs font-bold text-rose-600 dark:text-rose-400 font-mono whitespace-nowrap">
+                            {formatCurrency(cat.total_amount ?? 0)}
+                          </TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedCategory(cat);
+                                setCatName(cat.name);
+                                setCatDesc(cat.description || '');
+                                setCatStatus(cat.status);
+                                setOpenEditCatDialog(true);
+                              }}
+                              className="h-7 px-2 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-medium"
+                            >
+                              Sửa
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

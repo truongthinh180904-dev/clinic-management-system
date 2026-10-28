@@ -608,19 +608,19 @@ export default function InvoicesPage() {
       {/* Main Table */}
       <Card className="shadow-sm border-slate-200 dark:border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="min-w-[1100px]">
             <TableHeader>
               <TableRow className="bg-slate-50 dark:bg-slate-900/50">
-                <TableHead className="w-36 font-semibold">Mã hóa đơn</TableHead>
-                <TableHead className="font-semibold">Bệnh nhân</TableHead>
-                <TableHead className="font-semibold">Nghiệp vụ</TableHead>
-                <TableHead className="text-right font-semibold">Tổng tiền</TableHead>
-                <TableHead className="text-right font-semibold">Đã thu</TableHead>
-                <TableHead className="text-right font-semibold">Còn nợ</TableHead>
-                <TableHead className="w-44 font-semibold text-center">Tiến độ thanh toán</TableHead>
-                <TableHead className="font-semibold text-center">Trạng thái</TableHead>
-                <TableHead className="font-semibold">Ngày xuất</TableHead>
-                <TableHead className="text-right font-semibold">Thao tác</TableHead>
+                <TableHead className="w-36 font-semibold whitespace-nowrap">Mã hóa đơn</TableHead>
+                <TableHead className="font-semibold min-w-[180px] whitespace-nowrap">Bệnh nhân</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap min-w-[130px]">Nghiệp vụ</TableHead>
+                <TableHead className="text-right font-semibold whitespace-nowrap min-w-[120px]">Tổng tiền</TableHead>
+                <TableHead className="text-right font-semibold whitespace-nowrap min-w-[110px]">Đã thu</TableHead>
+                <TableHead className="text-right font-semibold whitespace-nowrap min-w-[110px]">Còn nợ</TableHead>
+                <TableHead className="w-44 font-semibold text-center whitespace-nowrap min-w-[160px]">Tiến độ thanh toán</TableHead>
+                <TableHead className="font-semibold text-center whitespace-nowrap min-w-[120px]">Trạng thái</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap min-w-[110px]">Ngày xuất</TableHead>
+                <TableHead className="text-right font-semibold whitespace-nowrap min-w-[170px]">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -663,7 +663,7 @@ export default function InvoicesPage() {
                       className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors"
                     >
                       {/* Invoice Code */}
-                      <TableCell className="font-mono font-medium text-blue-600 dark:text-blue-400">
+                      <TableCell className="font-mono font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
                         <Link
                           href={`/invoices/${inv.id}`}
                           className="hover:underline flex items-center gap-1"
@@ -673,11 +673,11 @@ export default function InvoicesPage() {
                       </TableCell>
 
                       {/* Patient */}
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <div className="font-medium text-slate-900 dark:text-slate-100">
                           {inv.patient?.full_name || 'Khách vãng lai'}
                         </div>
-                        <div className="text-xs text-slate-500 flex items-center gap-2">
+                        <div className="text-xs text-slate-500 flex items-center gap-2 whitespace-nowrap">
                           {inv.patient?.patient_code && (
                             <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded">
                               {inv.patient.patient_code}
@@ -688,7 +688,7 @@ export default function InvoicesPage() {
                       </TableCell>
 
                       {/* Reference Scope */}
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {inv.visit ? (
                           <div className="text-xs">
                             <span className="inline-block px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 font-medium">
@@ -707,7 +707,7 @@ export default function InvoicesPage() {
                       </TableCell>
 
                       {/* Total Amount */}
-                      <TableCell className="text-right font-medium text-slate-900 dark:text-slate-100">
+                      <TableCell className="text-right font-mono font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">
                         {formatCurrency(total)}
                         {Number(inv.discount_amount) > 0 && (
                           <div className="text-[11px] text-emerald-600 dark:text-emerald-400">
@@ -717,12 +717,12 @@ export default function InvoicesPage() {
                       </TableCell>
 
                       {/* Paid Amount */}
-                      <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400">
+                      <TableCell className="text-right font-mono font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                         {formatCurrency(paid)}
                       </TableCell>
 
                       {/* Remaining Amount */}
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right font-mono font-medium whitespace-nowrap">
                         {remaining > 0 ? (
                           <span className="text-amber-600 dark:text-amber-400">
                             {formatCurrency(remaining)}
@@ -733,8 +733,8 @@ export default function InvoicesPage() {
                       </TableCell>
 
                       {/* Progress bar */}
-                      <TableCell>
-                        <div className="space-y-1">
+                      <TableCell className="whitespace-nowrap">
+                        <div className="space-y-1 w-36">
                           <div className="flex items-center justify-between text-[11px] text-slate-500">
                             <span>{percent}%</span>
                             <span>{paid >= total ? 'Đủ 100%' : `Còn nợ`}</span>
@@ -756,18 +756,18 @@ export default function InvoicesPage() {
                       </TableCell>
 
                       {/* Status */}
-                      <TableCell className="text-center">
+                      <TableCell className="text-center whitespace-nowrap">
                         {renderStatusBadge(inv.status)}
                       </TableCell>
 
                       {/* Issued Date */}
-                      <TableCell className="text-xs text-slate-600 dark:text-slate-400">
+                      <TableCell className="text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap font-mono">
                         {formatDate(inv.issued_at)}
                       </TableCell>
 
                       {/* Action buttons */}
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
+                      <TableCell className="text-right whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
                           {/* Quick pay button */}
                           {inv.status !== 'PAID' && inv.status !== 'CANCELLED' && remaining > 0 && (
                             <Button

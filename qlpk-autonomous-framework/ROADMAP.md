@@ -90,7 +90,7 @@
 
 ### TASK `P3-004` (`F3-02-01`): Chuẩn hóa Bảng Dữ liệu Toàn Hệ thống Chống Dồn Cột và Vỡ Bố Cục
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-003`
 - **goal:** Khắc phục triệt để tình trạng tiêu đề cột và nội dung bị xuống dòng 2-3 hàng; bọc bảng trong container có `overflow-x-auto`, thiết lập độ rộng cột hợp lý, áp dụng `whitespace-nowrap` cho các cột ngắn (Mã, Ngày giờ, Trạng thái, Thao tác), nội dung dài có tooltip/ellipsis, và bố trí nút thao tác không bị chồng lấn.
 - **scope:**

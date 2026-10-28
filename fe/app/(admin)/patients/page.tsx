@@ -452,16 +452,16 @@ export default function PatientsPage() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-left text-sm min-w-[900px]">
                 <thead className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                   <tr>
-                    <th className="py-3.5 px-4">Mã BN</th>
-                    <th className="py-3.5 px-4">Họ và tên</th>
-                    <th className="py-3.5 px-4">Số điện thoại / Email</th>
-                    <th className="py-3.5 px-4">Địa chỉ</th>
-                    <th className="py-3.5 px-4">Lần khám gần nhất</th>
-                    <th className="py-3.5 px-4">Trạng thái</th>
-                    <th className="py-3.5 px-4 text-right">Thao tác</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[120px]">Mã BN</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[180px]">Họ và tên</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[150px]">Số điện thoại / Email</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[180px]">Địa chỉ</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[140px]">Lần khám gần nhất</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap min-w-[120px]">Trạng thái</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[180px]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -473,7 +473,7 @@ export default function PatientsPage() {
                         className="hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition-colors"
                       >
                         {/* Patient Code */}
-                        <td className="py-3.5 px-4 font-mono font-medium text-blue-600 dark:text-blue-400">
+                        <td className="py-3.5 px-4 font-mono font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
                           <Link href={`/patients/${patient.id}`} className="hover:underline">
                             {patient.patient_code}
                           </Link>
@@ -487,14 +487,14 @@ export default function PatientsPage() {
                           >
                             {patient.full_name}
                           </Link>
-                          <div className="text-xs text-slate-400 mt-0.5">
+                          <div className="text-xs text-slate-400 mt-0.5 whitespace-nowrap">
                             {patient.gender ? GENDER_LABEL[patient.gender] || patient.gender : '—'}
                             {patient.date_of_birth && ` • ${patient.date_of_birth}`}
                           </div>
                         </td>
 
                         {/* Phone & Email */}
-                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                           <div className="font-mono font-medium">{patient.phone || '—'}</div>
                           {patient.email && (
                             <div className="text-xs text-slate-400">{patient.email}</div>
@@ -502,17 +502,20 @@ export default function PatientsPage() {
                         </td>
 
                         {/* Address */}
-                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 max-w-xs truncate">
+                        <td
+                          className="py-3.5 px-4 text-slate-600 dark:text-slate-300 max-w-xs truncate"
+                          title={patient.address || undefined}
+                        >
                           {patient.address || '—'}
                         </td>
 
                         {/* Last Visit */}
-                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-mono text-xs">
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-mono text-xs whitespace-nowrap">
                           {patient.last_visit_date || patient.first_visit_date || 'Chưa khám'}
                         </td>
 
                         {/* Status */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusInfo.badgeClass}`}
                           >
@@ -521,8 +524,8 @@ export default function PatientsPage() {
                         </td>
 
                         {/* Actions */}
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="inline-flex items-center gap-2">
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
                             <Link
                               href={`/patients/${patient.id}`}
                               className="rounded px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50"

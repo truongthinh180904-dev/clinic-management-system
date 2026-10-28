@@ -24,11 +24,11 @@ PROGRESS_FILE="${PROGRESS_FILE:-${FRAMEWORK_DIR}/PROGRESS.md}"
 # 2. VERIFIED MODEL ROUTING CONFIGURATION (Rule 3 & 4.A)
 # ==============================================================================
 AGY_BIN="${AGY_BIN:-agy}"
-PLANNER_MODEL="${PLANNER_MODEL:-claude-sonnet-5-5-high}"
+PLANNER_MODEL="${PLANNER_MODEL:-gemini-3.8-flash-high}"
 CODER_MODEL="${CODER_MODEL:-gemini-3.8-flash-high}"
-REVIEWER_MODEL="${REVIEWER_MODEL:-claude-sonnet-5-5-high}"
-DEBUG_FALLBACK_MODEL="${DEBUG_FALLBACK_MODEL:-gpt-oss-120b-medium}"
-ARCH_ESCALATION_MODEL="${ARCH_ESCALATION_MODEL:-gpt-oss-120b-medium}"
+REVIEWER_MODEL="${REVIEWER_MODEL:-gemini-3.8-flash-high}"
+DEBUG_FALLBACK_MODEL="${DEBUG_FALLBACK_MODEL:-gemini-3.8-flash-high}"
+ARCH_ESCALATION_MODEL="${ARCH_ESCALATION_MODEL:-gemini-3.8-flash-high}"
 ALLOW_FALLBACK="${ALLOW_FALLBACK:-1}"
 
 VALID_AGY_MODELS=(
@@ -50,10 +50,10 @@ VALID_AGY_MODELS=(
 # ==============================================================================
 # 3. CPU, RAM, COOLDOWN, TIMEOUT & RETRY CONFIGURATION (Rule 4.C)
 # ==============================================================================
-TASK_COOLDOWN_SECONDS="${TASK_COOLDOWN_SECONDS:-30}"
-ERROR_COOLDOWN_SECONDS="${ERROR_COOLDOWN_SECONDS:-120}"
+TASK_COOLDOWN_SECONDS="${TASK_COOLDOWN_SECONDS:-15}"
+ERROR_COOLDOWN_SECONDS="${ERROR_COOLDOWN_SECONDS:-30}"
 QUOTA_BACKOFF_SECONDS="${QUOTA_BACKOFF_SECONDS:-900}"
-CPU_LOAD_PER_CORE_LIMIT="${CPU_LOAD_PER_CORE_LIMIT:-0.85}"
+CPU_LOAD_PER_CORE_LIMIT="${CPU_LOAD_PER_CORE_LIMIT:-1.8}"
 MIN_FREE_MEMORY_PERCENT="${MIN_FREE_MEMORY_PERCENT:-15}"
 RESOURCE_WAIT_SECONDS="${RESOURCE_WAIT_SECONDS:-300}"
 RESOURCE_POLL_INTERVAL_SECONDS="${RESOURCE_POLL_INTERVAL_SECONDS:-15}"
@@ -71,12 +71,13 @@ RETRY_BASE_SECONDS="${RETRY_BASE_SECONDS:-5}"
 # 4. GIT & SECURITY CONFIGURATION (Rule 4.D)
 # ==============================================================================
 ALLOWED_BRANCHES="${ALLOWED_BRANCHES:-main,dev}"
-ALLOW_UNTRACKED_REGEX="${ALLOW_UNTRACKED_REGEX:-^(\.DS_Store|PHASE_2_TASKS\.md|.*\.md|qlpk-autonomous-framework(-v2\.zip|/.*)?|docs/.*|be/.*|fe/.*)$}"
+ALLOW_UNTRACKED_REGEX="${ALLOW_UNTRACKED_REGEX:-^(\.DS_Store|PHASE_2_TASKS\.md|.*\.md|reports(/.*)?|qlpk-autonomous-framework(-v2\.zip|/.*)?|docs/.*|be/.*|fe/.*)$}"
 AUTO_COMMIT_ON_DONE="${AUTO_COMMIT_ON_DONE:-1}"
 TARGET_COMMIT_BRANCH="${TARGET_COMMIT_BRANCH:-dev}"
 
 SESSION_START_EPOCH="$(date +%s)"
 ACTIVE_CHILD_PID=""
+CAFFEINATE_CHILD_PID=""
 LOCK_ACQUIRED=0
 
 # ==============================================================================
@@ -129,6 +130,10 @@ kill_active_child() {
 }
 
 cleanup_lock() {
+  if [[ -n "${CAFFEINATE_CHILD_PID:-}" ]]; then
+    kill -TERM "$CAFFEINATE_CHILD_PID" 2>/dev/null || true
+    CAFFEINATE_CHILD_PID=""
+  fi
   kill_active_child
   if [[ "$LOCK_ACQUIRED" -eq 1 && -d "$LOCK_DIR" ]]; then
     rm -rf -- "$LOCK_DIR"
@@ -171,6 +176,11 @@ acquire_lock() {
   fi
   printf '%s\n' "$$" > "${LOCK_DIR}/pid"
   LOCK_ACQUIRED=1
+  if [[ "$(uname -s)" == "Darwin" ]] && command -v caffeinate >/dev/null 2>&1; then
+    caffeinate -dimsu -w "$$" >/dev/null 2>&1 &
+    CAFFEINATE_CHILD_PID="$!"
+    log "MACOS_CAFFEINATE: Enabled system sleep assertion (-dimsu) via PID ${CAFFEINATE_CHILD_PID} watching parent PID $$."
+  fi
   trap 'on_signal INT' INT
   trap 'on_signal TERM' TERM
   trap 'cleanup_lock' EXIT
@@ -1100,7 +1110,7 @@ get_demo_task_spec() {
       ;;
     P3-002)
       printf 'Survey Frontend UI/UX, Data Tables, and verify existing test suites\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
       printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_AUDIT_REPORT.md"\n'
       ;;
     P3-003)
@@ -1136,42 +1146,42 @@ get_demo_task_spec() {
       ;;
     P3-010)
       printf 'Complete Patient Profile Detail page with Medical Chronological Timeline\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=PatientTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=PatientTest\n'
       printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
       ;;
     P3-011)
       printf 'Build comprehensive Electronic Medical Record consultation interface for doctors\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=MedicalRecordTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=MedicalRecordTest\n'
       printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
       ;;
     P3-012)
       printf 'Implement strict RBAC permissions and clinical edit Audit Trail for medical records\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=MedicalRecordTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=MedicalRecordTest\n'
       printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
       ;;
     P3-013)
       printf 'Standardize Appointment state machine transitions and multi-criteria appointment filters\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=AppointmentTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=AppointmentTest\n'
       printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
       ;;
     P3-014)
       printf 'Build fast Reception desk check-in workflow for patients with duplicate warnings\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=VisitTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=VisitTest\n'
       printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
       ;;
     P3-015)
       printf 'Implement atomic Check-in conversion from Appointment to Visit with duplicate protection\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=AppointmentTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=AppointmentTest\n'
       printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
       ;;
     P3-016)
       printf 'Build PatientFileController and secure upload API for patient clinical files with MIME validation\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
       printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
       ;;
     P3-017)
       printf 'Build secure download and inline preview streaming API for patient files with RBAC checks\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
       printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
       ;;
     P3-018)
@@ -1192,17 +1202,17 @@ get_demo_task_spec() {
       ;;
     P3-022)
       printf 'Extend RolePermissionSeeder for clinical medical files and sensitive health record actions\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=RolePermissionTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=RolePermissionTest\n'
       printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
       ;;
     P3-023)
       printf 'Upgrade Audit Log to automatically track sensitive clinical data viewing, exports, and updates\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=AuditLogTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=AuditLogTest\n'
       printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
       ;;
     P3-024)
       printf 'Implement Data Masking for phone/identity numbers and API Rate Limiting for sensitive endpoints\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
       printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
       ;;
     P3-025)
@@ -1219,22 +1229,22 @@ get_demo_task_spec() {
     P3-027)
       printf 'Add strategic MySQL Composite Indexes on visits, appointments, invoices, and cash_transactions\n'
       printf 'cd "$PROJECT_ROOT/be" && php artisan migrate --pretend\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
       ;;
     P3-028)
       printf 'Eliminate N+1 queries with eager loading across reporting and clinical APIs and optimize pagination\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
       printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
       ;;
     P3-029)
       printf 'Implement End-to-End integration test covering the entire clinic lifecycle from appointment to cashier\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest tests/Feature/EndToEndPhase3WorkflowTest.php --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=EndToEndPhase3WorkflowTest\n'
       ;;
     P3-030)
       printf 'Complete Phase 3 system verification, OPERATIONAL_GUIDE.md, and PHASE_3_REPORT.md handover\n'
       printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_REPORT.md"\n'
       printf 'test -s "$PROJECT_ROOT/docs/phase-3/OPERATIONAL_GUIDE.md"\n'
-      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
       printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
       printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
       ;;

@@ -420,18 +420,18 @@ function VisitsListContent() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
+            <table className="w-full text-left border-collapse text-sm min-w-[950px]">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
-                  <th className="py-3 px-4">Mã lượt khám</th>
-                  <th className="py-3 px-4">Bệnh nhân</th>
-                  <th className="py-3 px-4">Ngày khám</th>
-                  <th className="py-3 px-4">Dịch vụ / Gói</th>
-                  <th className="py-3 px-4">Bác sĩ</th>
-                  <th className="py-3 px-4">Thành tiền</th>
-                  <th className="py-3 px-4">Trạng thái</th>
-                  <th className="py-3 px-4">Thanh toán</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
+                  <th className="py-3 px-4 whitespace-nowrap min-w-[130px]">Mã lượt khám</th>
+                  <th className="py-3 px-4 whitespace-nowrap min-w-[180px]">Bệnh nhân</th>
+                  <th className="py-3 px-4 whitespace-nowrap min-w-[120px]">Ngày khám</th>
+                  <th className="py-3 px-4 whitespace-nowrap min-w-[160px]">Dịch vụ / Gói</th>
+                  <th className="py-3 px-4 whitespace-nowrap min-w-[160px]">Bác sĩ</th>
+                  <th className="py-3 px-4 whitespace-nowrap min-w-[120px]">Thành tiền</th>
+                  <th className="py-3 px-4 whitespace-nowrap min-w-[120px]">Trạng thái</th>
+                  <th className="py-3 px-4 whitespace-nowrap min-w-[130px]">Thanh toán</th>
+                  <th className="py-3 px-4 text-right whitespace-nowrap min-w-[180px]">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -454,7 +454,7 @@ function VisitsListContent() {
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                     >
                       {/* Code */}
-                      <td className="py-3 px-4 font-mono font-medium text-blue-600 dark:text-blue-400">
+                      <td className="py-3 px-4 font-mono font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
                         <Link
                           href={`/visits/${visit.id}`}
                           className="hover:underline flex items-center gap-1.5"
@@ -464,28 +464,28 @@ function VisitsListContent() {
                       </td>
 
                       {/* Patient */}
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         <div className="font-medium text-slate-900 dark:text-white">
                           {visit.patient?.full_name || `BN #${visit.patient_id}`}
                         </div>
-                        <div className="text-xs text-slate-500 font-mono">
+                        <div className="text-xs text-slate-500 font-mono whitespace-nowrap">
                           {visit.patient?.patient_code}
                           {visit.patient?.phone && ` • ${visit.patient.phone}`}
                         </div>
                       </td>
 
                       {/* Date */}
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-3 px-4 whitespace-nowrap font-mono text-xs">
                         <div>{formatDate(visit.visit_date)}</div>
                       </td>
 
                       {/* Service / Package */}
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         <div className="font-medium text-slate-800 dark:text-slate-200">
                           {visit.service?.name || `DV #${visit.service_id}`}
                         </div>
                         {visit.patient_package_id && (
-                          <div className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded text-xs">
+                          <div className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded text-xs whitespace-nowrap">
                             <span>📦 Gói dịch vụ</span>
                             {visit.patient_package?.package?.name && (
                               <span className="font-semibold">
@@ -497,17 +497,17 @@ function VisitsListContent() {
                       </td>
 
                       {/* Doctor */}
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         <div className="font-medium text-slate-800 dark:text-slate-200">
                           {visit.employee?.full_name || `BS #${visit.employee_id}`}
                         </div>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-slate-500 whitespace-nowrap">
                           {visit.employee?.position || 'Bác sĩ phụ trách'}
                         </div>
                       </td>
 
                       {/* Amount */}
-                      <td className="py-3 px-4 whitespace-nowrap font-medium font-mono">
+                      <td className="py-3 px-4 whitespace-nowrap font-medium font-mono text-slate-900 dark:text-slate-100">
                         {formatMoney(visit.total_amount)}
                         {visit.discount_amount > 0 && (
                           <div className="text-xs text-rose-500">
@@ -537,7 +537,7 @@ function VisitsListContent() {
 
                       {/* Actions */}
                       <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5">
+                        <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
                           <Link
                             href={`/visits/${visit.id}`}
                             className="px-2.5 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md transition-colors"

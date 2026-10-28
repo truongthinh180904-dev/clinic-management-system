@@ -714,16 +714,16 @@ function AppointmentsContent() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300 min-w-[950px]">
               <thead className="border-b border-slate-200 bg-slate-50/75 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400">
                 <tr>
-                  <th className="px-4 py-3">Mã lịch hẹn</th>
-                  <th className="px-4 py-3">Bệnh nhân</th>
-                  <th className="px-4 py-3">Thời gian</th>
-                  <th className="px-4 py-3">Dịch vụ</th>
-                  <th className="px-4 py-3">Bác sĩ / Nhân sự</th>
-                  <th className="px-4 py-3">Trạng thái</th>
-                  <th className="px-4 py-3 text-right">Thao tác</th>
+                  <th className="px-4 py-3 whitespace-nowrap min-w-[130px]">Mã lịch hẹn</th>
+                  <th className="px-4 py-3 whitespace-nowrap min-w-[180px]">Bệnh nhân</th>
+                  <th className="px-4 py-3 whitespace-nowrap min-w-[150px]">Thời gian</th>
+                  <th className="px-4 py-3 whitespace-nowrap min-w-[150px]">Dịch vụ</th>
+                  <th className="px-4 py-3 whitespace-nowrap min-w-[160px]">Bác sĩ / Nhân sự</th>
+                  <th className="px-4 py-3 whitespace-nowrap min-w-[130px]">Trạng thái</th>
+                  <th className="px-4 py-3 text-right whitespace-nowrap min-w-[200px]">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -741,7 +741,7 @@ function AppointmentsContent() {
                       className="hover:bg-slate-50/50 transition-colors dark:hover:bg-slate-800/30"
                     >
                       {/* Code */}
-                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
+                      <td className="px-4 py-3 font-mono font-medium text-slate-900 dark:text-white whitespace-nowrap">
                         <Link
                           href={`/appointments/${appt.id}`}
                           className="text-blue-600 hover:underline dark:text-blue-400"
@@ -751,11 +751,11 @@ function AppointmentsContent() {
                       </td>
 
                       {/* Patient */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="font-semibold text-slate-900 dark:text-white">
                           {appt.patient?.full_name || `BN #${appt.patient_id}`}
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                           {appt.patient?.phone ||
                             appt.patient?.patient_code ||
                             '---'}
@@ -763,8 +763,8 @@ function AppointmentsContent() {
                       </td>
 
                       {/* Schedule */}
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-slate-900 dark:text-white">
+                      <td className="px-4 py-3 whitespace-nowrap font-mono text-xs">
+                        <div className="font-medium text-slate-900 dark:text-white text-sm font-sans">
                           {appt.appointment_date}
                         </div>
                         <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -774,12 +774,12 @@ function AppointmentsContent() {
                       </td>
 
                       {/* Service */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="font-medium text-slate-900 dark:text-white">
                           {appt.service?.name || `DV #${appt.service_id}`}
                         </div>
                         {appt.service?.price !== undefined && (
-                          <div className="text-xs text-slate-500 dark:text-slate-400">
+                          <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono">
                             {new Intl.NumberFormat('vi-VN', {
                               style: 'currency',
                               currency: 'VND',
@@ -789,11 +789,11 @@ function AppointmentsContent() {
                       </td>
 
                       {/* Doctor */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="font-medium text-slate-900 dark:text-white">
                           {appt.employee?.full_name || `NV #${appt.employee_id}`}
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                           {appt.employee?.position ||
                             appt.employee?.employee_code ||
                             'Bác sĩ phụ trách'}
@@ -801,7 +801,7 @@ function AppointmentsContent() {
                       </td>
 
                       {/* Status */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusInfo.badgeClass}`}
                         >
@@ -811,8 +811,8 @@ function AppointmentsContent() {
                       </td>
 
                       {/* Actions */}
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
                           {/* Quick Confirm */}
                           {canUpdate && appt.status === 'PENDING' && (
                             <button
