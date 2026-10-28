@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { ApiError } from '@/lib/api/client';
@@ -19,6 +19,11 @@ import {
 import { PaginationMeta } from '@/types/auth';
 import { toast } from '@/components/ui/toast';
 import { FormField, FormSubmitButton, FormAlert } from '@/components/ui/form-field';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatCard } from '@/components/ui/stat-card';
+import { Pagination } from '@/components/ui/pagination';
+import { EmptySearchState, EmptyDataState, ErrorState } from '@/components/ui/empty-state';
+import { Sparkles, CheckCircle2, Clock, Ban, Search, X } from 'lucide-react';
 
 const STATUS_MAP: Record<ServiceStatus, { label: string; badgeClass: string }> = {
   ACTIVE: {
@@ -188,54 +193,107 @@ export default function ServicesPage() {
     }
   };
 
+  // Block 3: Summary Statistics
+  const summaryStats = useMemo(() => {
+    const total = pagination?.total ?? services.length;
+    const active = services.filter((s) => s.status === 'ACTIVE').length;
+    const inactive = services.filter((s) => s.status === 'INACTIVE').length;
+    const locked = services.filter((s) => s.status === 'LOCKED').length;
+    return [
+      {
+        title: 'Tổng số dịch vụ',
+        value: total,
+        icon: Sparkles,
+        variant: 'primary' as const,
+        description: 'Dịch vụ trong danh mục',
+      },
+      {
+        title: 'Đang áp dụng',
+        value: active,
+        icon: CheckCircle2,
+        variant: 'success' as const,
+        description: 'Khả dụng cho bệnh nhân',
+      },
+      {
+        title: 'Tạm ngưng',
+        value: inactive,
+        icon: Clock,
+        variant: 'warning' as const,
+        description: 'Tạm dừng tiếp nhận',
+      },
+      {
+        title: 'Đã khóa',
+        value: locked,
+        icon: Ban,
+        variant: 'destructive' as const,
+        description: 'Ngừng cung cấp',
+      },
+    ];
+  }, [pagination?.total, services]);
+
+  const hasActiveFilters = Boolean(searchTerm || statusFilter);
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setCurrentPage(1);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Quản lý Dịch vụ khám & Điều trị
-            </h1>
-          </div>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Danh mục các dịch vụ kỹ thuật, thời lượng khám và biểu giá áp dụng toàn hệ thống
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Link
-            href="/packages"
-            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-          >
-            📦 Quản lý Gói dịch vụ
-          </Link>
-          {canCreate && (
-            <button
-              onClick={handleOpenCreateModal}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
+      {/* Block 1 & 2: Page Header & Action Buttons */}
+      <PageHeader
+        title="Quản lý Dịch vụ khám & Điều trị"
+        description="Danh mục các dịch vụ kỹ thuật, thời lượng khám và biểu giá áp dụng toàn hệ thống"
+        actions={
+          <div className="flex items-center gap-3">
+            <Link
+              href="/packages"
+              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-xs"
             >
-              <span>+</span>
-              <span>Thêm dịch vụ mới</span>
-            </button>
-          )}
-        </div>
+              📦 Quản lý Gói dịch vụ
+            </Link>
+            {canCreate && (
+              <button
+                onClick={handleOpenCreateModal}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                <span>+</span>
+                <span>Thêm dịch vụ mới</span>
+              </button>
+            )}
+          </div>
+        }
+      />
+
+      {/* Block 3: Khối tóm tắt thống kê quan trọng */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {summaryStats.map((stat, idx) => (
+          <StatCard key={idx} {...stat} />
+        ))}
       </div>
 
-      {/* Filter and Search Bar */}
+      {/* Block 4 & 5: Filter and Search Bar */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 shadow-sm">
-        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-sm">
-              🔍
-            </span>
+        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
               placeholder="Tìm theo mã dịch vụ, tên dịch vụ..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-9 pr-4 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-10 pr-9 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -255,10 +313,21 @@ export default function ServicesPage() {
 
             <button
               type="submit"
-              className="rounded-lg bg-slate-100 dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              className="rounded-lg bg-slate-800 dark:bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors"
             >
               Lọc
             </button>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="px-2.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg border border-slate-300 dark:border-slate-700"
+                title="Xóa bộ lọc"
+              >
+                ✕
+              </button>
+            )}
           </div>
         </form>
       </div>
@@ -276,7 +345,7 @@ export default function ServicesPage() {
         </div>
       )}
 
-      {/* Table Data */}
+      {/* Block 6, 7 & 8: Table Data, Pagination & State */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center">
@@ -284,21 +353,17 @@ export default function ServicesPage() {
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Đang tải danh mục dịch vụ...</p>
           </div>
         ) : services.length === 0 ? (
-          <div className="p-12 text-center">
-            <span className="text-4xl">💊</span>
-            <h3 className="mt-3 text-base font-semibold text-slate-900 dark:text-white">
-              Không tìm thấy dịch vụ nào
-            </h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              Không có dữ liệu phù hợp với bộ lọc hiện tại hoặc chưa có dịch vụ nào được tạo.
-            </p>
-            {canCreate && (
-              <button
-                onClick={handleOpenCreateModal}
-                className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                + Thêm dịch vụ đầu tiên
-              </button>
+          <div className="p-6">
+            {hasActiveFilters ? (
+              <EmptySearchState query={searchTerm} onReset={handleResetFilters} />
+            ) : (
+              <EmptyDataState
+                title="Chưa có dịch vụ nào"
+                description="Danh mục dịch vụ kỹ thuật đang trống. Bắt đầu bằng cách thêm dịch vụ đầu tiên."
+                createLabel="+ Thêm dịch vụ đầu tiên"
+                onCreate={canCreate ? handleOpenCreateModal : undefined}
+                icon={Sparkles}
+              />
             )}
           </div>
         ) : (
@@ -389,30 +454,17 @@ export default function ServicesPage() {
           </div>
         )}
 
-        {/* Pagination Bar */}
-        {pagination && pagination.last_page > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 px-4 py-3 bg-slate-50/50 dark:bg-slate-900/30">
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              Trang {pagination.current_page} / {pagination.last_page} (Tổng số {pagination.total} dịch vụ)
-            </span>
-            <div className="inline-flex gap-2">
-              <button
-                disabled={currentPage <= 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="rounded border border-slate-300 dark:border-slate-700 px-3 py-1 text-xs font-medium disabled:opacity-40"
-              >
-                Trước
-              </button>
-              <button
-                disabled={currentPage >= pagination.last_page}
-                onClick={() => setCurrentPage((p) => Math.min(pagination.last_page, p + 1))}
-                className="rounded border border-slate-300 dark:border-slate-700 px-3 py-1 text-xs font-medium disabled:opacity-40"
-              >
-                Sau
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Block 7: Standard Pagination Bar */}
+        <Pagination
+          currentPage={pagination?.current_page || currentPage}
+          totalPages={pagination?.last_page || 1}
+          totalItems={pagination?.total}
+          perPage={pagination?.per_page || 10}
+          from={pagination?.from}
+          to={pagination?.to}
+          onPageChange={(p) => setCurrentPage(p)}
+          itemLabel="dịch vụ"
+        />
       </div>
 
       {/* Modal: Create or Edit Service */}

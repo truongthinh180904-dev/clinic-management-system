@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { ApiError } from '@/lib/api/client';
@@ -21,6 +21,11 @@ import { PaginationMeta } from '@/types/auth';
 import { Employee } from '@/types/employee';
 import { toast } from '@/components/ui/toast';
 import { FormField, FormSubmitButton } from '@/components/ui/form-field';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatCard } from '@/components/ui/stat-card';
+import { Pagination } from '@/components/ui/pagination';
+import { EmptySearchState, EmptyDataState, ErrorState } from '@/components/ui/empty-state';
+import { Stethoscope, Activity, CheckCircle2, XCircle, Search, X } from 'lucide-react';
 
 function VisitsListContent() {
   const { hasPermission, hasRole } = useAuth();
@@ -207,27 +212,82 @@ function VisitsListContent() {
     }
   };
 
+  // Block 3: Summary Statistics
+  const summaryStats = useMemo(() => {
+    const total = pagination?.total ?? visits.length;
+    const inProgress = visits.filter((v) => v.status === 'IN_PROGRESS').length;
+    const completed = visits.filter((v) => v.status === 'COMPLETED').length;
+    const cancelled = visits.filter((v) => v.status === 'CANCELLED').length;
+    return [
+      {
+        title: 'Tổng lượt khám',
+        value: total,
+        icon: Stethoscope,
+        variant: 'primary' as const,
+        description: 'Tổng lượt khám ghi nhận',
+      },
+      {
+        title: 'Đang thực hiện',
+        value: inProgress,
+        icon: Activity,
+        variant: 'warning' as const,
+        description: 'Đang được bác sĩ thăm khám',
+      },
+      {
+        title: 'Đã hoàn thành',
+        value: completed,
+        icon: CheckCircle2,
+        variant: 'success' as const,
+        description: 'Đã kết thúc lượt khám',
+      },
+      {
+        title: 'Đã hủy',
+        value: cancelled,
+        icon: XCircle,
+        variant: 'destructive' as const,
+        description: 'Lượt khám bị hủy bỏ',
+      },
+    ];
+  }, [pagination?.total, visits]);
+
+  const hasActiveFilters = Boolean(
+    searchTerm || dateFilter || employeeFilter || patientFilter || statusFilter || paymentStatusFilter
+  );
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setDateFilter('');
+    setEmployeeFilter('');
+    setPatientFilter('');
+    setStatusFilter('');
+    setPaymentStatusFilter('');
+    setCurrentPage(1);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Quản lý Lượt khám & Bệnh án
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Theo dõi danh sách tiếp nhận, khám chữa bệnh, sử dụng gói và lập hồ sơ bệnh án
-          </p>
-        </div>
-        {canCreate && (
-          <Link
-            href="/visits/new"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm"
-          >
-            <span>➕</span>
-            <span>Tạo lượt khám mới</span>
-          </Link>
-        )}
+      {/* Block 1 & 2: Top Header & Actions */}
+      <PageHeader
+        title="Quản lý Lượt khám & Bệnh án"
+        description="Theo dõi danh sách tiếp nhận, khám chữa bệnh, sử dụng gói và lập hồ sơ bệnh án"
+        actions={
+          canCreate ? (
+            <Link
+              href="/visits/new"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm"
+            >
+              <span>➕</span>
+              <span>Tạo lượt khám mới</span>
+            </Link>
+          ) : undefined
+        }
+      />
+
+      {/* Block 3: Khối tóm tắt thống kê quan trọng */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {summaryStats.map((stat, idx) => (
+          <StatCard key={idx} {...stat} />
+        ))}
       </div>
 
       {/* Success Notification */}
@@ -262,24 +322,39 @@ function VisitsListContent() {
         </div>
       )}
 
-      {/* Filters Toolbar */}
+      {/* Block 4 & 5: Filters Toolbar */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Keyword Search */}
-          <div>
+          <div className="relative">
             <label className="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">
               Tìm kiếm
             </label>
-            <input
-              type="text"
-              placeholder="Mã lượt khám, tên, SĐT, dịch vụ..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Mã lượt khám, tên, SĐT, dịch vụ..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-9 pr-8 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setCurrentPage(1);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Visit Date */}
@@ -395,23 +470,17 @@ function VisitsListContent() {
             </p>
           </div>
         ) : visits.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="text-4xl mb-3">🩺</div>
-            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">
-              Không tìm thấy lượt khám nào
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-              Không có dữ liệu lượt khám phù hợp với tiêu chí lọc hoặc chưa có lượt khám nào được tạo.
-            </p>
-            {canCreate && (
-              <div className="mt-4">
-                <Link
-                  href="/visits/new"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-                >
-                  ➕ Tạo lượt khám mới
-                </Link>
-              </div>
+          <div className="p-6">
+            {hasActiveFilters ? (
+              <EmptySearchState query={searchTerm} onReset={handleResetFilters} />
+            ) : (
+              <EmptyDataState
+                title="Chưa có lượt khám nào"
+                description="Hệ thống chưa ghi nhận lượt khám nào phù hợp. Hãy tiếp đón bệnh nhân hoặc tạo lượt khám mới."
+                createLabel="+ Tạo lượt khám mới"
+                createHref={canCreate ? "/visits/new" : undefined}
+                icon={Stethoscope}
+              />
             )}
           </div>
         ) : (
@@ -581,39 +650,17 @@ function VisitsListContent() {
           </div>
         )}
 
-        {/* Pagination Bar */}
-        {pagination && pagination.total > 0 && (
-          <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
-            <div>
-              Hiển thị {pagination.from || 0} - {pagination.to || 0} trên tổng số{' '}
-              <span className="font-semibold text-slate-900 dark:text-white">
-                {pagination.total}
-              </span>{' '}
-              lượt khám
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={currentPage <= 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Trước
-              </button>
-              <span>
-                Trang {pagination.current_page} / {pagination.last_page}
-              </span>
-              <button
-                disabled={currentPage >= pagination.last_page}
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(pagination.last_page, p + 1))
-                }
-                className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Sau
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Block 7: Standard Pagination */}
+        <Pagination
+          currentPage={pagination?.current_page || currentPage}
+          totalPages={pagination?.last_page || 1}
+          totalItems={pagination?.total}
+          from={pagination?.from}
+          to={pagination?.to}
+          perPage={pagination?.per_page || perPage}
+          onPageChange={(p) => setCurrentPage(p)}
+          itemLabel="lượt khám"
+        />
       </div>
 
       {/* Quick Status Modal */}

@@ -119,7 +119,7 @@
 
 ### TASK `P3-006` (`F3-02-03`): Chuẩn hóa Cấu trúc Trang Danh sách Thống nhất (List Page Pattern)
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-005`
 - **goal:** Áp dụng mô hình chuẩn 8 khối cho các trang danh sách: Header -> Action button -> Khối tóm tắt thống kê -> Thanh tìm kiếm -> Bộ lọc đa cấp -> Data Table -> Phân trang -> Empty/Loading States.
 - **scope:** `fe/app/(admin)/*` các trang danh sách.

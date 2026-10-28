@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useTransition } from 'react';
+import React, { useEffect, useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { ApiError } from '@/lib/api/client';
@@ -26,7 +26,11 @@ import {
   FormSubmitButton,
   FormAlert,
 } from '@/components/ui/form-field';
-import { User, Phone, FileHeart } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatCard } from '@/components/ui/stat-card';
+import { Pagination } from '@/components/ui/pagination';
+import { EmptySearchState, EmptyDataState, ErrorState } from '@/components/ui/empty-state';
+import { User, Phone, FileHeart, Users, UserCheck, UserX, UserMinus, Search, X } from 'lucide-react';
 
 const STATUS_MAP: Record<PatientStatus, { label: string; badgeClass: string }> = {
   ACTIVE: {
@@ -273,28 +277,80 @@ export default function PatientsPage() {
     }
   };
 
+  // Block 3: Summary Statistics
+  const summaryStats = useMemo(() => {
+    const total = meta.total || patients.length;
+    const active = patients.filter((p) => p.status === 'ACTIVE').length;
+    const inactive = patients.filter((p) => p.status === 'INACTIVE').length;
+    const locked = patients.filter((p) => p.status === 'LOCKED').length;
+    return [
+      {
+        title: 'Tổng số bệnh nhân',
+        value: total,
+        icon: Users,
+        variant: 'primary' as const,
+        description: 'Tổng hồ sơ trong hệ thống',
+      },
+      {
+        title: 'Đang theo dõi',
+        value: active,
+        icon: UserCheck,
+        variant: 'success' as const,
+        description: 'Bệnh nhân đang hoạt động',
+      },
+      {
+        title: 'Tạm ngưng',
+        value: inactive,
+        icon: UserMinus,
+        variant: 'warning' as const,
+        description: 'Tạm dừng thăm khám',
+      },
+      {
+        title: 'Đã khóa',
+        value: locked,
+        icon: UserX,
+        variant: 'destructive' as const,
+        description: 'Hồ sơ đã khóa',
+      },
+    ];
+  }, [meta.total, patients]);
+
+  const hasActiveFilters = Boolean(search || selectedGender || selectedStatus);
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setSelectedGender('');
+    setSelectedStatus('');
+    setPage(1);
+    startTransition(() => {
+      fetchPatients(1);
+    });
+  };
+
   return (
     <div className="space-y-6">
-      {/* Page Title & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Quản lý Bệnh nhân
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Tra cứu thông tin, thêm mới hồ sơ bệnh nhân và theo dõi lịch sử khám bệnh
-          </p>
-        </div>
+      {/* Block 1 & 2: Page Header & Action Buttons */}
+      <PageHeader
+        title="Quản lý Bệnh nhân"
+        description="Tra cứu thông tin, thêm mới hồ sơ bệnh nhân và theo dõi lịch sử khám bệnh"
+        actions={
+          canCreate ? (
+            <button
+              onClick={handleOpenCreateModal}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              <span>+</span>
+              <span>Thêm bệnh nhân mới</span>
+            </button>
+          ) : undefined
+        }
+      />
 
-        {canCreate && (
-          <button
-            onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            <span>+</span>
-            <span>Thêm bệnh nhân mới</span>
-          </button>
-        )}
+      {/* Block 3: Khối tóm tắt thống kê quan trọng */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {summaryStats.map((stat, idx) => (
+          <StatCard key={idx} {...stat} />
+        ))}
       </div>
 
       {/* Action Notification */}
@@ -350,17 +406,27 @@ export default function PatientsPage() {
         </div>
       )}
 
-      {/* Search & Filters */}
+      {/* Block 4 & 5: Thanh tìm kiếm & Bộ lọc đa cấp */}
       <div className="rounded-xl bg-white dark:bg-slate-950 p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          <div className="sm:col-span-6">
+          <div className="sm:col-span-6 relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
               placeholder="Tìm kiếm mã BN, họ tên, số điện thoại, email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-10 pr-9 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           <div className="sm:col-span-2">
@@ -402,18 +468,10 @@ export default function PatientsPage() {
             >
               Tìm kiếm
             </button>
-            {(search || selectedGender || selectedStatus) && (
+            {hasActiveFilters && (
               <button
                 type="button"
-                onClick={() => {
-                  setSearch('');
-                  setSelectedGender('');
-                  setSelectedStatus('');
-                  setPage(1);
-                  startTransition(() => {
-                    fetchPatients(1);
-                  });
-                }}
+                onClick={handleResetFilters}
                 className="px-2.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg border border-slate-300 dark:border-slate-700"
                 title="Xóa bộ lọc"
               >
@@ -424,7 +482,7 @@ export default function PatientsPage() {
         </form>
       </div>
 
-      {/* Main Table Content */}
+      {/* Block 6, 7 & 8: Main Table Content, Pagination & States */}
       <div className="rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
@@ -432,37 +490,21 @@ export default function PatientsPage() {
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Đang tải danh sách bệnh nhân...</p>
           </div>
         ) : errorMsg ? (
-          <div className="p-8 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 text-xl font-bold">
-              !
-            </div>
-            <h3 className="mt-3 text-base font-semibold text-slate-900 dark:text-white">Không thể tải dữ liệu</h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{errorMsg}</p>
-            <button
-              onClick={() => fetchPatients(page)}
-              className="mt-4 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              Thử lại
-            </button>
+          <div className="p-6">
+            <ErrorState message={errorMsg} onRetry={() => fetchPatients(page)} />
           </div>
         ) : patients.length === 0 ? (
-          <div className="p-12 text-center">
-            <span className="text-4xl">🧑‍🤝‍🧑</span>
-            <h3 className="mt-3 text-base font-semibold text-slate-900 dark:text-white">
-              Không tìm thấy hồ sơ bệnh nhân nào
-            </h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {search || selectedGender || selectedStatus
-                ? 'Không có kết quả nào khớp với bộ lọc hoặc từ khóa tìm kiếm.'
-                : 'Chưa có dữ liệu bệnh nhân nào trong cơ sở dữ liệu.'}
-            </p>
-            {canCreate && (
-              <button
-                onClick={handleOpenCreateModal}
-                className="mt-4 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                + Thêm bệnh nhân đầu tiên
-              </button>
+          <div className="p-6">
+            {hasActiveFilters ? (
+              <EmptySearchState query={search} onReset={handleResetFilters} />
+            ) : (
+              <EmptyDataState
+                title="Chưa có hồ sơ bệnh nhân nào"
+                description="Chưa có dữ liệu bệnh nhân nào trong cơ sở dữ liệu. Bắt đầu bằng cách thêm hồ sơ bệnh nhân đầu tiên."
+                createLabel="+ Thêm bệnh nhân đầu tiên"
+                onCreate={canCreate ? handleOpenCreateModal : undefined}
+                icon={Users}
+              />
             )}
           </div>
         ) : (
@@ -582,56 +624,20 @@ export default function PatientsPage() {
               </table>
             </div>
 
-            {/* Pagination Controls */}
-            {meta.last_page > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
-                <div>
-                  Hiển thị <span className="font-medium text-slate-700 dark:text-slate-200">{meta.from || 0}</span> -{' '}
-                  <span className="font-medium text-slate-700 dark:text-slate-200">{meta.to || 0}</span> trong tổng số{' '}
-                  <span className="font-medium text-slate-700 dark:text-slate-200">{meta.total}</span> bệnh nhân
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={meta.current_page <= 1}
-                    className="rounded px-2.5 py-1.5 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    « Trước
-                  </button>
-
-                  {Array.from({ length: meta.last_page }, (_, i) => i + 1)
-                    .filter((p) => p === 1 || p === meta.last_page || Math.abs(p - meta.current_page) <= 1)
-                    .map((p, idx, arr) => {
-                      const prev = arr[idx - 1];
-                      const hasGap = prev && p - prev > 1;
-                      return (
-                        <React.Fragment key={p}>
-                          {hasGap && <span className="px-1 text-slate-400">...</span>}
-                          <button
-                            onClick={() => setPage(p)}
-                            className={`rounded px-3 py-1.5 border text-xs font-medium ${
-                              meta.current_page === p
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900'
-                            }`}
-                          >
-                            {p}
-                          </button>
-                        </React.Fragment>
-                      );
-                    })}
-
-                  <button
-                    onClick={() => setPage((p) => Math.min(meta.last_page, p + 1))}
-                    disabled={meta.current_page >= meta.last_page}
-                    className="rounded px-2.5 py-1.5 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    Sau »
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Block 7: Standard Pagination */}
+            <Pagination
+              currentPage={meta.current_page}
+              totalPages={meta.last_page}
+              totalItems={meta.total}
+              from={meta.from}
+              to={meta.to}
+              perPage={meta.per_page}
+              onPageChange={(p) => {
+                setPage(p);
+                fetchPatients(p);
+              }}
+              itemLabel="bệnh nhân"
+            />
           </>
         )}
       </div>

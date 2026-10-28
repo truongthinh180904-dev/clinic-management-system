@@ -117,7 +117,7 @@
 
 #### TASK `P3-006` (`F3-02-03`): Chuẩn hóa Cấu trúc Trang Danh sách Thống nhất (List Page Pattern)
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-005`
 - **goal:** Áp dụng mô hình chuẩn 8 thành phần cho mọi trang danh sách quản trị: (1) Header tiêu đề & mô tả, (2) Nút hành động chính, (3) Khối tóm tắt thống kê quan trọng, (4) Thanh tìm kiếm tức thời, (5) Bộ lọc nghiệp vụ phân cấp, (6) Bảng dữ liệu chuẩn hóa, (7) Thanh phân trang, (8) Trạng thái Loading / Empty / Error rõ ràng.
 - **scope:** `fe/app/(admin)/*` các trang danh sách.
