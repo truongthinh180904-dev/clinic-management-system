@@ -33,8 +33,8 @@
 - **Kế hoạch triển khai (Plan):** [`docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md)
 - **Quản trị rủi ro (Risk Register):** [`docs/phase-3/PHASE_3_RISK_REGISTER.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_RISK_REGISTER.md)
 - **Total tasks in Phase 3:** `30 Tasks` (`P3-001` → `P3-030` thuộc 10 Features `F3-01` → `F3-10`)
-- **Completed (`DONE`):** `21 / 30` Tasks (`70.0%`)
-- **Remaining (`PENDING`):** `9 / 30` Tasks (`30.0%`)
+- **Completed (`DONE`):** `23 / 30` Tasks (`76.7%`)
+- **Remaining (`PENDING`):** `7 / 30` Tasks (`23.3%`)
 - **Cấu hình Model Phân công (`agy v1.4.7`):**
   - **Planner:** `gemini-3.8-flash-high`
   - **Coder:** `gemini-3.8-flash-high`
@@ -70,8 +70,8 @@
 | `P3-020` | `F3-06` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-020.md` | Chuẩn hóa Bar Chart so sánh hiệu suất Bác sĩ và chỉ tiêu KPI |
 | `P3-021` | `F3-06` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-021.md` | Chuẩn hóa Area Chart xu hướng Doanh thu & Lượt khám 12 tháng |
 | `P3-022` | `F3-07` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-022.md` | Phân quyền RBAC chuyên sâu cho Hồ sơ y tế và Tệp đính kèm |
-| `P3-023` | `F3-07` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-023.md` | Nâng cấp Audit Log truy vết xem và thao tác dữ liệu nhạy cảm |
-| `P3-024` | `F3-07` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-024.md` | Che dấu dữ liệu cá nhân (Data Masking) & Rate Limiting |
+| `P3-023` | `F3-07` | P0 | `BLOCKED` | `FAIL` | `FAIL` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-023.md` | Nâng cấp Audit Log truy vết xem và thao tác dữ liệu nhạy cảm |
+| `P3-024` | `F3-07` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-024.md` | Che dấu dữ liệu cá nhân (Data Masking) & Rate Limiting |
 | `P3-025` | `F3-08` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `scripts/backup-db.sh` | Kịch bản sao lưu CSDL tự động nén gzip (`scripts/backup-db.sh`) |
 | `P3-026` | `F3-08` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `scripts/restore-db.sh` | Kịch bản khôi phục CSDL an toàn kèm dry-run & Sổ tay vận hành |
 | `P3-027` | `F3-09` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-027.md` | Bổ sung Composite Indexes MySQL cho các bảng giao dịch lớn |

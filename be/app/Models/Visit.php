@@ -53,6 +53,10 @@ class Visit extends Model
     protected $attributes = [
         'payment_status' => self::PAYMENT_STATUS_UNPAID,
         'status' => self::STATUS_SCHEDULED,
+        'quantity' => 1,
+        'unit_price' => 0,
+        'discount_amount' => 0,
+        'total_amount' => 0,
     ];
 
     protected function casts(): array

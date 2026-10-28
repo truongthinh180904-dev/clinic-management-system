@@ -337,7 +337,7 @@
 
 ### TASK `P3-023` (`F3-07-03` / `F3-07-04`): Nâng cấp Nhật ký Kiểm toán (Audit Log) Truy vết Truy cập và Thao tác Nhạy cảm
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-022`
 - **goal:** Tự động ghi nhật ký kiểm toán vào bảng `audit_logs` khi có người dùng: (1) Xem hoặc tải tệp hồ sơ y tế bệnh nhân, (2) Xuất file CSV báo cáo tài chính/kho, (3) Thay đổi thông tin bệnh án, (4) Thay đổi trạng thái tài khoản người dùng hoặc vai trò.
 - **scope:** `be/app/Models/AuditLog.php`, `be/app/Http/Controllers/Api/V1/AuditLogController.php`.
@@ -348,7 +348,7 @@
 
 ### TASK `P3-024` (`F3-07-05` / `F3-07-06`): Che dấu Dữ liệu Nhạy cảm (Data Masking) và Giới hạn Tần suất Truy cập (Rate Limiting)
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-023`
 - **goal:** Triển khai cơ chế che giấu thông tin cá nhân (Data Masking): che bớt số điện thoại (`0912***456`) và CCCD với vai trò không có quyền quản trị trực tiếp; thiết lập Middleware Rate Limiting trên các API nhạy cảm (Login, Export, Upload) để chống brute-force và DDoS.
 - **scope:** `be/routes/api.php`, `be/app/Http/Resources/*`.

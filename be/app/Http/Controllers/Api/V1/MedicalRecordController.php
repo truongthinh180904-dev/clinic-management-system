@@ -40,6 +40,23 @@ class MedicalRecordController extends Controller
             ], 404);
         }
 
+        AuditLog::create([
+            'user_id' => $request->user()?->id,
+            'module' => 'medical_records',
+            'action' => 'view',
+            'table_name' => 'medical_records',
+            'record_id' => (string) $medicalRecord->id,
+            'old_values' => null,
+            'new_values' => [
+                'visit_id' => $visit->id,
+                'patient_id' => $visit->patient_id,
+                'doctor_id' => $medicalRecord->doctor_id,
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'Lấy thông tin hồ sơ bệnh án thành công.',

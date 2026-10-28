@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\CashTransaction;
 use App\Models\InventoryTransaction;
 use App\Models\Invoice;
@@ -180,6 +181,24 @@ class ExportController extends Controller
 
         $filename = 'danh_sach_benh_nhan_'.now()->format('Ymd_His').'.csv';
 
+        AuditLog::create([
+            'user_id' => $request->user()?->id,
+            'module' => 'patients',
+            'action' => 'export_csv',
+            'table_name' => 'patients',
+            'record_id' => null,
+            'old_values' => null,
+            'new_values' => [
+                'type' => 'patients',
+                'filename' => $filename,
+                'row_count' => count($rows),
+                'filters' => $request->all(),
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
+        ]);
+
         return $this->toCsvResponse($filename, $headers, $rows);
     }
 
@@ -284,6 +303,24 @@ class ExportController extends Controller
 
         $filename = 'hoa_don_cong_no_'.now()->format('Ymd_His').'.csv';
 
+        AuditLog::create([
+            'user_id' => $request->user()?->id,
+            'module' => 'invoices',
+            'action' => 'export_csv',
+            'table_name' => 'invoices',
+            'record_id' => null,
+            'old_values' => null,
+            'new_values' => [
+                'type' => 'invoices',
+                'filename' => $filename,
+                'row_count' => count($rows),
+                'filters' => $request->all(),
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
+        ]);
+
         return $this->toCsvResponse($filename, $headers, $rows);
     }
 
@@ -377,6 +414,24 @@ class ExportController extends Controller
         }
 
         $filename = 'so_quy_thu_chi_'.now()->format('Ymd_His').'.csv';
+
+        AuditLog::create([
+            'user_id' => $request->user()?->id,
+            'module' => 'cash_transactions',
+            'action' => 'export_csv',
+            'table_name' => 'cash_transactions',
+            'record_id' => null,
+            'old_values' => null,
+            'new_values' => [
+                'type' => 'cashbook',
+                'filename' => $filename,
+                'row_count' => count($rows),
+                'filters' => $request->all(),
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
+        ]);
 
         return $this->toCsvResponse($filename, $headers, $rows);
     }
@@ -476,6 +531,24 @@ class ExportController extends Controller
         }
 
         $filename = 'bao_cao_ton_kho_'.now()->format('Ymd_His').'.csv';
+
+        AuditLog::create([
+            'user_id' => $request->user()?->id,
+            'module' => 'inventory',
+            'action' => 'export_csv',
+            'table_name' => 'inventory_transactions',
+            'record_id' => null,
+            'old_values' => null,
+            'new_values' => [
+                'type' => 'inventory',
+                'filename' => $filename,
+                'row_count' => count($rows),
+                'filters' => $request->all(),
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
+        ]);
 
         return $this->toCsvResponse($filename, $headers, $rows);
     }

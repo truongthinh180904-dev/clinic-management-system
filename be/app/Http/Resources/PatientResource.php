@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Patient;
+use App\Services\DataMaskingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,17 +19,25 @@ class PatientResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $canBypass = DataMaskingService::canBypassMasking($request->user());
+
         return [
             'id' => $this->id,
             'patient_code' => $this->patient_code,
             'full_name' => $this->full_name,
             'date_of_birth' => $this->date_of_birth?->format('Y-m-d'),
             'gender' => $this->gender,
-            'phone' => $this->phone,
+            'phone' => $canBypass ? $this->phone : DataMaskingService::maskPhone($this->phone),
             'email' => $this->email,
             'address' => $this->address,
             'emergency_contact_name' => $this->emergency_contact_name,
-            'emergency_contact_phone' => $this->emergency_contact_phone,
+            'emergency_contact_phone' => $canBypass ? $this->emergency_contact_phone : DataMaskingService::maskPhone($this->emergency_contact_phone),
+            'identity_number' => $this->when(
+                isset($this->identity_number) || isset($this->cccd),
+                fn () => $canBypass
+                    ? ($this->identity_number ?? $this->cccd)
+                    : DataMaskingService::maskIdentity($this->identity_number ?? $this->cccd)
+            ),
             'first_visit_date' => $this->first_visit_date?->format('Y-m-d'),
             'last_visit_date' => $this->last_visit_date?->format('Y-m-d'),
             'status' => $this->status,

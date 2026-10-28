@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AlertRuleController;
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\ApprovalRequestController;
+use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CashTransactionController;
 use App\Http\Controllers\Api\V1\DashboardController;
@@ -46,7 +47,9 @@ Route::prefix('v1')->group(function (): void {
     })->name('api.v1.health');
 
     Route::prefix('auth')->group(function (): void {
-        Route::post('/login', [AuthController::class, 'login'])->name('api.v1.auth.login');
+        Route::post('/login', [AuthController::class, 'login'])
+            ->middleware('throttle:login')
+            ->name('api.v1.auth.login');
 
         Route::middleware(['auth:sanctum', 'active_user'])->group(function (): void {
             Route::get('/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
@@ -203,7 +206,7 @@ Route::prefix('v1')->group(function (): void {
                 ->name('api.v1.patients.files.index');
 
             Route::post('/{patient}/files', [PatientFileController::class, 'uploadForPatient'])
-                ->middleware('permission:patient_files.upload')
+                ->middleware(['permission:patient_files.upload', 'throttle:upload'])
                 ->name('api.v1.patients.files.upload');
         });
 
@@ -374,7 +377,7 @@ Route::prefix('v1')->group(function (): void {
                 ->name('api.v1.visits.files.index');
 
             Route::post('/{visit}/files', [PatientFileController::class, 'uploadForVisit'])
-                ->middleware('permission:patient_files.upload')
+                ->middleware(['permission:patient_files.upload', 'throttle:upload'])
                 ->name('api.v1.visits.files.upload');
         });
 
@@ -699,21 +702,17 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // Data Export (CSV UTF-8 BOM)
-        Route::prefix('exports')->group(function (): void {
+        Route::prefix('exports')->middleware(['permission:exports.view', 'throttle:export'])->group(function (): void {
             Route::get('/patients', [ExportController::class, 'patients'])
-                ->middleware('permission:exports.view')
                 ->name('api.v1.exports.patients');
 
             Route::get('/invoices', [ExportController::class, 'invoices'])
-                ->middleware('permission:exports.view')
                 ->name('api.v1.exports.invoices');
 
             Route::get('/cashbook', [ExportController::class, 'cashbook'])
-                ->middleware('permission:exports.view')
                 ->name('api.v1.exports.cashbook');
 
             Route::get('/inventory', [ExportController::class, 'inventory'])
-                ->middleware('permission:exports.view')
                 ->name('api.v1.exports.inventory');
         });
 
@@ -791,6 +790,21 @@ Route::prefix('v1')->group(function (): void {
             Route::match(['post', 'patch'], '/{approvalRequest}/reject', [ApprovalRequestController::class, 'reject'])
                 ->middleware('permission:approvals.manage')
                 ->name('api.v1.approval-requests.reject');
+        });
+
+        // Audit Logs (Kiểm toán hệ thống)
+        Route::prefix('audit-logs')->group(function (): void {
+            Route::get('/metadata', [AuditLogController::class, 'metadata'])
+                ->middleware('permission:audit_logs.view|roles.view|users.view')
+                ->name('api.v1.audit-logs.metadata');
+
+            Route::get('/', [AuditLogController::class, 'index'])
+                ->middleware('permission:audit_logs.view|roles.view|users.view')
+                ->name('api.v1.audit-logs.index');
+
+            Route::get('/{id}', [AuditLogController::class, 'show'])
+                ->middleware('permission:audit_logs.view|roles.view|users.view')
+                ->name('api.v1.audit-logs.show');
         });
     });
 });

@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   UserCog,
   ShieldCheck,
+  ShieldAlert,
   LogOut,
   Menu,
   Search,
@@ -95,6 +96,7 @@ export const navGroups: NavGroup[] = [
       { name: 'Import / Export', href: '/data-transfer', icon: ArrowLeftRight, permission: 'exports.view' },
       { name: 'Nhân sự', href: '/employees', icon: UserCog, permission: 'employees.view' },
       { name: 'Tài khoản & Quyền', href: '/users', icon: ShieldCheck, permission: 'users.view', role: 'ADMIN' },
+      { name: 'Nhật ký kiểm toán', href: '/audit-logs', icon: ShieldAlert, permission: 'audit_logs.view', role: 'ADMIN' },
     ],
   },
 ];

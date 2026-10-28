@@ -34,6 +34,7 @@ class RolePermissionSeeder extends Seeder
             ['module' => 'patients', 'action' => 'create', 'permission_key' => 'patients.create', 'description' => 'Tạo mới hồ sơ bệnh nhân'],
             ['module' => 'patients', 'action' => 'update', 'permission_key' => 'patients.update', 'description' => 'Cập nhật thông tin bệnh nhân'],
             ['module' => 'patients', 'action' => 'delete', 'permission_key' => 'patients.delete', 'description' => 'Đổi trạng thái hoặc vô hiệu hóa hồ sơ bệnh nhân'],
+            ['module' => 'patients', 'action' => 'mask_bypass', 'permission_key' => 'patients.mask_bypass', 'description' => 'Xem thông tin cá nhân và số điện thoại đầy đủ không bị che dấu'],
 
             // Module Patient Files (Tệp đính kèm y tế)
             ['module' => 'patient_files', 'action' => 'view', 'permission_key' => 'patient_files.view', 'description' => 'Xem và tải tài liệu y tế bệnh nhân'],
@@ -127,6 +128,9 @@ class RolePermissionSeeder extends Seeder
             // Module Approvals (Luồng phê duyệt)
             ['module' => 'approvals', 'action' => 'view', 'permission_key' => 'approvals.view', 'description' => 'Xem danh sách yêu cầu phê duyệt'],
             ['module' => 'approvals', 'action' => 'manage', 'permission_key' => 'approvals.manage', 'description' => 'Phê duyệt hoặc từ chối các yêu cầu'],
+
+            // Module Audit Logs (Kiểm toán hệ thống)
+            ['module' => 'audit_logs', 'action' => 'view', 'permission_key' => 'audit_logs.view', 'description' => 'Xem nhật ký kiểm toán hệ thống'],
         ];
 
         $permissionIds = [];
@@ -159,6 +163,7 @@ class RolePermissionSeeder extends Seeder
                     'patients.view',
                     'patients.create',
                     'patients.update',
+                    'patients.mask_bypass',
                     'patient_files.view',
                     'patient_files.upload',
                     'patient_files.delete',
@@ -248,6 +253,7 @@ class RolePermissionSeeder extends Seeder
                     'patients.view',
                     'patients.create',
                     'patients.update',
+                    'patients.mask_bypass',
                     'patient_files.view',
                     'patient_files.upload',
                     'services.view',

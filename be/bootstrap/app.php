@@ -9,6 +9,7 @@ use Illuminate\Auth\RequestGuard;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
@@ -41,6 +42,20 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => 'Phiên làm việc đã hết hạn hoặc token không hợp lệ. Vui lòng đăng nhập lại.',
                     'errors' => null,
                 ], 401);
+            }
+        });
+
+        $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                $headers = $e->getHeaders();
+                $retryAfter = $headers['Retry-After'] ?? 60;
+
+                return response()->json([
+                    'success' => false,
+                    'message' => "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau {$retryAfter} giây.",
+                    'errors' => null,
+                    'retry_after' => (int) $retryAfter,
+                ], 429, $headers);
             }
         });
     })

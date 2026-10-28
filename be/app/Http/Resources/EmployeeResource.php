@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Employee;
+use App\Services\DataMaskingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,11 +19,17 @@ class EmployeeResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $user = $request->user();
+        $canBypass = DataMaskingService::canBypassMasking($user)
+            || ($user && $user->employee_id === $this->id)
+            || ($user && $user->hasPermission('employees.manage'))
+            || ($user && $user->hasPermission('employees.update'));
+
         return [
             'id' => $this->id,
             'employee_code' => $this->employee_code,
             'full_name' => $this->full_name,
-            'phone' => $this->phone,
+            'phone' => $canBypass ? $this->phone : DataMaskingService::maskPhone($this->phone),
             'email' => $this->email,
             'date_of_birth' => $this->date_of_birth?->format('Y-m-d'),
             'gender' => $this->gender,

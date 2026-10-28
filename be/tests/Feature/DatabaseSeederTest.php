@@ -50,6 +50,7 @@ class DatabaseSeederTest extends TestCase
             'ADMIN',
             'MANAGER',
             'DOCTOR',
+            'NURSE',
             'RECEPTIONIST',
             'CASHIER',
             'ACCOUNTANT',
@@ -57,7 +58,7 @@ class DatabaseSeederTest extends TestCase
             'VIEWER',
         ];
 
-        $this->assertSame(8, Role::count());
+        $this->assertSame(9, Role::count());
 
         foreach ($expectedRoles as $roleName) {
             $this->assertDatabaseHas('roles', ['name' => $roleName]);
@@ -115,6 +116,16 @@ class DatabaseSeederTest extends TestCase
             $this->assertStringNotContainsString('update', $key);
             $this->assertStringNotContainsString('delete', $key);
         }
+
+        // 6. NURSE has patient_files upload/view, but strictly NO medical records permissions
+        $nurseRole = Role::where('name', 'NURSE')->firstOrFail();
+        $nursePermissions = $nurseRole->permissions->pluck('permission_key')->all();
+
+        $this->assertContains('patient_files.view', $nursePermissions);
+        $this->assertContains('patient_files.upload', $nursePermissions);
+        $this->assertNotContains('medical_records.view', $nursePermissions);
+        $this->assertNotContains('medical_records.create', $nursePermissions);
+        $this->assertNotContains('medical_records.update', $nursePermissions);
     }
 
     public function test_demo_catalog_seeder_populates_services_and_packages_safely(): void
@@ -148,7 +159,7 @@ class DatabaseSeederTest extends TestCase
         $initialPackagesCount = ServicePackage::count();
         $initialUsersCount = User::count();
 
-        $this->assertSame(8, $initialRolesCount);
+        $this->assertSame(9, $initialRolesCount);
         $this->assertSame(1, $initialUsersCount);
 
         $adminUser = User::where('username', 'admin')->firstOrFail();
@@ -182,7 +193,7 @@ class DatabaseSeederTest extends TestCase
             // 2. DatabaseSeeder in production without ADMIN_INITIAL_PASSWORD must not seed weak default admin
             $this->seed(DatabaseSeeder::class);
             $this->assertSame(0, User::count());
-            $this->assertSame(8, Role::count());
+            $this->assertSame(9, Role::count());
 
             // 3. DatabaseSeeder in production with ADMIN_INITIAL_PASSWORD seeds the configured admin safely
             putenv('ADMIN_INITIAL_PASSWORD=Secr3t!P@ssword');

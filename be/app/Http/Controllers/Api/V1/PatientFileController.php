@@ -218,6 +218,23 @@ class PatientFileController extends Controller
             ], 404);
         }
 
+        AuditLog::create([
+            'user_id' => $request->user()?->id,
+            'module' => 'patient_files',
+            'action' => 'view',
+            'table_name' => 'patient_files',
+            'record_id' => (string) $file->id,
+            'old_values' => null,
+            'new_values' => [
+                'file_name' => $file->file_name,
+                'patient_id' => $file->patient_id,
+                'mime_type' => $file->mime_type,
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'Lấy thông tin tệp đính kèm thành công.',
@@ -255,6 +272,23 @@ class PatientFileController extends Controller
             ], 500);
         }
 
+        AuditLog::create([
+            'user_id' => $request->user()?->id,
+            'module' => 'patient_files',
+            'action' => 'preview',
+            'table_name' => 'patient_files',
+            'record_id' => (string) $file->id,
+            'old_values' => null,
+            'new_values' => [
+                'file_name' => $file->file_name,
+                'patient_id' => $file->patient_id,
+                'mime_type' => $file->mime_type,
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
+        ]);
+
         return response()->stream(function () use ($stream) {
             if (is_resource($stream)) {
                 fpassthru($stream);
@@ -288,6 +322,23 @@ class PatientFileController extends Controller
                 'message' => 'Tệp tin không tồn tại trên hệ thống lưu trữ.',
             ], 404);
         }
+
+        AuditLog::create([
+            'user_id' => $request->user()?->id,
+            'module' => 'patient_files',
+            'action' => 'download',
+            'table_name' => 'patient_files',
+            'record_id' => (string) $file->id,
+            'old_values' => null,
+            'new_values' => [
+                'file_name' => $file->file_name,
+                'patient_id' => $file->patient_id,
+                'mime_type' => $file->mime_type,
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
+        ]);
 
         return $disk->download($file->storage_path, $file->file_name, [
             'Content-Type' => $file->mime_type,

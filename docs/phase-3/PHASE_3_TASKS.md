@@ -364,7 +364,7 @@
 
 #### TASK `P3-024` (`F3-07-05` / `F3-07-06`): Che dấu Dữ liệu Nhạy cảm (Data Masking) và Giới hạn Tần suất Truy cập (Rate Limiting)
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-023`
 - **goal:** Triển khai cơ chế che giấu thông tin cá nhân (Data Masking): che bớt số điện thoại (`0912***456`) và số CCCD đối với các vai trò không có thẩm quyền quản trị trực tiếp; thiết lập Middleware Rate Limiting trên các API nhạy cảm (Đăng nhập tối đa 5 lần/phút, Export dữ liệu tối đa 10 lần/phút, Upload file tối đa 20 lần/phút) để chống tấn công brute-force và làm cạn kiệt tài nguyên máy chủ.
 - **scope:** `be/routes/api.php`, `be/app/Http/Resources/*`.
