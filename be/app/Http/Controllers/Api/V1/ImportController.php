@@ -70,16 +70,20 @@ class ImportController extends Controller
     /**
      * Display detailed information of an import batch with its errors.
      */
-    public function show(int|string $id): JsonResponse
+    public function show(ImportBatch|int|string $batch): JsonResponse
     {
-        $batch = ImportBatch::with([
+        $batchModel = $batch instanceof ImportBatch
+            ? $batch
+            : ImportBatch::query()->findOrFail($batch);
+
+        $batchModel->loadMissing([
             'errors' => fn ($q) => $q->orderBy('row_number')->orderBy('id'),
             'importer',
-        ])->findOrFail($id);
+        ]);
 
         return response()->json([
             'success' => true,
-            'data' => new ImportBatchResource($batch),
+            'data' => new ImportBatchResource($batchModel),
         ], 200);
     }
 

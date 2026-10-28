@@ -52,7 +52,7 @@ class ImportBatchResource extends JsonResource
                         ? $error->created_at->toIso8601String()
                         : ($error->created_at ? (string) $error->created_at : null),
                 ];
-            }) : null,
+            })->values()->all() : null,
             'created_at' => $createdAt,
             'completed_at' => $completedAt,
         ];
