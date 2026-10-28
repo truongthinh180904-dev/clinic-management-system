@@ -720,4 +720,84 @@ class ManagementReportApiTest extends TestCase
         $this->assertCount(1, $responseSearch->json('data.items'));
         $this->assertEquals('PRD-A', $responseSearch->json('data.items.0.product_code'));
     }
+
+    public function test_accountant_and_manager_roles_can_access_reports(): void
+    {
+        $accountant = $this->createUserWithRole('ACCOUNTANT');
+        $manager = $this->createUserWithRole('MANAGER');
+
+        foreach ([$accountant, $manager] as $authorizedUser) {
+            $this->authenticate($authorizedUser)->getJson('/api/v1/reports/financial')->assertStatus(200);
+            $this->authenticate($authorizedUser)->getJson('/api/v1/reports/clinical')->assertStatus(200);
+            $this->authenticate($authorizedUser)->getJson('/api/v1/reports/inventory')->assertStatus(200);
+        }
+    }
+
+    public function test_financial_report_handles_zero_records_gracefully(): void
+    {
+        $admin = $this->createUserWithRole('ADMIN');
+
+        $response = $this->authenticate($admin)->getJson('/api/v1/reports/financial?start_date=2026-01-01&end_date=2026-01-31');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'invoiced_amount' => 0,
+                    'collected_amount' => 0,
+                    'debt_amount' => 0,
+                    'expense_amount' => 0,
+                    'net_profit' => 0,
+                    'net_cashflow' => 0,
+                    'expenses_by_category' => [],
+                    'daily_series' => [],
+                ],
+            ]);
+    }
+
+    public function test_clinical_report_handles_zero_records_gracefully(): void
+    {
+        $admin = $this->createUserWithRole('ADMIN');
+
+        $response = $this->authenticate($admin)->getJson('/api/v1/reports/clinical?start_date=2026-01-01&end_date=2026-01-31');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'appointments' => [
+                        'total' => 0,
+                        'completed' => 0,
+                        'attendance_rate' => 0,
+                    ],
+                    'attendance_rate' => 0,
+                    'visits' => [
+                        'total' => 0,
+                        'completed' => 0,
+                    ],
+                    'used_package_sessions' => 0,
+                    'visits_by_doctor' => [],
+                    'visits_by_service' => [],
+                ],
+            ]);
+    }
+
+    public function test_reports_handle_swapped_date_range_gracefully(): void
+    {
+        $admin = $this->createUserWithRole('ADMIN');
+
+        // Pass start_date greater than end_date
+        $response = $this->authenticate($admin)->getJson('/api/v1/reports/financial?start_date=2026-10-31&end_date=2026-10-01');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'period' => [
+                        'start_date' => '2026-10-01',
+                        'end_date' => '2026-10-31',
+                    ],
+                ],
+            ]);
+    }
 }

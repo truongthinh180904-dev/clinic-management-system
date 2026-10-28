@@ -446,6 +446,7 @@ class ReportController extends Controller
                     'completed' => $statusCounts['COMPLETED'],
                     'in_progress' => $statusCounts['IN_PROGRESS'],
                     'scheduled' => $statusCounts['SCHEDULED'],
+                    'waiting' => $statusCounts['WAITING'],
                     'cancelled' => $statusCounts['CANCELLED'],
                     'by_status' => $statusCounts,
                 ],
