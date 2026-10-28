@@ -172,6 +172,102 @@ class PatientController extends Controller
     }
 
     /**
+     * Display patient clinical chronological timeline.
+     */
+    public function timeline(Request $request, string $id): JsonResponse
+    {
+        $patient = Patient::find($id);
+
+        if (! $patient) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy hồ sơ bệnh nhân yêu cầu.',
+                'errors' => null,
+            ], 404);
+        }
+
+        $canViewMedical = $request->user()?->hasPermission('medical_records.view') ?? false;
+
+        $visits = $patient->visits()
+            ->with([
+                'employee',
+                'service',
+                'appointment',
+                'medicalRecord' => function ($q) {
+                    $q->with('doctor');
+                },
+            ])
+            ->orderBy('visit_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $timeline = $visits->map(function ($visit) use ($canViewMedical) {
+            $doctorInfo = $visit->employee ? [
+                'id' => $visit->employee->id,
+                'employee_code' => $visit->employee->employee_code,
+                'full_name' => $visit->employee->full_name,
+                'phone' => $visit->employee->phone,
+            ] : null;
+
+            $serviceInfo = $visit->service ? [
+                'id' => $visit->service->id,
+                'service_code' => $visit->service->service_code,
+                'name' => $visit->service->name,
+                'price' => (float) $visit->service->price,
+            ] : null;
+
+            $appointmentInfo = $visit->appointment ? [
+                'id' => $visit->appointment->id,
+                'appointment_code' => $visit->appointment->appointment_code,
+                'appointment_date' => $visit->appointment->appointment_date?->format('Y-m-d'),
+                'status' => $visit->appointment->status,
+            ] : null;
+
+            $medicalRecordInfo = ($canViewMedical && $visit->medicalRecord) ? [
+                'id' => $visit->medicalRecord->id,
+                'visit_id' => $visit->medicalRecord->visit_id,
+                'doctor_id' => $visit->medicalRecord->doctor_id,
+                'doctor_name' => $visit->medicalRecord->doctor?->full_name,
+                'medical_history' => $visit->medicalRecord->medical_history,
+                'diagnosis' => $visit->medicalRecord->diagnosis,
+                'indication' => $visit->medicalRecord->indication,
+                'result' => $visit->medicalRecord->result,
+                'treatment' => $visit->medicalRecord->treatment,
+                'follow_up_date' => $visit->medicalRecord->follow_up_date?->format('Y-m-d'),
+                'created_at' => $visit->medicalRecord->created_at?->toIso8601String(),
+                'updated_at' => $visit->medicalRecord->updated_at?->toIso8601String(),
+            ] : null;
+
+            return [
+                'id' => $visit->id,
+                'visit_code' => $visit->visit_code,
+                'visit_date' => $visit->visit_date?->toIso8601String(),
+                'status' => $visit->status,
+                'payment_status' => $visit->payment_status,
+                'quantity' => (int) $visit->quantity,
+                'unit_price' => (float) $visit->unit_price,
+                'discount_amount' => (float) $visit->discount_amount,
+                'total_amount' => (float) $visit->total_amount,
+                'notes' => $visit->notes,
+                'doctor' => $doctorInfo,
+                'service' => $serviceInfo,
+                'appointment' => $appointmentInfo,
+                'medical_record' => $medicalRecordInfo,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lấy trục thời gian lịch sử khám bệnh nhân thành công.',
+            'data' => [
+                'patient' => new PatientResource($patient),
+                'timeline' => $timeline,
+                'total_visits' => $timeline->count(),
+            ],
+        ], 200);
+    }
+
+    /**
      * Update the specified patient in storage.
      */
     public function update(UpdatePatientRequest $request, string $id): JsonResponse

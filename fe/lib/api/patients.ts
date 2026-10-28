@@ -8,6 +8,7 @@ import {
   PatientMutationResponse,
   PatientQueryParams,
   PatientStatus,
+  PatientTimelineResponse,
   UpdatePatientInput,
 } from '@/types/patient';
 import { PaginatedResponse } from '@/types/employee';
@@ -95,4 +96,13 @@ export async function checkDuplicatePatients(
   data: CheckDuplicateInput
 ): Promise<ApiResponse<CheckDuplicateResponseData>> {
   return apiClient.post<CheckDuplicateResponseData>('/patients/check-duplicates', data);
+}
+
+/**
+ * Fetch patient chronological clinical history timeline.
+ */
+export async function getPatientTimeline(
+  id: number | string
+): Promise<ApiResponse<PatientTimelineResponse>> {
+  return apiClient.get<PatientTimelineResponse>(`/patients/${id}/timeline`);
 }

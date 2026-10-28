@@ -170,6 +170,10 @@ Route::prefix('v1')->group(function (): void {
                 ->middleware('permission:patients.view')
                 ->name('api.v1.patients.show');
 
+            Route::get('/{patient}/timeline', [PatientController::class, 'timeline'])
+                ->middleware('permission:patients.view')
+                ->name('api.v1.patients.timeline');
+
             Route::match(['put', 'patch'], '/{patient}', [PatientController::class, 'update'])
                 ->middleware('permission:patients.update')
                 ->name('api.v1.patients.update');

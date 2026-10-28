@@ -4,11 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\Appointment;
 use App\Models\Employee;
+use App\Models\MedicalRecord;
 use App\Models\Patient;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Service;
 use App\Models\User;
+use App\Models\Visit;
 use App\Services\PatientCodeGenerator;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -593,5 +595,155 @@ class PatientApiTest extends TestCase
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['full_name', 'email', 'date_of_birth', 'gender']);
+    }
+
+    public function test_doctor_can_get_patient_clinical_timeline_with_medical_records(): void
+    {
+        $doctorUser = $this->createUserWithRole('DOCTOR');
+
+        $patient = Patient::create([
+            'patient_code' => 'BN000088',
+            'full_name' => 'Nguyen Van Timeline',
+            'gender' => 'MALE',
+            'phone' => '0988776655',
+            'status' => 'ACTIVE',
+        ]);
+
+        $doctorEmployee = Employee::create([
+            'employee_code' => 'NV-DOC-01',
+            'full_name' => 'BS Nguyen Van Duc',
+            'phone' => '0911223344',
+            'status' => 'ACTIVE',
+        ]);
+
+        $service = Service::create([
+            'service_code' => 'DV-TIMELINE-01',
+            'name' => 'Kham Tai Mui Hong',
+            'price' => 200000,
+            'duration_minutes' => 30,
+            'status' => 'ACTIVE',
+        ]);
+
+        $visit = Visit::create([
+            'visit_code' => 'KB-20261028-0001',
+            'patient_id' => $patient->id,
+            'employee_id' => $doctorEmployee->id,
+            'service_id' => $service->id,
+            'visit_date' => now()->subDay(),
+            'quantity' => 1,
+            'unit_price' => 200000,
+            'discount_amount' => 0,
+            'total_amount' => 200000,
+            'status' => Visit::STATUS_COMPLETED,
+            'payment_status' => Visit::PAYMENT_STATUS_PAID,
+            'created_by' => $doctorUser->id,
+        ]);
+
+        MedicalRecord::create([
+            'visit_id' => $visit->id,
+            'doctor_id' => $doctorEmployee->id,
+            'medical_history' => 'Tien su viem xoang man tinh, di ung Penicillin',
+            'diagnosis' => 'J01.0 - Viem xoang ham cap',
+            'indication' => 'Noi soi tai mui hong',
+            'result' => 'Niem mac sung huyet',
+            'treatment' => 'Augmentin 1g x 2 lan/ngay',
+            'follow_up_date' => now()->addDays(7)->format('Y-m-d'),
+        ]);
+
+        $response = $this->authenticate($doctorUser)
+            ->getJson("/api/v1/patients/{$patient->id}/timeline")
+            ->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Lấy trục thời gian lịch sử khám bệnh nhân thành công.',
+            ])
+            ->assertJsonStructure([
+                'data' => [
+                    'patient' => ['id', 'patient_code', 'full_name'],
+                    'timeline' => [
+                        '*' => [
+                            'id',
+                            'visit_code',
+                            'visit_date',
+                            'status',
+                            'payment_status',
+                            'total_amount',
+                            'doctor' => ['id', 'employee_code', 'full_name'],
+                            'service' => ['id', 'service_code', 'name'],
+                            'medical_record' => [
+                                'id',
+                                'diagnosis',
+                                'medical_history',
+                                'treatment',
+                                'follow_up_date',
+                            ],
+                        ],
+                    ],
+                    'total_visits',
+                ],
+            ]);
+
+        $this->assertSame(1, $response->json('data.total_visits'));
+        $this->assertSame('KB-20261028-0001', $response->json('data.timeline.0.visit_code'));
+        $this->assertSame('J01.0 - Viem xoang ham cap', $response->json('data.timeline.0.medical_record.diagnosis'));
+    }
+
+    public function test_receptionist_gets_timeline_without_sensitive_medical_records(): void
+    {
+        $receptionist = $this->createUserWithRole('RECEPTIONIST');
+
+        $patient = Patient::create([
+            'patient_code' => 'BN000089',
+            'full_name' => 'Tran Thi Privacy',
+            'gender' => 'FEMALE',
+            'phone' => '0988776699',
+            'status' => 'ACTIVE',
+        ]);
+
+        $doctorEmployee = Employee::create([
+            'employee_code' => 'NV-DOC-02',
+            'full_name' => 'BS Tran Van Tam',
+            'phone' => '0911223388',
+            'status' => 'ACTIVE',
+        ]);
+
+        $service = Service::create([
+            'service_code' => 'DV-TIMELINE-02',
+            'name' => 'Kham Tong Quat',
+            'price' => 300000,
+            'duration_minutes' => 30,
+            'status' => 'ACTIVE',
+        ]);
+
+        $visit = Visit::create([
+            'visit_code' => 'KB-20261028-0002',
+            'patient_id' => $patient->id,
+            'employee_id' => $doctorEmployee->id,
+            'service_id' => $service->id,
+            'visit_date' => now(),
+            'quantity' => 1,
+            'unit_price' => 300000,
+            'discount_amount' => 0,
+            'total_amount' => 300000,
+            'status' => Visit::STATUS_COMPLETED,
+            'payment_status' => Visit::PAYMENT_STATUS_PAID,
+            'created_by' => $receptionist->id,
+        ]);
+
+        MedicalRecord::create([
+            'visit_id' => $visit->id,
+            'doctor_id' => $doctorEmployee->id,
+            'medical_history' => 'Bao mat thong tin y te',
+            'diagnosis' => 'Chan doan bao mat',
+        ]);
+
+        $response = $this->authenticate($receptionist)
+            ->getJson("/api/v1/patients/{$patient->id}/timeline")
+            ->assertStatus(200);
+
+        $this->assertSame(1, $response->json('data.total_visits'));
+        $this->assertSame('KB-20261028-0002', $response->json('data.timeline.0.visit_code'));
+        // Sensitive medical record must be NULL for receptionist (no medical_records.view)
+        $this->assertNull($response->json('data.timeline.0.medical_record'));
     }
 }

@@ -91,3 +91,62 @@ export interface PatientMutationResponse {
   duplicate_warnings?: DuplicateWarning[];
   errors?: Record<string, string[]> | null;
 }
+
+export interface PatientTimelineDoctor {
+  id: number;
+  employee_code: string;
+  full_name: string;
+  phone?: string | null;
+}
+
+export interface PatientTimelineService {
+  id: number;
+  service_code: string;
+  name: string;
+  price?: number;
+}
+
+export interface PatientTimelineAppointment {
+  id: number;
+  appointment_code: string;
+  appointment_date: string;
+  status: string;
+}
+
+export interface PatientTimelineMedicalRecord {
+  id: number;
+  visit_id: number;
+  doctor_id?: number | null;
+  doctor_name?: string | null;
+  medical_history?: string | null;
+  diagnosis: string;
+  indication?: string | null;
+  result?: string | null;
+  treatment?: string | null;
+  follow_up_date?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface PatientTimelineItem {
+  id: number;
+  visit_code: string;
+  visit_date: string;
+  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | string;
+  payment_status: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'REFUNDED' | string;
+  quantity?: number;
+  unit_price?: number;
+  discount_amount?: number;
+  total_amount: number;
+  notes?: string | null;
+  doctor?: PatientTimelineDoctor | null;
+  service?: PatientTimelineService | null;
+  appointment?: PatientTimelineAppointment | null;
+  medical_record?: PatientTimelineMedicalRecord | null;
+}
+
+export interface PatientTimelineResponse {
+  patient: Patient;
+  timeline: PatientTimelineItem[];
+  total_visits: number;
+}

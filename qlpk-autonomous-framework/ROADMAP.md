@@ -168,7 +168,7 @@
 
 ### TASK `P3-010` (`F3-03-01` / `F3-03-02` / `F3-03-03`): Hoàn thiện Hồ sơ Bệnh nhân và Trục Thời gian Lịch sử Khám (Timeline)
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-009`
 - **goal:** Nâng cấp trang chi tiết bệnh nhân `fe/app/(admin)/patients/[id]/page.tsx`: hiển thị thông tin định danh y tế rõ ràng (Mã BN, Họ tên, Giới tính, Nhóm máu, Tiền sử dị ứng), xây dựng khối Trục thời gian lịch sử khám (Clinical Timeline) theo thứ tự ngày giờ giảm dần, hiển thị trạng thái lượt khám, bác sĩ phụ trách và liên kết nhanh đến bệnh án chi tiết.
 - **scope:** `fe/app/(admin)/patients/[id]/page.tsx`, `be/app/Http/Controllers/Api/V1/PatientController.php`.
