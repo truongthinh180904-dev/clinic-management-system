@@ -47,7 +47,7 @@
 
 ### TASK `P3-001` (`F3-01-01` / `F3-01-02` / `F3-01-03`): Khảo sát Git, Schema 30 Bảng MySQL và Danh mục API Backend
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P2-030`
 - **goal:** Khảo sát chi tiết hiện trạng mã nguồn, đối chiếu schema thực tế của 30 bảng MySQL trên `DBQLPK` với Eloquent models và 28 API controller groups; lập báo cáo audit kỹ thuật tại `docs/phase-3/PHASE_3_AUDIT_REPORT.md`.
 - **scope:** `be/app/Models/*`, `be/app/Http/Controllers/Api/V1/*`, `be/routes/api.php`, `docs/phase-3/PHASE_3_AUDIT_REPORT.md`.
