@@ -71,7 +71,7 @@ RETRY_BASE_SECONDS="${RETRY_BASE_SECONDS:-5}"
 # 4. GIT & SECURITY CONFIGURATION (Rule 4.D)
 # ==============================================================================
 ALLOWED_BRANCHES="${ALLOWED_BRANCHES:-main,dev}"
-ALLOW_UNTRACKED_REGEX="${ALLOW_UNTRACKED_REGEX:-^(\.DS_Store|qlpk-autonomous-framework(-v2\.zip|/.*)?|docs/.*|be/.*|fe/.*)$}"
+ALLOW_UNTRACKED_REGEX="${ALLOW_UNTRACKED_REGEX:-^(\.DS_Store|PHASE_2_TASKS\.md|.*\.md|qlpk-autonomous-framework(-v2\.zip|/.*)?|docs/.*|be/.*|fe/.*)$}"
 AUTO_COMMIT_ON_DONE="${AUTO_COMMIT_ON_DONE:-1}"
 TARGET_COMMIT_BRANCH="${TARGET_COMMIT_BRANCH:-dev}"
 
@@ -1093,6 +1093,151 @@ get_demo_task_spec() {
       printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
       printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
       ;;
+    P3-001)
+      printf 'Audit repository state, 30-table MySQL schema, and backend APIs in docs/phase-3/PHASE_3_AUDIT_REPORT.md\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_AUDIT_REPORT.md"\n'
+      printf 'grep -Fq "BÁO CÁO AUDIT TOÀN BỘ HỆ THỐNG GIAI ĐOẠN 3" "$PROJECT_ROOT/docs/phase-3/PHASE_3_AUDIT_REPORT.md"\n'
+      ;;
+    P3-002)
+      printf 'Survey Frontend UI/UX, Data Tables, and verify existing test suites\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_AUDIT_REPORT.md"\n'
+      ;;
+    P3-003)
+      printf 'Verify core cross-module business logic and finalize Phase 3 planning deliverables\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_TASKS.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_RISK_REGISTER.md"\n'
+      ;;
+    P3-004)
+      printf 'Standardize Data Tables with overflow-x-auto, whitespace-nowrap, and no-wrap short columns across admin list views\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-005)
+      printf 'Standardize all Forms with inline validation, required indicators, loading spinners, and double-submit protection\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-006)
+      printf 'Standardize List Page layout pattern across administrative modules\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-007)
+      printf 'Standardize Confirmation Dialogs and action Modals with shadcn/ui AlertDialog\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-008)
+      printf 'Optimize Desktop, Tablet, and Mobile responsiveness and accessibility\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-009)
+      printf 'Review all frontend routes and generate UI standardization report in docs/phase-3/UI_STANDARDIZATION_REPORT.md\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/UI_STANDARDIZATION_REPORT.md"\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-010)
+      printf 'Complete Patient Profile Detail page with Medical Chronological Timeline\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=PatientTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-011)
+      printf 'Build comprehensive Electronic Medical Record consultation interface for doctors\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=MedicalRecordTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-012)
+      printf 'Implement strict RBAC permissions and clinical edit Audit Trail for medical records\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=MedicalRecordTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-013)
+      printf 'Standardize Appointment state machine transitions and multi-criteria appointment filters\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=AppointmentTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-014)
+      printf 'Build fast Reception desk check-in workflow for patients with duplicate warnings\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=VisitTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-015)
+      printf 'Implement atomic Check-in conversion from Appointment to Visit with duplicate protection\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=AppointmentTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-016)
+      printf 'Build PatientFileController and secure upload API for patient clinical files with MIME validation\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P3-017)
+      printf 'Build secure download and inline preview streaming API for patient files with RBAC checks\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P3-018)
+      printf 'Build Medical Files management UI with drag-and-drop, image preview modals, and PDF viewer\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-019)
+      printf 'Standardize Donut and Pie charts for payment methods, expense categories, and appointment distribution\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-020)
+      printf 'Standardize multi-dimensional Bar charts for Doctor KPI performance and department visit volumes\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-021)
+      printf 'Standardize Area and Line time-series trend charts for monthly revenue and visit metrics\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-022)
+      printf 'Extend RolePermissionSeeder for clinical medical files and sensitive health record actions\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=RolePermissionTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P3-023)
+      printf 'Upgrade Audit Log to automatically track sensitive clinical data viewing, exports, and updates\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --filter=AuditLogTest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P3-024)
+      printf 'Implement Data Masking for phone/identity numbers and API Rate Limiting for sensitive endpoints\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P3-025)
+      printf 'Build automated database backup script scripts/backup-db.sh with gzip compression and retention\n'
+      printf 'test -x "$PROJECT_ROOT/scripts/backup-db.sh"\n'
+      printf 'bash "$PROJECT_ROOT/scripts/backup-db.sh" --dry-run\n'
+      ;;
+    P3-026)
+      printf 'Build safe database restore script scripts/restore-db.sh and DISASTER_RECOVERY_RUNBOOK.md\n'
+      printf 'test -x "$PROJECT_ROOT/scripts/restore-db.sh"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/DISASTER_RECOVERY_RUNBOOK.md"\n'
+      printf 'bash "$PROJECT_ROOT/scripts/restore-db.sh" --help\n'
+      ;;
+    P3-027)
+      printf 'Add strategic MySQL Composite Indexes on visits, appointments, invoices, and cash_transactions\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan migrate --pretend\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      ;;
+    P3-028)
+      printf 'Eliminate N+1 queries with eager loading across reporting and clinical APIs and optimize pagination\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P3-029)
+      printf 'Implement End-to-End integration test covering the entire clinic lifecycle from appointment to cashier\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest tests/Feature/EndToEndPhase3WorkflowTest.php --colors=never\n'
+      ;;
+    P3-030)
+      printf 'Complete Phase 3 system verification, OPERATIONAL_GUIDE.md, and PHASE_3_REPORT.md handover\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_REPORT.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/OPERATIONAL_GUIDE.md"\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pest --colors=never\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
     *)
       return 1
       ;;
@@ -1165,6 +1310,8 @@ auto_commit_task_on_dev() {
     local phase_prefix="phase-1"
     if [[ "$task_id" == P2-* ]]; then
       phase_prefix="phase-2"
+    elif [[ "$task_id" == P3-* ]]; then
+      phase_prefix="phase-3"
     fi
     local commit_msg="feat(${phase_prefix}): complete ${task_id} - ${task_goal}"
     if git -C "$PROJECT_ROOT" commit -m "$commit_msg" >/dev/null 2>&1; then
@@ -1186,15 +1333,15 @@ run_session() {
   if [[ -n "$requested_task" ]]; then
     tasks_to_run=("$requested_task")
   else
-    local all_p2_tasks=(
-      "P2-001" "P2-002" "P2-003" "P2-004" "P2-005" "P2-006" "P2-007"
-      "P2-008" "P2-009" "P2-010" "P2-011" "P2-012" "P2-013" "P2-014"
-      "P2-015" "P2-016" "P2-017" "P2-018" "P2-019" "P2-020" "P2-021"
-      "P2-022" "P2-023" "P2-024" "P2-025" "P2-026" "P2-027" "P2-028"
-      "P2-029" "P2-030"
+    local all_p3_tasks=(
+      "P3-001" "P3-002" "P3-003" "P3-004" "P3-005" "P3-006" "P3-007"
+      "P3-008" "P3-009" "P3-010" "P3-011" "P3-012" "P3-013" "P3-014"
+      "P3-015" "P3-016" "P3-017" "P3-018" "P3-019" "P3-020" "P3-021"
+      "P3-022" "P3-023" "P3-024" "P3-025" "P3-026" "P3-027" "P3-028"
+      "P3-029" "P3-030"
     )
     local t
-    for t in "${all_p2_tasks[@]}"; do
+    for t in "${all_p3_tasks[@]}"; do
       if is_task_done_in_progress "$t"; then
         log "SKIP_DONE_TASK: ${t} is already marked DONE in PROGRESS.md."
         continue
