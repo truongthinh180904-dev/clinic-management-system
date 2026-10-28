@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\V1\CashTransactionController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DebtController;
 use App\Http\Controllers\Api\V1\EmployeeController;
+use App\Http\Controllers\Api\V1\ExpenseCategoryController;
+use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\ExportController;
 use App\Http\Controllers\Api\V1\ImportController;
 use App\Http\Controllers\Api\V1\InventoryTransactionController;
@@ -464,6 +466,60 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/', [CashTransactionController::class, 'index'])
                 ->middleware('permission:cash_transactions.view')
                 ->name('api.v1.cashbook.index');
+        });
+
+        // Expense Categories Management
+        Route::prefix('expense-categories')->group(function (): void {
+            Route::get('/', [ExpenseCategoryController::class, 'index'])
+                ->middleware('permission:expenses.view')
+                ->name('api.v1.expense-categories.index');
+
+            Route::post('/', [ExpenseCategoryController::class, 'store'])
+                ->middleware('permission:expenses.create|expenses.approve')
+                ->name('api.v1.expense-categories.store');
+
+            Route::get('/{expense_category}', [ExpenseCategoryController::class, 'show'])
+                ->middleware('permission:expenses.view')
+                ->name('api.v1.expense-categories.show');
+
+            Route::match(['put', 'patch'], '/{expense_category}', [ExpenseCategoryController::class, 'update'])
+                ->middleware('permission:expenses.create|expenses.approve')
+                ->name('api.v1.expense-categories.update');
+
+            Route::delete('/{expense_category}', [ExpenseCategoryController::class, 'destroy'])
+                ->middleware('permission:expenses.approve')
+                ->name('api.v1.expense-categories.destroy');
+        });
+
+        // Expense Vouchers Management
+        Route::prefix('expenses')->group(function (): void {
+            Route::get('/', [ExpenseController::class, 'index'])
+                ->middleware('permission:expenses.view')
+                ->name('api.v1.expenses.index');
+
+            Route::post('/', [ExpenseController::class, 'store'])
+                ->middleware('permission:expenses.create')
+                ->name('api.v1.expenses.store');
+
+            Route::get('/{expense}', [ExpenseController::class, 'show'])
+                ->middleware('permission:expenses.view')
+                ->name('api.v1.expenses.show');
+
+            Route::match(['put', 'patch'], '/{expense}', [ExpenseController::class, 'update'])
+                ->middleware('permission:expenses.create|expenses.approve')
+                ->name('api.v1.expenses.update');
+
+            Route::match(['patch', 'post'], '/{expense}/approve', [ExpenseController::class, 'approve'])
+                ->middleware('permission:expenses.approve|approvals.manage')
+                ->name('api.v1.expenses.approve');
+
+            Route::match(['patch', 'post'], '/{expense}/reject', [ExpenseController::class, 'reject'])
+                ->middleware('permission:expenses.approve|approvals.manage')
+                ->name('api.v1.expenses.reject');
+
+            Route::delete('/{expense}', [ExpenseController::class, 'destroy'])
+                ->middleware('permission:expenses.create|expenses.approve')
+                ->name('api.v1.expenses.destroy');
         });
 
         // Product & Stock Catalog Management

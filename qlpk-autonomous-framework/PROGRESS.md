@@ -43,7 +43,7 @@
 | `P2-009` | `F2-03` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-009.md` | Giao diện Hóa đơn & Thu ngân nhiều đợt (`/invoices`, `/invoices/[id]`) |
 | `P2-010` | `F2-04` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-010.md` | Xây dựng API Theo dõi & Đối soát Công nợ (`/api/v1/debts`) |
 | `P2-011` | `F2-04` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-011.md` | Giao diện Quản lý Công nợ & Thu nợ nhanh (`/debts`) |
-| `P2-012` | `F2-05` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-012.md` | Xây dựng API Danh mục Chi phí & Phiếu chi (`/api/v1/expenses`) |
+| `P2-012` | `F2-05` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-012.md` | Xây dựng API Danh mục Chi phí & Phiếu chi (`/api/v1/expenses`) |
 | `P2-013` | `F2-05` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-013.md` | Xây dựng API Sổ quỹ & Dòng tiền (`/api/v1/cash-transactions`) |
 | `P2-014` | `F2-05` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-014.md` | Giao diện Thu chi & Sổ quỹ chuyên nghiệp (`/finance/cashbook`) |
 | `P2-015` | `F2-06` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-015.md` | Xây dựng API Danh mục Sản phẩm & Tồn kho (`/api/v1/products`) |
@@ -52,9 +52,9 @@
 | `P2-018` | `F2-07` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-018.md` | Xây dựng API Chỉ tiêu & Thực đạt KPI Nhân viên (`/api/v1/kpi-targets`) |
 | `P2-019` | `F2-07` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P2-019.md` | Giao diện Quản lý KPI Nhân viên & Biểu đồ hiệu suất (`/kpi`) |
 | `P2-020` | `F2-08` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-020.md` | Xây dựng API Báo cáo Quản trị Tài chính, Khám bệnh & Kho (`/api/v1/reports`) |
-| `P2-021` | `F2-08` | P1 | `BLOCKED` | `FAIL` | `FAIL` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-021.md` | Giao diện Trung tâm Báo cáo Quản trị đa chiều (`/reports`) |
-| `P2-022` | `F2-09` | P1 | `BLOCKED` | `FAIL` | `FAIL` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-022.md` | Xây dựng API Import CSV kèm lưu vết lỗi `import_errors` (`/api/v1/imports`) |
-| `P2-023` | `F2-09` | P1 | `BLOCKED` | `FAIL` | `FAIL` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-023.md` | Xây dựng API Export CSV UTF-8 BOM cho Bệnh nhân/Hóa đơn/Quỹ/Kho (`/api/v1/exports`) |
+| `P2-021` | `F2-08` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-021.md` | Giao diện Trung tâm Báo cáo Quản trị đa chiều (`/reports`) |
+| `P2-022` | `F2-09` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-022.md` | Xây dựng API Import CSV kèm lưu vết lỗi `import_errors` (`/api/v1/imports`) |
+| `P2-023` | `F2-09` | P1 | `READY` | `NOT_RUN` | `NOT_RUN` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-023.md` | Xây dựng API Export CSV UTF-8 BOM cho Bệnh nhân/Hóa đơn/Quỹ/Kho (`/api/v1/exports`) |
 | `P2-024` | `F2-09` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-024.md` | Giao diện Trung tâm Import / Export Dữ liệu (`/data-transfer`) |
 | `P2-025` | `F2-10` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-025.md` | Xây dựng API Quy tắc Cảnh báo & Thông báo (`/api/v1/notifications`, `/api/v1/alert-rules`) |
 | `P2-026` | `F2-10` | P1 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-high` | `reports/tasks/P2-026.md` | Xây dựng API Phê duyệt Tập trung (`/api/v1/approval-requests`) |

@@ -328,7 +328,7 @@
 
 ### TASK `P2-012` (`F2-05-01`): Xây dựng API Danh mục Chi phí & Phiếu chi (`/api/v1/expense-categories`, `/api/v1/expenses`) và `ExpenseApiTest`
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-008`
 - **goal:** Xây dựng API quản lý Danh mục chi phí (`expense_categories`) và Phiếu chi (`expenses`), hỗ trợ quy trình lập phiếu chi (`PENDING`), tự động tạo yêu cầu phê duyệt (`approval_requests`) và phê duyệt/từ chối phiếu chi (`APPROVED` / `REJECTED`).
 - **scope:**
