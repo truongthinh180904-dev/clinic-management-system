@@ -33,8 +33,8 @@
 - **Kế hoạch triển khai (Plan):** [`docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md)
 - **Quản trị rủi ro (Risk Register):** [`docs/phase-3/PHASE_3_RISK_REGISTER.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_RISK_REGISTER.md)
 - **Total tasks in Phase 3:** `30 Tasks` (`P3-001` → `P3-030` thuộc 10 Features `F3-01` → `F3-10`)
-- **Completed (`DONE`):** `19 / 30` Tasks (`63.3%`)
-- **Remaining (`PENDING`):** `11 / 30` Tasks (`36.7%`)
+- **Completed (`DONE`):** `20 / 30` Tasks (`66.7%`)
+- **Remaining (`PENDING`):** `10 / 30` Tasks (`33.3%`)
 - **Cấu hình Model Phân công (`agy v1.4.7`):**
   - **Planner:** `gemini-3.8-flash-high`
   - **Coder:** `gemini-3.8-flash-high`
@@ -67,7 +67,7 @@
 | `P3-017` | `F3-05` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-017.md` | Backend API Tải xuống & Xem tệp có xác thực và phân quyền |
 | `P3-018` | `F3-05` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-018.md` | Frontend UI Quản lý & Xem trước Tệp Y tế (X-quang, Xét nghiệm) |
 | `P3-019` | `F3-06` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-019.md` | Chuẩn hóa Donut Chart cơ cấu Doanh thu, Thanh toán, Chi phí |
-| `P3-020` | `F3-06` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-020.md` | Chuẩn hóa Bar Chart so sánh hiệu suất Bác sĩ và chỉ tiêu KPI |
+| `P3-020` | `F3-06` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-020.md` | Chuẩn hóa Bar Chart so sánh hiệu suất Bác sĩ và chỉ tiêu KPI |
 | `P3-021` | `F3-06` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-021.md` | Chuẩn hóa Area Chart xu hướng Doanh thu & Lượt khám 12 tháng |
 | `P3-022` | `F3-07` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-022.md` | Phân quyền RBAC chuyên sâu cho Hồ sơ y tế và Tệp đính kèm |
 | `P3-023` | `F3-07` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-023.md` | Nâng cấp Audit Log truy vết xem và thao tác dữ liệu nhạy cảm |

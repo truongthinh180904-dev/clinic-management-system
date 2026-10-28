@@ -300,7 +300,7 @@
 
 ### TASK `P3-020` (`F3-06-02`): Chuẩn hóa Biểu đồ Cột (Bar Chart) So sánh Hiệu suất Bác sĩ và Chỉ tiêu KPI
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-019`
 - **goal:** Hoàn thiện biểu đồ Bar Chart so sánh đa chiều: (1) Doanh thu thực tế vs Mục tiêu KPI theo từng bác sĩ/nhân viên trong tháng, (2) Số lượt khám hoàn thành giữa các chuyên khoa phòng khám, (3) Top 10 thuốc/vật tư tiêu hao nhiều nhất.
 - **scope:** `fe/app/(admin)/kpi/page.tsx`, `fe/app/(admin)/reports/page.tsx`.

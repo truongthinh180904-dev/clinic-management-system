@@ -26,19 +26,9 @@ import {
   PieChart as PieIcon,
   HelpCircle,
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  Cell,
-} from 'recharts';
 
 import { useAuth } from '@/lib/auth/auth-context';
+import { DoctorKpiBarChart, DepartmentVisitsBarChart } from '@/components/charts';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -318,6 +308,26 @@ export default function KpiManagementPage() {
     });
   }, [targets]);
 
+  // Aggregated department visit volumes and revenue
+  const departmentChartData = useMemo(() => {
+    const deptMap: Record<string, { total_visits: number; completed_visits: number; revenue: number }> = {};
+    targets.forEach((t) => {
+      const dept = t.employee?.department || 'Khoa Khám bệnh';
+      if (!deptMap[dept]) {
+        deptMap[dept] = { total_visits: 0, completed_visits: 0, revenue: 0 };
+      }
+      deptMap[dept].total_visits += Number(t.target_visits) || 0;
+      deptMap[dept].completed_visits += Number(t.actual_visits) || 0;
+      deptMap[dept].revenue += Number(t.actual_revenue) || 0;
+    });
+    return Object.entries(deptMap).map(([department, d]) => ({
+      department,
+      total_visits: d.total_visits,
+      completed_visits: d.completed_visits,
+      revenue: d.revenue,
+    }));
+  }, [targets]);
+
   // Quick preset handlers for form
   const setFormPeriodMonth = (offsetMonths: number = 0) => {
     const d = new Date();
@@ -571,225 +581,22 @@ export default function KpiManagementPage() {
       </div>
 
       {/* 3. Recharts Target vs Actual Comparison Charts */}
-      <Card className="border shadow-sm overflow-hidden">
-        <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                <BarChart2 className="h-5 w-5 text-blue-600" />
-                Đối chiếu Chỉ tiêu vs Thực đạt (Recharts Performance Analysis)
-              </CardTitle>
-              <CardDescription>
-                So sánh trực quan giữa mục tiêu đã giao và kết quả vận hành thực tế của từng nhân viên
-              </CardDescription>
-            </div>
-            <Tabs
-              value={chartMetricTab}
-              onValueChange={(v) => setChartMetricTab(v as 'both' | 'revenue' | 'visits')}
-              className="w-auto"
-            >
-              <TabsList className="grid grid-cols-3 w-[300px]">
-                <TabsTrigger value="both">Song song</TabsTrigger>
-                <TabsTrigger value="revenue">Doanh thu</TabsTrigger>
-                <TabsTrigger value="visits">Lượt khám</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </CardHeader>
+      <div className="space-y-6">
+        <DoctorKpiBarChart
+          data={chartData}
+          metric={chartMetricTab}
+          title="Đối chiếu Chỉ tiêu vs Thực đạt Bác sĩ (KPI Performance)"
+          description="So sánh trực quan giữa mục tiêu đã giao và kết quả vận hành thực tế của từng nhân viên"
+        />
 
-        <CardContent className="pt-6">
-          {chartData.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-500">
-              <Target className="h-12 w-12 text-slate-300 mb-2" />
-              <p className="text-sm font-medium">Chưa có dữ liệu chỉ tiêu để hiển thị biểu đồ</p>
-              <p className="text-xs text-slate-400">Vui lòng thêm mới hoặc điều chỉnh bộ lọc thời gian</p>
-            </div>
-          ) : chartMetricTab === 'both' ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Revenue Comparison Chart */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <DollarSign className="h-4 w-4 text-emerald-600" />
-                    Chỉ tiêu Doanh thu vs Thực đạt (VNĐ)
-                  </h4>
-                  <Badge variant="outline" className="text-xs">
-                    ĐVT: Triệu đồng
-                  </Badge>
-                </div>
-                <div className="h-[280px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartData}
-                      margin={{ top: 10, right: 10, left: 0, bottom: 25 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis
-                        dataKey="name"
-                        tick={{ fontSize: 11 }}
-                        interval={0}
-                        angle={-15}
-                        textAnchor="end"
-                      />
-                      <YAxis
-                        tick={{ fontSize: 11 }}
-                        tickFormatter={(v) => formatShortCurrency(v)}
-                        width={55}
-                      />
-                      <Tooltip
-                        formatter={(val: any) => [
-                          formatCurrency(Number(val ?? 0)),
-                          '',
-                        ]}
-                        labelFormatter={(label) => `Nhân viên: ${label}`}
-                        contentStyle={{
-                          backgroundColor: '#ffffff',
-                          borderRadius: '8px',
-                          border: '1px solid #e2e8f0',
-                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                          fontSize: '12px',
-                        }}
-                      />
-                      <Legend
-                        verticalAlign="top"
-                        align="right"
-                        iconType="circle"
-                        wrapperStyle={{ fontSize: '12px', paddingBottom: '10px' }}
-                      />
-                      <Bar
-                        dataKey="target_revenue"
-                        name="Chỉ tiêu Doanh thu"
-                        fill="#3b82f6"
-                        radius={[4, 4, 0, 0]}
-                        maxBarSize={32}
-                      />
-                      <Bar
-                        dataKey="actual_revenue"
-                        name="Thực đạt Doanh thu"
-                        fill="#10b981"
-                        radius={[4, 4, 0, 0]}
-                        maxBarSize={32}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Visits Comparison Chart */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <Activity className="h-4 w-4 text-violet-600" />
-                    Chỉ tiêu Lượt khám vs Thực đạt (Lượt)
-                  </h4>
-                  <Badge variant="outline" className="text-xs">
-                    ĐVT: Lượt khám
-                  </Badge>
-                </div>
-                <div className="h-[280px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartData}
-                      margin={{ top: 10, right: 10, left: 0, bottom: 25 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis
-                        dataKey="name"
-                        tick={{ fontSize: 11 }}
-                        interval={0}
-                        angle={-15}
-                        textAnchor="end"
-                      />
-                      <YAxis tick={{ fontSize: 11 }} width={35} />
-                      <Tooltip
-                        formatter={(val: any) => [
-                          `${val ?? 0} lượt khám`,
-                          '',
-                        ]}
-                        labelFormatter={(label) => `Nhân viên: ${label}`}
-                        contentStyle={{
-                          backgroundColor: '#ffffff',
-                          borderRadius: '8px',
-                          border: '1px solid #e2e8f0',
-                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                          fontSize: '12px',
-                        }}
-                      />
-                      <Legend
-                        verticalAlign="top"
-                        align="right"
-                        iconType="circle"
-                        wrapperStyle={{ fontSize: '12px', paddingBottom: '10px' }}
-                      />
-                      <Bar
-                        dataKey="target_visits"
-                        name="Chỉ tiêu Lượt khám"
-                        fill="#f59e0b"
-                        radius={[4, 4, 0, 0]}
-                        maxBarSize={32}
-                      />
-                      <Bar
-                        dataKey="actual_visits"
-                        name="Thực đạt Lượt khám"
-                        fill="#8b5cf6"
-                        radius={[4, 4, 0, 0]}
-                        maxBarSize={32}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          ) : chartMetricTab === 'revenue' ? (
-            /* Single Large Revenue Chart */
-            <div className="h-[340px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 30 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="fullName" tick={{ fontSize: 12 }} interval={0} angle={-10} textAnchor="end" />
-                  <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatShortCurrency(v)} width={65} />
-                  <Tooltip
-                    formatter={(val: any) => [
-                      formatCurrency(Number(val ?? 0)),
-                      '',
-                    ]}
-                    contentStyle={{
-                      backgroundColor: '#ffffff',
-                      borderRadius: '8px',
-                      border: '1px solid #e2e8f0',
-                    }}
-                  />
-                  <Legend verticalAlign="top" align="right" />
-                  <Bar dataKey="target_revenue" name="Mục tiêu Doanh thu" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="actual_revenue" name="Thực đạt Doanh thu" fill="#10b981" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            /* Single Large Visits Chart */
-            <div className="h-[340px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 30 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="fullName" tick={{ fontSize: 12 }} interval={0} angle={-10} textAnchor="end" />
-                  <YAxis tick={{ fontSize: 12 }} width={45} />
-                  <Tooltip
-                    formatter={(val: any) => [`${val ?? 0} lượt khám`, '']}
-                    contentStyle={{
-                      backgroundColor: '#ffffff',
-                      borderRadius: '8px',
-                      border: '1px solid #e2e8f0',
-                    }}
-                  />
-                  <Legend verticalAlign="top" align="right" />
-                  <Bar dataKey="target_visits" name="Chỉ tiêu Lượt khám" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="actual_visits" name="Thực đạt Lượt khám" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {departmentChartData.length > 0 && (
+          <DepartmentVisitsBarChart
+            data={departmentChartData}
+            title="Số Lượt khám Hoàn thành Giữa các Chuyên khoa Phòng khám"
+            description="Tổng hợp lượt khám tiếp nhận và hoàn tất phân bổ theo từng khoa phòng chuyên môn"
+          />
+        )}
+      </div>
 
       {/* 4. Filters & Search Control Bar */}
       <Card className="border shadow-sm p-4">
