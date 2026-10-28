@@ -324,7 +324,7 @@
 
 #### TASK `P3-021` (`F3-06-03`): Chuẩn hóa Biểu đồ Đường/Vùng (Line/Area Chart) Xu hướng Tăng trưởng Doanh thu & Lưu lượng
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-020`
 - **goal:** Nâng cấp biểu đồ Line/Area Chart thể hiện chuỗi thời gian (Time-series analytics): theo dõi xu hướng biến động doanh thu thuần, dòng tiền thực thu và số lượt khám hàng ngày trong tháng, so sánh với cùng kỳ tháng trước; hỗ trợ bộ lọc nhanh (7 ngày qua, 30 ngày qua, Quý này, Năm nay).
 - **scope:** `fe/app/(admin)/dashboard/page.tsx`, `fe/app/(admin)/reports/page.tsx`.

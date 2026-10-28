@@ -23,24 +23,14 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from 'recharts';
 
 import { useAuth } from '@/lib/auth/auth-context';
-import { DonutChart, AppointmentDistributionChart } from '@/components/charts';
+import {
+  DonutChart,
+  AppointmentDistributionChart,
+  TimeSeriesRevenueChart,
+  TimeSeriesVisitsChart,
+} from '@/components/charts';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { StatCard } from '@/components/ui/stat-card';
 import {
@@ -77,7 +67,7 @@ import {
   TopPerformersData,
 } from '@/types/dashboard';
 
-type DatePreset = '7d' | '30d' | 'month' | 'custom';
+type DatePreset = '7d' | '30d' | 'month' | 'quarter' | 'year' | 'custom';
 
 function formatDateForApi(d: Date): string {
   const year = d.getFullYear();
@@ -152,6 +142,15 @@ export default function AdminDashboardPage() {
       setEndDate(formatDateForApi(now));
     } else if (newPreset === 'month') {
       start = new Date(now.getFullYear(), now.getMonth(), 1);
+      setStartDate(formatDateForApi(start));
+      setEndDate(formatDateForApi(now));
+    } else if (newPreset === 'quarter') {
+      const currentQuarter = Math.floor(now.getMonth() / 3);
+      start = new Date(now.getFullYear(), currentQuarter * 3, 1);
+      setStartDate(formatDateForApi(start));
+      setEndDate(formatDateForApi(now));
+    } else if (newPreset === 'year') {
+      start = new Date(now.getFullYear(), 0, 1);
       setStartDate(formatDateForApi(start));
       setEndDate(formatDateForApi(now));
     }
@@ -260,7 +259,7 @@ export default function AdminDashboardPage() {
 
         {/* Date Filter Bar */}
         <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white/10 p-2 backdrop-blur-md">
-          <div className="flex items-center rounded-lg bg-black/20 p-1">
+          <div className="flex flex-wrap items-center rounded-lg bg-black/20 p-1">
             <button
               type="button"
               onClick={() => handleApplyPreset('7d')}
@@ -293,6 +292,28 @@ export default function AdminDashboardPage() {
               }`}
             >
               Tháng này
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyPreset('quarter')}
+              className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
+                preset === 'quarter'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-blue-100 hover:text-white'
+              }`}
+            >
+              Quý này
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyPreset('year')}
+              className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
+                preset === 'year'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-blue-100 hover:text-white'
+              }`}
+            >
+              Năm nay
             </button>
           </div>
 
@@ -426,216 +447,30 @@ export default function AdminDashboardPage() {
 
               {/* Tab 1: Financial Chart */}
               <TabsContent value="finance" className="mt-0">
-                <div className="h-[320px] w-full">
-                  {isMounted && revenueData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart
-                        data={revenueData}
-                        margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                      >
-                        <defs>
-                          <linearGradient id="colorInvoiced" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
-                          </linearGradient>
-                          <linearGradient id="colorCollected" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                          </linearGradient>
-                          <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          className="stroke-slate-200 dark:stroke-slate-800"
-                        />
-                        <XAxis
-                          dataKey="date"
-                          tickFormatter={(val) => {
-                            if (!val) return '';
-                            const parts = String(val).split('-');
-                            return parts.length >= 3 ? `${parts[2]}/${parts[1]}` : val;
-                          }}
-                          className="text-xs text-slate-500"
-                        />
-                        <YAxis
-                          tickFormatter={(val) => formatShortAmount(Number(val))}
-                          className="text-xs text-slate-500"
-                        />
-                        <Tooltip
-                          content={({ active, payload, label }) => {
-                            if (!active || !payload || !payload.length) return null;
-                            return (
-                              <div className="rounded-lg border border-slate-200 bg-white/95 p-3 text-xs shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
-                                <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1.5">
-                                  Ngày {formatDate(label)}
-                                </p>
-                                {payload.map((entry, index) => (
-                                  <div
-                                    key={`item-${index}`}
-                                    className="flex items-center justify-between gap-4 py-0.5"
-                                  >
-                                    <span
-                                      className="flex items-center gap-1.5 font-medium"
-                                      style={{ color: entry.color }}
-                                    >
-                                      <span
-                                        className="h-2 w-2 rounded-full"
-                                        style={{ backgroundColor: entry.color }}
-                                      />
-                                      {entry.name}:
-                                    </span>
-                                    <span className="font-semibold text-slate-900 dark:text-slate-100">
-                                      {formatCurrency(Number(entry.value))}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          }}
-                        />
-                        <Legend
-                          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-                          formatter={(value) => (
-                            <span className="text-slate-700 dark:text-slate-300 font-medium">
-                              {value}
-                            </span>
-                          )}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="invoiced_amount"
-                          name="Doanh thu phát sinh"
-                          stroke="#3b82f6"
-                          strokeWidth={2}
-                          fillOpacity={1}
-                          fill="url(#colorInvoiced)"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="collected_amount"
-                          name="Đã thực thu"
-                          stroke="#10b981"
-                          strokeWidth={2}
-                          fillOpacity={1}
-                          fill="url(#colorCollected)"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="expense_amount"
-                          name="Chi phí đã duyệt"
-                          stroke="#f43f5e"
-                          strokeWidth={2}
-                          fillOpacity={1}
-                          fill="url(#colorExpense)"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-slate-400">
-                      {loading ? 'Đang tải biểu đồ tài chính...' : 'Chưa có dữ liệu giao dịch trong kỳ.'}
-                    </div>
-                  )}
-                </div>
+                <TimeSeriesRevenueChart
+                  data={revenueData}
+                  title=""
+                  description=""
+                  height={320}
+                  chartType="area"
+                  defaultMetric="all"
+                  showControls={true}
+                  showSummaryBar={false}
+                />
               </TabsContent>
 
-              {/* Tab 2: Visits Bar Chart */}
+              {/* Tab 2: Visits Chart */}
               <TabsContent value="visits" className="mt-0">
-                <div className="h-[320px] w-full">
-                  {isMounted && visitTrends?.daily && visitTrends.daily.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={visitTrends.daily}
-                        margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                      >
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          className="stroke-slate-200 dark:stroke-slate-800"
-                        />
-                        <XAxis
-                          dataKey="date"
-                          tickFormatter={(val) => {
-                            if (!val) return '';
-                            const parts = String(val).split('-');
-                            return parts.length >= 3 ? `${parts[2]}/${parts[1]}` : val;
-                          }}
-                          className="text-xs text-slate-500"
-                        />
-                        <YAxis allowDecimals={false} className="text-xs text-slate-500" />
-                        <Tooltip
-                          content={({ active, payload, label }) => {
-                            if (!active || !payload || !payload.length) return null;
-                            return (
-                              <div className="rounded-lg border border-slate-200 bg-white/95 p-3 text-xs shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
-                                <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1.5">
-                                  Ngày {formatDate(label)}
-                                </p>
-                                {payload.map((entry, index) => (
-                                  <div
-                                    key={`item-${index}`}
-                                    className="flex items-center justify-between gap-4 py-0.5"
-                                  >
-                                    <span
-                                      className="flex items-center gap-1.5 font-medium"
-                                      style={{ color: entry.color }}
-                                    >
-                                      <span
-                                        className="h-2 w-2 rounded-full"
-                                        style={{ backgroundColor: entry.color }}
-                                      />
-                                      {entry.name}:
-                                    </span>
-                                    <span className="font-semibold text-slate-900 dark:text-slate-100">
-                                      {entry.value} lượt
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          }}
-                        />
-                        <Legend
-                          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-                          formatter={(value) => (
-                            <span className="text-slate-700 dark:text-slate-300 font-medium">
-                              {value}
-                            </span>
-                          )}
-                        />
-                        <Bar
-                          dataKey="completed"
-                          name="Hoàn thành"
-                          fill="#10b981"
-                          radius={[4, 4, 0, 0]}
-                        />
-                        <Bar
-                          dataKey="in_progress"
-                          name="Đang khám"
-                          fill="#3b82f6"
-                          radius={[4, 4, 0, 0]}
-                        />
-                        <Bar
-                          dataKey="waiting"
-                          name="Chờ khám"
-                          fill="#f59e0b"
-                          radius={[4, 4, 0, 0]}
-                        />
-                        <Bar
-                          dataKey="cancelled"
-                          name="Đã hủy"
-                          fill="#f43f5e"
-                          radius={[4, 4, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-slate-400">
-                      {loading ? 'Đang tải biểu đồ lượt khám...' : 'Chưa có lượt khám trong kỳ.'}
-                    </div>
-                  )}
-                </div>
+                <TimeSeriesVisitsChart
+                  data={visitTrends?.daily || []}
+                  title=""
+                  description=""
+                  height={320}
+                  chartType="area"
+                  defaultMetric="all"
+                  showControls={true}
+                  showSummaryBar={false}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>

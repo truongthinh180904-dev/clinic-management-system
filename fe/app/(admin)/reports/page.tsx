@@ -26,12 +26,8 @@ import {
 } from 'lucide-react';
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
   BarChart,
   Bar,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -50,6 +46,8 @@ import {
   DoctorKpiBarChart,
   DepartmentVisitsBarChart,
   TopInventoryConsumptionChart,
+  TimeSeriesRevenueChart,
+  TimeSeriesVisitsChart,
 } from '@/components/charts';
 import { useAuth } from '@/lib/auth/auth-context';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
@@ -99,7 +97,7 @@ function toISODate(d: Date): string {
 }
 
 // Quick presets for date ranges
-type PresetKey = '7days' | '30days' | 'thisMonth' | 'lastMonth' | 'thisYear';
+type PresetKey = '7days' | '30days' | 'thisMonth' | 'lastMonth' | 'thisQuarter' | 'thisYear';
 
 function getPresetRange(preset: PresetKey): { startDate: string; endDate: string } {
   const today = new Date();
@@ -124,6 +122,11 @@ function getPresetRange(preset: PresetKey): { startDate: string; endDate: string
       const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       const end = new Date(today.getFullYear(), today.getMonth(), 0);
       return { startDate: toISODate(start), endDate: toISODate(end) };
+    }
+    case 'thisQuarter': {
+      const currentQuarter = Math.floor(today.getMonth() / 3);
+      const start = new Date(today.getFullYear(), currentQuarter * 3, 1);
+      return { startDate: toISODate(start), endDate };
     }
     case 'thisYear': {
       const start = new Date(today.getFullYear(), 0, 1);
@@ -447,6 +450,14 @@ export default function ReportsPage() {
                 Tháng trước
               </Button>
               <Button
+                variant={activePreset === 'thisQuarter' ? 'default' : 'outline'}
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => applyPreset('thisQuarter')}
+              >
+                Quý này
+              </Button>
+              <Button
                 variant={activePreset === 'thisYear' ? 'default' : 'outline'}
                 size="sm"
                 className="h-8 text-xs"
@@ -673,103 +684,20 @@ export default function ReportsPage() {
                       <span>Diễn biến Doanh thu, Thực thu & Chi phí theo Ngày</span>
                     </CardTitle>
                     <CardDescription>
-                      So sánh tổng giá trị hóa đơn xuất, số tiền thực thu vào sổ quỹ và chi phí đã phê duyệt
+                      Theo dõi chuỗi thời gian doanh thu phát sinh, thực thu sổ quỹ và chi phí đã phê duyệt
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[320px] w-full">
-                      {isMounted && financialData.daily_series.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={financialData.daily_series} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                            <defs>
-                              <linearGradient id="colorInvoiced" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                              </linearGradient>
-                              <linearGradient id="colorCollected" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                              </linearGradient>
-                              <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
-                                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                            <XAxis
-                              dataKey="date"
-                              stroke="#64748b"
-                              fontSize={12}
-                              tickLine={false}
-                              tickFormatter={(str: string) => {
-                                const parts = str.split('-');
-                                return parts.length === 3 ? `${parts[2]}/${parts[1]}` : str;
-                              }}
-                            />
-                            <YAxis
-                              stroke="#64748b"
-                              fontSize={12}
-                              tickLine={false}
-                              axisLine={false}
-                              tickFormatter={(val: number) =>
-                                val >= 1000000 ? `${(val / 1000000).toFixed(0)}Tr` : `${(val / 1000).toFixed(0)}k`
-                              }
-                            />
-                            <Tooltip
-                              formatter={(value: any, name: any) => {
-                                const valNum = typeof value === 'number' ? value : 0;
-                                const labels: Record<string, string> = {
-                                  invoiced_amount: 'Doanh thu hóa đơn',
-                                  collected_amount: 'Thực thu quỹ',
-                                  expense_amount: 'Chi phí duyệt',
-                                  net_profit: 'Lợi nhuận ròng',
-                                };
-                                return [formatCurrency(valNum), labels[String(name)] || String(name)];
-                              }}
-                              labelFormatter={(label: any) => `Ngày: ${formatDate(String(label))}`}
-                            />
-                            <Legend
-                              formatter={(value) => {
-                                const labels: Record<string, string> = {
-                                  invoiced_amount: 'Doanh thu',
-                                  collected_amount: 'Thực thu',
-                                  expense_amount: 'Chi phí',
-                                };
-                                return labels[String(value)] || String(value);
-                              }}
-                            />
-                            <Area
-                              type="monotone"
-                              dataKey="invoiced_amount"
-                              stroke="#3b82f6"
-                              strokeWidth={2}
-                              fillOpacity={1}
-                              fill="url(#colorInvoiced)"
-                            />
-                            <Area
-                              type="monotone"
-                              dataKey="collected_amount"
-                              stroke="#10b981"
-                              strokeWidth={2}
-                              fillOpacity={1}
-                              fill="url(#colorCollected)"
-                            />
-                            <Area
-                              type="monotone"
-                              dataKey="expense_amount"
-                              stroke="#f59e0b"
-                              strokeWidth={2}
-                              fillOpacity={1}
-                              fill="url(#colorExpense)"
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-sm text-slate-400">
-                          Chưa có dữ liệu giao dịch trong kỳ này
-                        </div>
-                      )}
-                    </div>
+                    <TimeSeriesRevenueChart
+                      data={financialData.daily_series}
+                      title=""
+                      description=""
+                      height={320}
+                      chartType="area"
+                      defaultMetric="all"
+                      showControls={true}
+                      showSummaryBar={false}
+                    />
                   </CardContent>
                 </Card>
 
@@ -1055,72 +983,16 @@ export default function ReportsPage() {
                     <CardDescription>Số lượng lịch hẹn đã đặt và số lượt khám thực tế diễn ra</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[280px] w-full">
-                      {isMounted && clinicalData.daily_series.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={clinicalData.daily_series} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                            <XAxis
-                              dataKey="date"
-                              stroke="#64748b"
-                              fontSize={12}
-                              tickLine={false}
-                              tickFormatter={(str: string) => {
-                                const parts = str.split('-');
-                                return parts.length === 3 ? `${parts[2]}/${parts[1]}` : str;
-                              }}
-                            />
-                            <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                            <Tooltip
-                              formatter={(value: any, name: any) => {
-                                const labels: Record<string, string> = {
-                                  appointments_count: 'Số lịch hẹn',
-                                  visits_count: 'Tổng lượt khám',
-                                  completed_visits: 'Đã hoàn tất',
-                                };
-                                return [value, labels[String(name)] || String(name)];
-                              }}
-                              labelFormatter={(label: any) => `Ngày: ${formatDate(String(label))}`}
-                            />
-                            <Legend
-                              formatter={(value) => {
-                                const labels: Record<string, string> = {
-                                  appointments_count: 'Lịch hẹn',
-                                  visits_count: 'Lượt khám',
-                                  completed_visits: 'Đã khám xong',
-                                };
-                                return labels[String(value)] || String(value);
-                              }}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="appointments_count"
-                              stroke="#8b5cf6"
-                              strokeWidth={2}
-                              dot={{ r: 3 }}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="visits_count"
-                              stroke="#3b82f6"
-                              strokeWidth={2}
-                              dot={{ r: 3 }}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="completed_visits"
-                              stroke="#10b981"
-                              strokeWidth={2}
-                              dot={{ r: 3 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-sm text-slate-400">
-                          Chưa có lịch khám trong kỳ này
-                        </div>
-                      )}
-                    </div>
+                    <TimeSeriesVisitsChart
+                      data={clinicalData.daily_series}
+                      title=""
+                      description=""
+                      height={280}
+                      chartType="area"
+                      defaultMetric="all"
+                      showControls={true}
+                      showSummaryBar={false}
+                    />
                   </CardContent>
                 </Card>
 

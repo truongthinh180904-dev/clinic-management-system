@@ -5,3 +5,5 @@ export * from './appointment-distribution-chart';
 export * from './doctor-kpi-bar-chart';
 export * from './department-visits-bar-chart';
 export * from './top-inventory-consumption-chart';
+export * from './time-series-revenue-chart';
+export * from './time-series-visits-chart';
