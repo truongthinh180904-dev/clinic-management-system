@@ -82,7 +82,10 @@ function AppointmentsContent() {
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState<number | ''>('');
+  const [serviceFilter, setServiceFilter] = useState<number | ''>('');
   const [patientFilter, setPatientFilter] = useState<number | ''>('');
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | ''>('');
 
@@ -151,7 +154,10 @@ function AppointmentsContent() {
       const res = await getAppointments({
         search: searchTerm || undefined,
         appointment_date: dateFilter || undefined,
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
         employee_id: employeeFilter !== '' ? employeeFilter : undefined,
+        service_id: serviceFilter !== '' ? serviceFilter : undefined,
         patient_id: patientFilter !== '' ? patientFilter : undefined,
         status: statusFilter !== '' ? statusFilter : undefined,
         page: currentPage,
@@ -181,7 +187,10 @@ function AppointmentsContent() {
     currentPage,
     perPage,
     dateFilter,
+    fromDate,
+    toDate,
     employeeFilter,
+    serviceFilter,
     patientFilter,
     statusFilter,
   ]);
@@ -347,6 +356,16 @@ function AppointmentsContent() {
       return;
     }
 
+    if (
+      editForm.status === 'CANCELLED' &&
+      (!editForm.notes || editForm.notes.trim() === '')
+    ) {
+      setFormErrors({
+        notes: ['Vui lòng cung cấp lý do khi hủy lịch hẹn.'],
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await updateAppointment(selectedAppointment.id, editForm);
@@ -396,6 +415,10 @@ function AppointmentsContent() {
   const handleCancelSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAppointment) return;
+    if (!cancelReason || cancelReason.trim() === '') {
+      toast.warning('Vui lòng cung cấp lý do khi hủy lịch hẹn.', 'Thiếu thông tin');
+      return;
+    }
     setIsSubmitting(true);
     try {
       await cancelAppointment(selectedAppointment.id, cancelReason);
@@ -563,10 +586,10 @@ function AppointmentsContent() {
             setCurrentPage(1);
             fetchAppointments();
           }}
-          className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6"
+          className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12"
         >
           {/* Keyword Search */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Tìm kiếm
             </label>
@@ -574,21 +597,39 @@ function AppointmentsContent() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Mã lịch hẹn, tên BN, SĐT, bác sĩ..."
+              placeholder="Mã lịch hẹn, tên BN, SĐT, bác sĩ, dịch vụ..."
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>
 
-          {/* Date Picker & Shortcut */}
-          <div>
+          {/* Date Range: From */}
+          <div className="lg:col-span-2">
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-              Ngày khám
+              Từ ngày
             </label>
             <input
               type="date"
-              value={dateFilter}
+              value={fromDate}
               onChange={(e) => {
-                setDateFilter(e.target.value);
+                setFromDate(e.target.value);
+                setDateFilter('');
+                setCurrentPage(1);
+              }}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            />
+          </div>
+
+          {/* Date Range: To */}
+          <div className="lg:col-span-2">
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              Đến ngày
+            </label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value);
+                setDateFilter('');
                 setCurrentPage(1);
               }}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -596,7 +637,7 @@ function AppointmentsContent() {
           </div>
 
           {/* Employee / Doctor Filter */}
-          <div>
+          <div className="lg:col-span-2">
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Bác sĩ / Nhân viên
             </label>
@@ -619,8 +660,32 @@ function AppointmentsContent() {
             </select>
           </div>
 
+          {/* Service Filter */}
+          <div className="lg:col-span-2">
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              Chuyên khoa / Dịch vụ
+            </label>
+            <select
+              value={serviceFilter}
+              onChange={(e) => {
+                setServiceFilter(
+                  e.target.value ? Number(e.target.value) : ''
+                );
+                setCurrentPage(1);
+              }}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">Tất cả dịch vụ</option>
+              {services.map((srv) => (
+                <option key={srv.id} value={srv.id}>
+                  {srv.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Status Filter */}
-          <div>
+          <div className="lg:col-span-2">
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Trạng thái
             </label>
@@ -642,7 +707,7 @@ function AppointmentsContent() {
           </div>
 
           {/* Quick Filter Buttons & Reset */}
-          <div className="flex items-end gap-2">
+          <div className="flex items-end gap-2 lg:col-span-1">
             <button
               type="submit"
               className="flex-1 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
@@ -654,7 +719,10 @@ function AppointmentsContent() {
               onClick={() => {
                 setSearchTerm('');
                 setDateFilter('');
+                setFromDate('');
+                setToDate('');
                 setEmployeeFilter('');
+                setServiceFilter('');
                 setPatientFilter('');
                 setStatusFilter('');
                 setCurrentPage(1);
@@ -675,10 +743,12 @@ function AppointmentsContent() {
           <button
             onClick={() => {
               setDateFilter(todayStr);
+              setFromDate('');
+              setToDate('');
               setCurrentPage(1);
             }}
             className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-              dateFilter === todayStr
+              dateFilter === todayStr && !fromDate && !toDate
                 ? 'bg-blue-600 text-white'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
             }`}
@@ -689,20 +759,46 @@ function AppointmentsContent() {
             onClick={() => {
               const tomorrow = new Date();
               tomorrow.setDate(tomorrow.getDate() + 1);
-              setDateFilter(tomorrow.toISOString().split('T')[0]);
+              const tStr = tomorrow.toISOString().split('T')[0];
+              setDateFilter(tStr);
+              setFromDate('');
+              setToDate('');
               setCurrentPage(1);
             }}
-            className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+              dateFilter && dateFilter !== todayStr
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+            }`}
           >
             Ngày mai
           </button>
           <button
             onClick={() => {
+              const nextWeek = new Date();
+              nextWeek.setDate(nextWeek.getDate() + 7);
               setDateFilter('');
+              setFromDate(todayStr);
+              setToDate(nextWeek.toISOString().split('T')[0]);
               setCurrentPage(1);
             }}
             className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-              dateFilter === ''
+              fromDate === todayStr && toDate
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+            }`}
+          >
+            7 ngày tới
+          </button>
+          <button
+            onClick={() => {
+              setDateFilter('');
+              setFromDate('');
+              setToDate('');
+              setCurrentPage(1);
+            }}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+              dateFilter === '' && fromDate === '' && toDate === ''
                 ? 'bg-slate-700 text-white dark:bg-slate-600'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
             }`}
@@ -1444,18 +1540,48 @@ function AppointmentsContent() {
                           status: e.target.value as AppointmentStatus,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      disabled={
+                        selectedAppointment.status === 'COMPLETED' ||
+                        selectedAppointment.status === 'CANCELLED' ||
+                        selectedAppointment.status === 'NO_SHOW'
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      <option value="PENDING">Chờ xác nhận</option>
-                      <option value="CONFIRMED">Đã xác nhận</option>
-                      <option value="COMPLETED">Đã khám xong</option>
-                      <option value="CANCELLED">Đã hủy</option>
-                      <option value="NO_SHOW">Không đến</option>
+                      {selectedAppointment.status === 'PENDING' && (
+                        <>
+                          <option value="PENDING">Chờ xác nhận (Hiện tại)</option>
+                          <option value="CONFIRMED">Đã xác nhận</option>
+                          <option value="CANCELLED">Hủy lịch hẹn</option>
+                        </>
+                      )}
+                      {selectedAppointment.status === 'CONFIRMED' && (
+                        <>
+                          <option value="CONFIRMED">Đã xác nhận (Hiện tại)</option>
+                          <option value="COMPLETED">Đã khám xong</option>
+                          <option value="CANCELLED">Hủy lịch hẹn</option>
+                          <option value="NO_SHOW">Không đến (No-show)</option>
+                        </>
+                      )}
+                      {selectedAppointment.status === 'COMPLETED' && (
+                        <option value="COMPLETED">Đã khám xong (Đã khóa)</option>
+                      )}
+                      {selectedAppointment.status === 'CANCELLED' && (
+                        <option value="CANCELLED">Đã hủy (Đã khóa)</option>
+                      )}
+                      {selectedAppointment.status === 'NO_SHOW' && (
+                        <option value="NO_SHOW">Không đến (Đã khóa)</option>
+                      )}
                     </select>
                   </FormField>
 
                   <FormField
-                    label="Ghi chú bổ sung"
+                    label={
+                      editForm.status === 'CANCELLED'
+                        ? 'Lý do hủy lịch hẹn'
+                        : 'Ghi chú bổ sung'
+                    }
+                    required={editForm.status === 'CANCELLED'}
+                    error={formErrors?.notes}
                   >
                     <input
                       type="text"

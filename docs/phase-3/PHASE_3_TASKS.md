@@ -213,7 +213,7 @@
 
 #### TASK `P3-013` (`F3-04-01` / `F3-04-02` / `F3-04-03`): Chuẩn hóa Máy trạng thái Lịch hẹn và Bộ lọc Lịch khám Đa tiêu chí
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-012`
 - **goal:** Chuẩn hóa quy tắc chuyển trạng thái của Lịch hẹn (`appointments`): `PENDING` -> `CONFIRMED` -> `COMPLETED` (hoặc `CANCELLED` kèm lý do hủy); hoàn thiện bộ lọc lịch hẹn đa năng theo Khoảng ngày khám, Bác sĩ phụ trách, Chuyên khoa/Dịch vụ và Trạng thái xác nhận.
 - **scope:** `be/app/Http/Controllers/Api/V1/AppointmentController.php`, `fe/app/(admin)/appointments/page.tsx`.

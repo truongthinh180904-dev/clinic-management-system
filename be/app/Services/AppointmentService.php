@@ -283,6 +283,11 @@ class AppointmentService
 
         $targetStatus = $data['status'] ?? $appointment->status;
 
+        if ($targetStatus !== $appointment->status) {
+            $notes = $data['notes'] ?? $appointment->notes;
+            $this->validateTransition($appointment, $targetStatus, $notes);
+        }
+
         return DB::transaction(function () use (
             $appointment,
             $data,
@@ -356,6 +361,45 @@ class AppointmentService
     }
 
     /**
+     * Validate state machine transitions.
+     * Enforces: PENDING -> CONFIRMED -> COMPLETED (or CANCELLED with reason)
+     * Rejects illegal transitions / skips (e.g., PENDING directly to COMPLETED).
+     * Rejects transitions from terminal states (COMPLETED, CANCELLED, NO_SHOW).
+     *
+     * @throws InvalidArgumentException
+     */
+    public function validateTransition(Appointment $appointment, string $newStatus, ?string $reason = null): void
+    {
+        $currentStatus = $appointment->status;
+
+        if ($currentStatus === Appointment::STATUS_CANCELLED) {
+            throw new InvalidArgumentException('Lịch hẹn này đã bị hủy trước đó và không thể thay đổi trạng thái.');
+        }
+
+        if ($currentStatus === Appointment::STATUS_COMPLETED && $newStatus !== Appointment::STATUS_COMPLETED) {
+            throw new InvalidArgumentException('Lịch hẹn đã hoàn thành và không thể chuyển sang trạng thái khác.');
+        }
+
+        if ($currentStatus === Appointment::STATUS_NO_SHOW && $newStatus !== Appointment::STATUS_NO_SHOW) {
+            throw new InvalidArgumentException('Lịch hẹn ở trạng thái không đến (NO_SHOW) không thể chuyển sang trạng thái khác.');
+        }
+
+        if ($currentStatus === $newStatus) {
+            return;
+        }
+
+        if (! $appointment->canTransitionTo($newStatus)) {
+            throw new InvalidArgumentException(
+                "Không thể chuyển trạng thái lịch hẹn từ {$currentStatus} sang {$newStatus}. Quy trình trạng thái phải tuân thủ: PENDING -> CONFIRMED -> COMPLETED (hoặc CANCELLED kèm lý do hủy)."
+            );
+        }
+
+        if ($newStatus === Appointment::STATUS_CANCELLED && ($reason === null || trim($reason) === '')) {
+            throw new InvalidArgumentException('Vui lòng cung cấp lý do khi hủy lịch hẹn.');
+        }
+    }
+
+    /**
      * Cancel an appointment.
      */
     public function cancelAppointment(
@@ -365,6 +409,8 @@ class AppointmentService
         ?string $ipAddress = null,
         ?string $userAgent = null
     ): Appointment {
+        $this->validateTransition($appointment, Appointment::STATUS_CANCELLED, $reason);
+
         return DB::transaction(function () use (
             $appointment,
             $reason,
@@ -374,7 +420,7 @@ class AppointmentService
         ) {
             $oldValues = $appointment->toArray();
 
-            $appointment->status = 'CANCELLED';
+            $appointment->status = Appointment::STATUS_CANCELLED;
 
             if ($reason !== null && trim($reason) !== '') {
                 $appointment->notes = trim(($appointment->notes ? $appointment->notes."\n" : '').'Lý do hủy: '.trim($reason));

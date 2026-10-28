@@ -42,6 +42,10 @@ class AppointmentController extends Controller
                     ->orWhereHas('employee', function ($eq) use ($searchTerm) {
                         $eq->where('full_name', 'LIKE', "%{$searchTerm}%")
                             ->orWhere('employee_code', 'LIKE', "%{$searchTerm}%");
+                    })
+                    ->orWhereHas('service', function ($sq) use ($searchTerm) {
+                        $sq->where('name', 'LIKE', "%{$searchTerm}%")
+                            ->orWhere('service_code', 'LIKE', "%{$searchTerm}%");
                     });
             });
         }
@@ -151,6 +155,7 @@ class AppointmentController extends Controller
                 'success' => false,
                 'message' => $e->getMessage(),
                 'errors' => [
+                    'status' => [$e->getMessage()],
                     'error' => [$e->getMessage()],
                 ],
             ], 422);
@@ -221,6 +226,7 @@ class AppointmentController extends Controller
                 'success' => false,
                 'message' => $e->getMessage(),
                 'errors' => [
+                    'status' => [$e->getMessage()],
                     'error' => [$e->getMessage()],
                 ],
             ], 422);
@@ -242,7 +248,7 @@ class AppointmentController extends Controller
         }
 
         $newStatus = (string) $request->input('status');
-        $notes = $request->input('notes');
+        $notes = $request->input('notes') ?? $request->input('reason');
 
         try {
             if ($newStatus === 'CANCELLED') {
@@ -285,7 +291,7 @@ class AppointmentController extends Controller
                 'success' => false,
                 'message' => $e->getMessage(),
                 'errors' => [
-                    'error' => [$e->getMessage()],
+                    'status' => [$e->getMessage()],
                 ],
             ], 422);
         }
@@ -305,21 +311,41 @@ class AppointmentController extends Controller
             ], 404);
         }
 
-        $reason = $request->input('reason') ?? $request->input('notes');
+        $reason = trim((string) ($request->input('reason') ?? $request->input('notes', '')));
 
-        $cancelled = $this->appointmentService->cancelAppointment(
-            $appointment,
-            $reason,
-            $request->user(),
-            $request->ip(),
-            $request->userAgent()
-        );
+        if ($reason === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng cung cấp lý do khi hủy lịch hẹn.',
+                'errors' => [
+                    'reason' => ['Vui lòng cung cấp lý do khi hủy lịch hẹn.'],
+                ],
+            ], 422);
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Hủy lịch hẹn thành công.',
-            'data' => new AppointmentResource($cancelled->load(['patient', 'employee', 'service', 'creator'])),
-        ], 200);
+        try {
+            $cancelled = $this->appointmentService->cancelAppointment(
+                $appointment,
+                $reason,
+                $request->user(),
+                $request->ip(),
+                $request->userAgent()
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Hủy lịch hẹn thành công.',
+                'data' => new AppointmentResource($cancelled->load(['patient', 'employee', 'service', 'creator'])),
+            ], 200);
+        } catch (InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => [
+                    'status' => [$e->getMessage()],
+                ],
+            ], 422);
+        }
     }
 
     /**

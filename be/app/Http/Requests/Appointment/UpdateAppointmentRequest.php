@@ -38,6 +38,7 @@ class UpdateAppointmentRequest extends FormRequest
             'appointment_code' => ['nullable', 'string', 'max:50', Rule::unique('appointments', 'appointment_code')->ignore($appointmentId)],
             'status' => ['sometimes', 'string', 'in:PENDING,CONFIRMED,COMPLETED,CANCELLED,NO_SHOW'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'reason' => ['nullable', 'string', 'max:2000'],
         ];
     }
 
@@ -52,6 +53,13 @@ class UpdateAppointmentRequest extends FormRequest
                 // Already resolved model instance
             } elseif ($appointment) {
                 $appointment = Appointment::find($appointment);
+            }
+
+            if ($this->has('status') && $this->input('status') === 'CANCELLED') {
+                $reason = trim((string) ($this->input('reason') ?? $this->input('notes', '')));
+                if ($reason === '') {
+                    $validator->errors()->add('notes', 'Vui lòng cung cấp lý do khi hủy lịch hẹn.');
+                }
             }
 
             $startTime = $this->input('start_time', $appointment?->start_time);

@@ -184,6 +184,10 @@ function AppointmentDetailContent({ appointmentId }: { appointmentId: string }) 
   const handleCancelSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!appointment) return;
+    if (!cancelReason || cancelReason.trim() === '') {
+      alert('Vui lòng cung cấp lý do khi hủy lịch hẹn.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const res = await cancelAppointment(appointment.id, cancelReason);
