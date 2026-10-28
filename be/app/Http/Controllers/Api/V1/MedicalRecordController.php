@@ -96,6 +96,11 @@ class MedicalRecordController extends Controller
                 'follow_up_date' => $data['follow_up_date'] ?? null,
             ]);
 
+            // Sync visit status to COMPLETED upon creating the medical record
+            if ($visit->status !== Visit::STATUS_COMPLETED) {
+                $visit->update(['status' => Visit::STATUS_COMPLETED]);
+            }
+
             AuditLog::create([
                 'user_id' => $request->user()?->id,
                 'module' => 'medical_records',
@@ -115,7 +120,7 @@ class MedicalRecordController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Tạo hồ sơ bệnh án thành công.',
-            'data' => new MedicalRecordResource($medicalRecord->load(['doctor', 'visit'])),
+            'data' => new MedicalRecordResource($medicalRecord->load(['doctor', 'visit.patient'])),
         ], 201);
     }
 

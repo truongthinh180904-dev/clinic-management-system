@@ -183,7 +183,7 @@
 
 #### TASK `P3-011` (`F3-03-04` / `F3-03-06`): Hoàn thiện Giao diện & Nghiệp vụ Bệnh án Điện tử (Khám bệnh Chuyên môn)
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-010`
 - **goal:** Xây dựng màn hình nhập liệu và hiển thị Bệnh án điện tử hoàn chỉnh cho bác sĩ: hỗ trợ nhập Tiền sử bệnh, Triệu chứng lâm sàng, Chẩn đoán sơ bộ/xác định, Chỉ định cận lâm sàng, Kết quả cận lâm sàng, Phác đồ điều trị và Ngày hẹn tái khám (`follow_up_date`); liên kết chặt chẽ với lượt khám tương ứng (`visit_id`).
 - **scope:** `fe/app/(admin)/visits/[id]/medical-record/page.tsx` hoặc Modal Bệnh án chuyên sâu tại `visits/page.tsx`, `be/app/Http/Controllers/Api/V1/MedicalRecordController.php`.

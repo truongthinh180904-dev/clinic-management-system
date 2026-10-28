@@ -267,6 +267,7 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
         const res = await createVisitMedicalRecord(visitId, payload);
         setMedicalRecord(res.data);
         setSuccessBanner('Đã tạo hồ sơ bệnh án thành công.');
+        loadVisitData();
       }
       setIsMedicalModalOpen(false);
     } catch (err) {
@@ -616,14 +617,23 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
 
               {/* Action buttons if user has medical permissions */}
               {canViewMedical && (
-                <div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/visits/${visit.id}/medical-record`}
+                    className="px-3 py-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg transition-colors flex items-center gap-1 border border-indigo-200 dark:border-indigo-800"
+                    title="Mở giao diện khám bệnh chuyên môn đầy đủ"
+                  >
+                    <span>🩺</span>
+                    <span>Phòng Khám EMR</span>
+                  </Link>
+
                   {medicalRecord ? (
                     canUpdateMedical && (
                       <button
                         onClick={handleOpenEditMedical}
                         className="px-3 py-1.5 text-xs font-semibold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg transition-colors"
                       >
-                        ✏️ Chỉnh sửa bệnh án
+                        ✏️ Sửa nhanh
                       </button>
                     )
                   ) : (
@@ -632,7 +642,7 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
                         onClick={handleOpenCreateMedical}
                         className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors shadow-sm"
                       >
-                        ➕ Lập hồ sơ bệnh án
+                        ➕ Lập nhanh
                       </button>
                     )
                   )}

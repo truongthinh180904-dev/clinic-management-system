@@ -65,6 +65,11 @@ function VisitsListContent() {
     hasRole('ADMIN') ||
     hasRole('MANAGER') ||
     hasRole('RECEPTIONIST');
+  const canMedical =
+    hasPermission('medical_records.view') ||
+    hasPermission('medical_records.create') ||
+    hasRole('ADMIN') ||
+    hasRole('DOCTOR');
 
   // List & pagination
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -627,6 +632,16 @@ function VisitsListContent() {
                           >
                             Chi tiết
                           </Link>
+
+                          {canMedical && visit.status !== 'CANCELLED' && (
+                            <Link
+                              href={`/visits/${visit.id}/medical-record`}
+                              className="px-2.5 py-1.5 text-xs font-medium bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded-md transition-colors"
+                              title="Khám bệnh & Bệnh án EMR"
+                            >
+                              Khám bệnh
+                            </Link>
+                          )}
 
                           {canUpdate && visit.status !== 'COMPLETED' && visit.status !== 'CANCELLED' && (
                             <button
