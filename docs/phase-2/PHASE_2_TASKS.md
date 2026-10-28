@@ -587,7 +587,7 @@
 
 ### TASK `P2-023` (`F2-09-02`): Xây dựng API Export dữ liệu & Báo cáo ra CSV (`/api/v1/exports`) và `DataExportApiTest`
 - **priority:** `P1`
-- **status:** `READY`
+- **status:** `DONE`
 - **dependencies:** `P2-022`
 - **goal:** Xây dựng `ExportController` xuất dữ liệu chuẩn UTF-8 BOM CSV (mở trực tiếp trên Microsoft Excel không lỗi font tiếng Việt) cho Danh sách Bệnh nhân, Hóa đơn & Công nợ, Sổ quỹ Thu Chi, và Báo cáo Tồn kho.
 - **scope:**
