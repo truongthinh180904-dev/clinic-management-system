@@ -239,7 +239,7 @@
 
 #### TASK `P3-015` (`F3-04-06` / `F3-04-07`): Chuyển đổi Nguyên tử từ Lịch hẹn sang Lượt khám Chống Tạo Trùng
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-014`
 - **goal:** Xây dựng endpoint và UI chuyển đổi nguyên tử: khi bấm "Tiếp nhận từ Lịch hẹn", hệ thống kích hoạt `DB::transaction()` khóa bi quan lịch hẹn, tạo lượt khám `Visit` liên kết `appointment_id`, chuyển trạng thái `Appointment` thành `COMPLETED`, chống tạo đúp 2 lượt khám cho cùng một lịch hẹn khi có nhiều click đồng thời.
 - **scope:** `be/app/Http/Controllers/Api/V1/AppointmentController.php`, `fe/app/(admin)/appointments/page.tsx`.
@@ -256,7 +256,7 @@
 
 #### TASK `P3-016` (`F3-05-01` / `F3-05-02`): Xây dựng Backend API Tải lên & Quản lý Tệp Đính kèm Y tế (`patient_files`)
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-015`
 - **goal:** Xây dựng `PatientFileController` và các Form Request: hỗ trợ tải lên tài liệu y tế (kết quả xét nghiệm, ảnh X-quang, MRI, đơn thuốc ngoài, file PDF kết luận); kiểm tra nghiêm ngặt phần mở rộng file (chỉ cho phép `jpg, jpeg, png, pdf, dicom`), giới hạn kích thước tối đa (ví dụ: 10MB/file), kiểm tra MIME type thực tế để chống mã độc; lưu trữ trong thư mục bảo vệ `storage/app/patient_files/{patient_id}/`.
 - **scope:**

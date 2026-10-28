@@ -232,7 +232,7 @@
 
 ### TASK `P3-015` (`F3-04-06` / `F3-04-07`): Chuyển đổi Nguyên tử từ Lịch hẹn sang Lượt khám Chống Tạo Trùng
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-014`
 - **goal:** Xây dựng endpoint và UI chuyển đổi nguyên tử: khi bấm "Tiếp nhận từ Lịch hẹn", hệ thống kích hoạt `DB::transaction()` khóa bi quan lịch hẹn, tạo lượt khám `Visit` liên kết `appointment_id`, chuyển trạng thái `Appointment` thành `COMPLETED`, chống tạo đúp 2 lượt khám cho cùng một lịch hẹn khi có nhiều click đồng thời.
 - **scope:** `be/app/Http/Controllers/Api/V1/AppointmentController.php`, `fe/app/(admin)/appointments/page.tsx`.
@@ -248,7 +248,7 @@
 
 ### TASK `P3-016` (`F3-05-01` / `F3-05-02`): Xây dựng Backend API Tải lên & Quản lý Tệp Đính kèm Y tế (`patient_files`)
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-015`
 - **goal:** Xây dựng `PatientFileController` và các Form Request: hỗ trợ tải lên tài liệu y tế (kết quả xét nghiệm, ảnh X-quang, MRI, đơn thuốc ngoài, file PDF kết luận); kiểm tra nghiêm ngặt MIME type, giới hạn dung lượng tối đa 10MB/file, lưu trữ trong thư mục bảo vệ `storage/app/patient_files/{patient_id}/`.
 - **scope:**
@@ -263,7 +263,7 @@
 
 ### TASK `P3-017` (`F3-05-03` / `F3-05-04`): Xây dựng Backend API Tải xuống & Xem Trực tiếp Tệp Y tế có Phân quyền
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-016`
 - **goal:** Xây dựng API phát trực tuyến tệp an toàn (`stream file`): yêu cầu token xác thực Sanctum và quyền `patient_files.view`; hỗ trợ xem trước hình ảnh/PDF trong trình duyệt (`Content-Disposition: inline`) và tải về máy (`Content-Disposition: attachment`); hỗ trợ xóa tệp đính kèm (`patient_files.delete`) có ghi nhận audit log.
 - **scope:** `be/app/Http/Controllers/Api/V1/PatientFileController.php`, `be/routes/api.php`.

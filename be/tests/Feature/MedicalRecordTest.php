@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\AuditLog;
 use App\Models\Employee;
 use App\Models\MedicalRecord;
 use App\Models\Patient;

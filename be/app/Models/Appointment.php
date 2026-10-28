@@ -22,9 +22,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Appointment extends Model
 {
     public const STATUS_PENDING = 'PENDING';
+
     public const STATUS_CONFIRMED = 'CONFIRMED';
+
     public const STATUS_COMPLETED = 'COMPLETED';
+
     public const STATUS_CANCELLED = 'CANCELLED';
+
     public const STATUS_NO_SHOW = 'NO_SHOW';
 
     /**

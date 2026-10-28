@@ -8,6 +8,7 @@ use App\Models\Employee;
 use App\Models\Patient;
 use App\Models\Service;
 use App\Models\User;
+use App\Models\Visit;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -25,6 +26,12 @@ class AppointmentOverlapException extends \RuntimeException
 
 class AppointmentService
 {
+    public function __construct(
+        protected ?VisitService $visitService = null
+    ) {
+        $this->visitService = $visitService ?? app(VisitService::class);
+    }
+
     /**
      * Generate a unique appointment code with prefix 'APT'.
      * Format: APTxxxxxx (e.g., APT000001, APT000002)
@@ -485,6 +492,172 @@ class AppointmentService
             ]);
 
             return true;
+        });
+    }
+
+    /**
+     * Atomically check in an appointment to create a Visit and complete the appointment.
+     * Prevents duplicate creation under concurrent requests using DB::transaction() and pessimistic row lock.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws InvalidArgumentException
+     */
+    public function checkInAppointment(
+        Appointment $appointment,
+        array $data = [],
+        ?User $actor = null,
+        ?string $ipAddress = null,
+        ?string $userAgent = null
+    ): Visit {
+        return DB::transaction(function () use (
+            $appointment,
+            $data,
+            $actor,
+            $ipAddress,
+            $userAgent
+        ) {
+            // 1. Pessimistic row-level lock on the appointment record
+            /** @var Appointment|null $lockedAppointment */
+            $lockedAppointment = Appointment::where('id', $appointment->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $lockedAppointment) {
+                throw new InvalidArgumentException('Không tìm thấy thông tin lịch hẹn.');
+            }
+
+            // 2. Prevent duplicate check-in / visits creation under race conditions
+            if ($lockedAppointment->status === Appointment::STATUS_COMPLETED || $lockedAppointment->visits()->exists()) {
+                throw new InvalidArgumentException('Lịch hẹn này đã hoàn thành hoặc đã phát sinh lượt khám trước đó.');
+            }
+
+            // 3. State transition validations
+            if ($lockedAppointment->status === Appointment::STATUS_CANCELLED) {
+                throw new InvalidArgumentException('Không thể tiếp nhận lịch hẹn đã bị hủy.');
+            }
+
+            if ($lockedAppointment->status === Appointment::STATUS_NO_SHOW) {
+                throw new InvalidArgumentException('Không thể tiếp nhận lịch hẹn ở trạng thái không đến (NO_SHOW).');
+            }
+
+            if ($lockedAppointment->status !== Appointment::STATUS_CONFIRMED) {
+                throw new InvalidArgumentException(
+                    "Không thể tiếp nhận lịch hẹn ở trạng thái {$lockedAppointment->status}. Lịch hẹn phải ở trạng thái đã xác nhận (CONFIRMED) trước khi tiếp nhận."
+                );
+            }
+
+            // 4. Resolve clinical entities and amounts
+            $service = Service::find($data['service_id'] ?? $lockedAppointment->service_id);
+            if (! $service) {
+                throw new InvalidArgumentException('Không tìm thấy thông tin dịch vụ của lịch hẹn.');
+            }
+
+            $employeeId = (int) ($data['employee_id'] ?? $lockedAppointment->employee_id);
+            $employee = Employee::find($employeeId);
+            if (! $employee) {
+                throw new InvalidArgumentException('Không tìm thấy thông tin nhân viên/bác sĩ phụ trách.');
+            }
+
+            $patient = Patient::find($lockedAppointment->patient_id);
+            if (! $patient) {
+                throw new InvalidArgumentException('Không tìm thấy thông tin bệnh nhân.');
+            }
+
+            $quantity = isset($data['quantity']) ? (int) $data['quantity'] : 1;
+            $unitPrice = isset($data['unit_price']) ? (float) $data['unit_price'] : (float) $service->price;
+            $discountAmount = isset($data['discount_amount']) ? (float) $data['discount_amount'] : 0.0;
+            $totalAmount = max(0.0, round(($quantity * $unitPrice) - $discountAmount, 2));
+
+            $visitDate = ! empty($data['visit_date'])
+                ? Carbon::parse($data['visit_date'])->toDateTimeString()
+                : now()->toDateTimeString();
+
+            $visitService = $this->visitService ?? app(VisitService::class);
+            $visitCode = ! empty($data['visit_code'])
+                ? (string) $data['visit_code']
+                : $visitService->generateVisitCode();
+
+            $visitNotes = ! empty($data['notes'])
+                ? (string) $data['notes']
+                : "[Tiếp nhận từ Lịch hẹn {$lockedAppointment->appointment_code}]".($lockedAppointment->notes ? " - {$lockedAppointment->notes}" : '');
+
+            // 5. Handle patient package deduction if supplied
+            $patientPackageId = isset($data['patient_package_id']) && ! empty($data['patient_package_id'])
+                ? (int) $data['patient_package_id']
+                : null;
+
+            if ($patientPackageId !== null) {
+                $visitService->deductPackageSessions(
+                    $patientPackageId,
+                    $patient->id,
+                    $service->id,
+                    $quantity,
+                    $visitDate,
+                    $actor,
+                    $ipAddress,
+                    $userAgent
+                );
+            }
+
+            // 6. Create Visit record linked to appointment_id
+            $visit = Visit::create([
+                'visit_code' => $visitCode,
+                'patient_id' => $patient->id,
+                'employee_id' => $employee->id,
+                'service_id' => $service->id,
+                'patient_package_id' => $patientPackageId,
+                'appointment_id' => $lockedAppointment->id,
+                'visit_date' => $visitDate,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'discount_amount' => $discountAmount,
+                'total_amount' => $totalAmount,
+                'payment_status' => Visit::PAYMENT_STATUS_UNPAID,
+                'status' => Visit::STATUS_SCHEDULED,
+                'notes' => $visitNotes,
+                'created_by' => $actor?->id,
+            ]);
+
+            // Update patient visit dates
+            $visitService->updatePatientVisitDates($patient->id);
+
+            // Audit log for visit creation
+            AuditLog::create([
+                'user_id' => $actor?->id,
+                'module' => 'visits',
+                'action' => 'create_from_appointment',
+                'table_name' => 'visits',
+                'record_id' => (string) $visit->id,
+                'old_values' => null,
+                'new_values' => $visit->toArray(),
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+                'created_at' => now(),
+            ]);
+
+            // 7. Transition Appointment status to COMPLETED
+            $oldApptValues = $lockedAppointment->toArray();
+            $lockedAppointment->status = Appointment::STATUS_COMPLETED;
+            $lockedAppointment->save();
+
+            $appointment->status = Appointment::STATUS_COMPLETED;
+
+            // Audit log for appointment status transition
+            AuditLog::create([
+                'user_id' => $actor?->id,
+                'module' => 'appointments',
+                'action' => 'check_in',
+                'table_name' => 'appointments',
+                'record_id' => (string) $lockedAppointment->id,
+                'old_values' => $oldApptValues,
+                'new_values' => $lockedAppointment->toArray(),
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+                'created_at' => now(),
+            ]);
+
+            return $visit;
         });
     }
 }

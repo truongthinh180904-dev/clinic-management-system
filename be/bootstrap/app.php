@@ -49,7 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         Auth::extend('token_bearer', function ($app, $name, array $config) {
             $guard = new class(function (Request $request) {
-                $token = $request->bearerToken();
+                $token = $request->bearerToken() ?: $request->query('token');
                 if (! $token) {
                     return null;
                 }
@@ -66,7 +66,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ) extends RequestGuard {
                 public function user()
                 {
-                    $token = $this->request->bearerToken();
+                    $token = $this->request->bearerToken() ?: $this->request->query('token');
                     if (! $token) {
                         return $this->user;
                     }
@@ -85,7 +85,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
                 public function setRequest(Request $request)
                 {
-                    if ($request->bearerToken()) {
+                    if ($request->bearerToken() || $request->query('token')) {
                         $this->user = null;
                     }
 

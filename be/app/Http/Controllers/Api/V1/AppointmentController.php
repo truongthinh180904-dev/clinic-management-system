@@ -7,6 +7,7 @@ use App\Http\Requests\Appointment\StoreAppointmentRequest;
 use App\Http\Requests\Appointment\UpdateAppointmentRequest;
 use App\Http\Requests\Appointment\UpdateAppointmentStatusRequest;
 use App\Http\Resources\AppointmentResource;
+use App\Http\Resources\VisitResource;
 use App\Models\Appointment;
 use App\Services\AppointmentOverlapException;
 use App\Services\AppointmentService;
@@ -342,6 +343,54 @@ class AppointmentController extends Controller
                 'success' => false,
                 'message' => $e->getMessage(),
                 'errors' => [
+                    'status' => [$e->getMessage()],
+                ],
+            ], 422);
+        }
+    }
+
+    /**
+     * Check in an appointment atomically into a clinic visit.
+     */
+    public function checkIn(Request $request, string $id): JsonResponse
+    {
+        $appointment = Appointment::find($id);
+
+        if (! $appointment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy thông tin lịch hẹn.',
+            ], 404);
+        }
+
+        try {
+            $visit = $this->appointmentService->checkInAppointment(
+                $appointment,
+                $request->all(),
+                $request->user(),
+                $request->ip(),
+                $request->userAgent()
+            );
+
+            $visitResource = (new VisitResource($visit->load(['patient', 'employee', 'service', 'appointment', 'creator'])))->resolve();
+            $appointmentResource = (new AppointmentResource($appointment->fresh(['patient', 'employee', 'service', 'creator'])))->resolve();
+
+            $data = array_merge($visitResource, [
+                'visit' => $visitResource,
+                'appointment' => $appointmentResource,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tiếp nhận bệnh nhân từ lịch hẹn thành công.',
+                'data' => $data,
+            ], 200);
+        } catch (InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => [
+                    'check_in' => [$e->getMessage()],
                     'status' => [$e->getMessage()],
                 ],
             ], 422);

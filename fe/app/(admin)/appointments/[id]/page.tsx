@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { ApiError } from '@/lib/api/client';
 import {
   cancelAppointment,
+  checkInAppointment,
   deleteAppointment,
   getAppointment,
   updateAppointment,
@@ -180,6 +181,27 @@ function AppointmentDetailContent({ appointmentId }: { appointmentId: string }) 
     }
   };
 
+  // Check-in from appointment into visit
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const handleCheckIn = async () => {
+    if (!appointment || isCheckingIn) return;
+    setIsCheckingIn(true);
+    try {
+      await checkInAppointment(appointment.id);
+      setActionSuccess('Tiếp nhận thành công! Lịch hẹn đã chuyển thành lượt khám.');
+      setTimeout(() => setActionSuccess(null), 4000);
+      loadAppointment();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        alert(err.message);
+      } else {
+        alert('Không thể tiếp nhận lịch hẹn này.');
+      }
+    } finally {
+      setIsCheckingIn(false);
+    }
+  };
+
   // Submit Cancel
   const handleCancelSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -299,6 +321,21 @@ function AppointmentDetailContent({ appointmentId }: { appointmentId: string }) 
               className="rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-blue-700"
             >
               ✅ Xác nhận lịch hẹn
+            </button>
+          )}
+
+          {canUpdate && appointment.status === 'CONFIRMED' && (
+            <button
+              onClick={handleCheckIn}
+              disabled={isCheckingIn}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-teal-700 disabled:opacity-50"
+            >
+              {isCheckingIn ? (
+                <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <span>🏥</span>
+              )}
+              <span>Tiếp nhận từ Lịch hẹn</span>
             </button>
           )}
 

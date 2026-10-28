@@ -106,6 +106,11 @@ class Visit extends Model
         return $this->hasMany(PatientFile::class, 'visit_id');
     }
 
+    public function files(): HasMany
+    {
+        return $this->patientFiles();
+    }
+
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class, 'visit_id');

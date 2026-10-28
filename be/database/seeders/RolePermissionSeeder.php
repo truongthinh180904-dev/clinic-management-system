@@ -34,6 +34,9 @@ class RolePermissionSeeder extends Seeder
             ['module' => 'patients', 'action' => 'create', 'permission_key' => 'patients.create', 'description' => 'Tạo mới hồ sơ bệnh nhân'],
             ['module' => 'patients', 'action' => 'update', 'permission_key' => 'patients.update', 'description' => 'Cập nhật thông tin bệnh nhân'],
             ['module' => 'patients', 'action' => 'delete', 'permission_key' => 'patients.delete', 'description' => 'Đổi trạng thái hoặc vô hiệu hóa hồ sơ bệnh nhân'],
+            ['module' => 'patients', 'action' => 'view', 'permission_key' => 'patient_files.view', 'description' => 'Xem và tải tài liệu y tế bệnh nhân'],
+            ['module' => 'patients', 'action' => 'create', 'permission_key' => 'patient_files.upload', 'description' => 'Tải lên tài liệu y tế bệnh nhân'],
+            ['module' => 'patients', 'action' => 'delete', 'permission_key' => 'patient_files.delete', 'description' => 'Xóa tài liệu y tế bệnh nhân'],
 
             // Module Services
             ['module' => 'services', 'action' => 'view', 'permission_key' => 'services.view', 'description' => 'Xem danh mục dịch vụ'],
@@ -153,6 +156,9 @@ class RolePermissionSeeder extends Seeder
                     'patients.view',
                     'patients.create',
                     'patients.update',
+                    'patient_files.view',
+                    'patient_files.upload',
+                    'patient_files.delete',
                     'services.view',
                     'services.create',
                     'services.update',
@@ -202,6 +208,9 @@ class RolePermissionSeeder extends Seeder
                 'description' => 'Bác sĩ điều trị: Xem lịch khám, thực hiện khám, cập nhật hồ sơ bệnh án, kê đơn, chỉ định dịch vụ.',
                 'permissions' => [
                     'patients.view',
+                    'patient_files.view',
+                    'patient_files.upload',
+                    'patient_files.delete',
                     'services.view',
                     'service_packages.view',
                     'patient_packages.view',
@@ -221,6 +230,8 @@ class RolePermissionSeeder extends Seeder
                     'patients.view',
                     'patients.create',
                     'patients.update',
+                    'patient_files.view',
+                    'patient_files.upload',
                     'services.view',
                     'service_packages.view',
                     'patient_packages.view',

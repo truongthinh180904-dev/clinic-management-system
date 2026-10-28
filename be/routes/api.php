@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\MedicalRecordController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PackageServiceController;
 use App\Http\Controllers\Api\V1\PatientController;
+use App\Http\Controllers\Api\V1\PatientFileController;
 use App\Http\Controllers\Api\V1\PatientPackageController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProductController;
@@ -195,6 +196,15 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/{patient}/debts', [DebtController::class, 'patientDebts'])
                 ->middleware('permission:debts.view|invoices.view')
                 ->name('api.v1.patients.debts');
+
+            // Patient Clinical Files
+            Route::get('/{patient}/files', [PatientFileController::class, 'indexByPatient'])
+                ->middleware('permission:patients.view|patient_files.view')
+                ->name('api.v1.patients.files.index');
+
+            Route::post('/{patient}/files', [PatientFileController::class, 'uploadForPatient'])
+                ->middleware('permission:patients.update|patients.create|patient_files.upload')
+                ->name('api.v1.patients.files.upload');
         });
 
         // Patient Packages Management
@@ -319,6 +329,10 @@ Route::prefix('v1')->group(function (): void {
                 ->middleware('permission:appointments.cancel|appointments.update')
                 ->name('api.v1.appointments.cancel');
 
+            Route::post('/{appointment}/check-in', [AppointmentController::class, 'checkIn'])
+                ->middleware('permission:appointments.update|visits.create')
+                ->name('api.v1.appointments.check-in');
+
             Route::delete('/{appointment}', [AppointmentController::class, 'destroy'])
                 ->middleware('permission:appointments.cancel|appointments.update')
                 ->name('api.v1.appointments.destroy');
@@ -353,6 +367,15 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('/{visit}', [VisitController::class, 'destroy'])
                 ->middleware('permission:visits.cancel|visits.update')
                 ->name('api.v1.visits.destroy');
+
+            // Visit Clinical Files
+            Route::get('/{visit}/files', [PatientFileController::class, 'indexByVisit'])
+                ->middleware('permission:visits.view|patients.view|patient_files.view|medical_records.view')
+                ->name('api.v1.visits.files.index');
+
+            Route::post('/{visit}/files', [PatientFileController::class, 'uploadForVisit'])
+                ->middleware('permission:visits.update|patients.update|patient_files.upload|medical_records.update|medical_records.create')
+                ->name('api.v1.visits.files.upload');
         });
 
         // Medical Record Management
@@ -386,6 +409,25 @@ Route::prefix('v1')->group(function (): void {
             Route::match(['put', 'patch'], '/{medical_record}', [MedicalRecordController::class, 'updateRecord'])
                 ->middleware('permission:medical_records.update')
                 ->name('api.v1.medical-records.update');
+        });
+
+        // Patient Files Direct Management
+        Route::prefix('patient-files')->group(function (): void {
+            Route::get('/{id}', [PatientFileController::class, 'show'])
+                ->middleware('permission:patient_files.view')
+                ->name('api.v1.patient-files.show');
+
+            Route::get('/{id}/preview', [PatientFileController::class, 'preview'])
+                ->middleware('permission:patient_files.view')
+                ->name('api.v1.patient-files.preview');
+
+            Route::get('/{id}/download', [PatientFileController::class, 'download'])
+                ->middleware('permission:patient_files.view')
+                ->name('api.v1.patient-files.download');
+
+            Route::delete('/{id}', [PatientFileController::class, 'destroy'])
+                ->middleware('permission:patient_files.delete')
+                ->name('api.v1.patient-files.destroy');
         });
 
         // Invoice Management

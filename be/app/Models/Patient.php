@@ -37,6 +37,11 @@ class Patient extends Model
         return $this->hasMany(PatientFile::class, 'patient_id');
     }
 
+    public function patientFiles(): HasMany
+    {
+        return $this->files();
+    }
+
     public function appointments(): HasMany
     {
         return $this->hasMany(Appointment::class, 'patient_id');

@@ -91,6 +91,16 @@ export async function cancelAppointment(
 }
 
 /**
+ * Atomically check in a confirmed appointment into a clinic visit.
+ */
+export async function checkInAppointment(
+  id: number | string,
+  payload?: Record<string, unknown>
+): Promise<ApiResponse<unknown>> {
+  return apiClient.post(`/appointments/${id}/check-in`, payload || {});
+}
+
+/**
  * Delete an appointment record.
  */
 export async function deleteAppointment(

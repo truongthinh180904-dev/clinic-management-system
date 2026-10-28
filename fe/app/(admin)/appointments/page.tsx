@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { ApiError } from '@/lib/api/client';
 import {
   cancelAppointment,
+  checkInAppointment,
   createAppointment,
   deleteAppointment,
   getAppointments,
@@ -452,6 +453,28 @@ function AppointmentsContent() {
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Không thể cập nhật trạng thái.';
       toast.error(msg, 'Lỗi cập nhật');
+    }
+  };
+
+  // Check-in from appointment to visit (P3-015 atomic check-in)
+  const [checkingInId, setCheckingInId] = useState<number | null>(null);
+
+  const handleCheckIn = async (appt: Appointment) => {
+    if (checkingInId !== null) return;
+    setCheckingInId(appt.id);
+    try {
+      await checkInAppointment(appt.id);
+      const msg = `Tiếp nhận lịch hẹn ${appt.appointment_code} thành công! Đã tạo lượt khám vào hàng đợi.`;
+      setActionSuccess(msg);
+      toast.success(msg, 'Tiếp nhận thành công');
+      setTimeout(() => setActionSuccess(null), 4000);
+      fetchAppointments();
+    } catch (err) {
+      const msg =
+        err instanceof ApiError ? err.message : 'Không thể tiếp nhận lịch hẹn này.';
+      toast.error(msg, 'Lỗi tiếp nhận');
+    } finally {
+      setCheckingInId(null);
     }
   };
 
@@ -960,6 +983,23 @@ function AppointmentsContent() {
                               className="rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950"
                             >
                               Xác nhận
+                            </button>
+                          )}
+
+                          {/* Atomic Check-in from Confirmed Appointment */}
+                          {canUpdate && appt.status === 'CONFIRMED' && (
+                            <button
+                              onClick={() => handleCheckIn(appt)}
+                              disabled={checkingInId === appt.id}
+                              title="Tiếp nhận từ Lịch hẹn"
+                              className="inline-flex items-center gap-1 rounded bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-100 disabled:opacity-50 dark:bg-teal-950/60 dark:text-teal-300 dark:hover:bg-teal-900"
+                            >
+                              {checkingInId === appt.id ? (
+                                <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+                              ) : (
+                                <span>🏥</span>
+                              )}
+                              <span>Tiếp nhận</span>
                             </button>
                           )}
 
