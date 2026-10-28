@@ -141,7 +141,7 @@
 
 ### TASK `P3-008` (`F3-02-05`): Tối ưu Responsive Đa Màn hình (Desktop, Tablet, Mobile) và Khả năng Truy cập
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-007`
 - **goal:** Kiểm tra và tinh chỉnh giao diện trên 3 độ phân giải chuẩn (Desktop, Tablet, Mobile); đảm bảo sidebar thu gọn mượt mà không che nội dung, các khối thống kê tự động xuống hàng theo grid linh hoạt, bàn phím và nhãn truy cập (ARIA labels) đầy đủ.
 - **scope:** `fe/components/layout/AdminShell.tsx`, `fe/app/(admin)/*`.

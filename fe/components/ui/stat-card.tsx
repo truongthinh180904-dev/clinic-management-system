@@ -37,33 +37,40 @@ export function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <Card className={cn('overflow-hidden transition-all duration-200 hover:shadow-md', className)}>
-      <CardContent className="p-6">
+    <Card
+      role="region"
+      aria-label={`Thống kê: ${title}`}
+      className={cn('overflow-hidden transition-all duration-200 hover:shadow-md', className)}
+    >
+      <CardContent className="p-4 sm:p-5 lg:p-6">
         <div className="flex items-center justify-between space-x-2">
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
+          <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
             {title}
           </p>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 shrink-0">
             {badge && <div>{badge}</div>}
             {Icon && (
-              <div className={cn('p-2.5 rounded-xl transition-colors', variantIconBg[variant])}>
-                <Icon className="h-5 w-5" />
+              <div
+                className={cn('p-2 sm:p-2.5 rounded-xl transition-colors', variantIconBg[variant])}
+                aria-hidden="true"
+              >
+                <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
             )}
           </div>
         </div>
 
-        <div className="mt-3">
-          <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+        <div className="mt-2.5 sm:mt-3">
+          <div className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 truncate">
             {value}
           </div>
 
           {(trend || trendValue || description) && (
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+            <div className="mt-1.5 sm:mt-2 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 truncate">
               {trend && (
                 <span
                   className={cn(
-                    'inline-flex items-center font-semibold rounded px-1.5 py-0.5',
+                    'inline-flex items-center font-semibold rounded px-1.5 py-0.5 shrink-0',
                     trend === 'up' && 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-300',
                     trend === 'down' && 'text-rose-700 bg-rose-50 dark:bg-rose-950 dark:text-rose-300',
                     trend === 'neutral' && 'text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300'
@@ -75,8 +82,8 @@ export function StatCard({
                   {trendValue}
                 </span>
               )}
-              {trendLabel && <span>{trendLabel}</span>}
-              {!trend && description && <span>{description}</span>}
+              {trendLabel && <span className="truncate">{trendLabel}</span>}
+              {!trend && description && <span className="truncate">{description}</span>}
             </div>
           )}
         </div>

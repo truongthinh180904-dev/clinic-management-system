@@ -31,6 +31,7 @@ import {
   Search,
   X,
   ChevronRight,
+  ChevronLeft,
   Hospital,
   Activity,
 } from 'lucide-react';
@@ -121,26 +122,36 @@ function findCurrentModule(pathname: string | null): { groupTitle: string; itemN
   return { groupTitle: 'HỆ THỐNG QLPK', itemName: 'Phân hệ quản trị' };
 }
 
+interface NavContentProps {
+  groups: NavGroup[];
+  onItemClick?: () => void;
+  unreadCount?: number;
+  isCollapsed?: boolean;
+}
+
 function NavContent({
   groups,
   onItemClick,
   unreadCount = 0,
-}: {
-  groups: NavGroup[];
-  onItemClick?: () => void;
-  unreadCount?: number;
-}) {
+  isCollapsed = false,
+}: NavContentProps) {
   const pathname = usePathname();
 
   return (
-    <div className="space-y-6">
+    <nav className="space-y-5" aria-label="Danh mục điều hướng">
       {groups.map((group) => (
         <div key={group.id} className="space-y-1">
-          <div className="px-3 py-1">
-            <h2 className="text-[11px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
-              {group.title}
-            </h2>
-          </div>
+          {isCollapsed ? (
+            <div className="py-2 flex justify-center" title={group.title}>
+              <div className="h-px w-6 bg-slate-200 dark:bg-slate-800" />
+            </div>
+          ) : (
+            <div className="px-3 py-1">
+              <h2 className="text-[11px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500 truncate">
+                {group.title}
+              </h2>
+            </div>
+          )}
           <div className="space-y-0.5">
             {group.items.map((item) => {
               const Icon = item.icon;
@@ -153,14 +164,17 @@ function NavContent({
                   key={item.href}
                   href={item.href}
                   onClick={onItemClick}
+                  title={item.name}
+                  aria-label={item.name}
                   className={cn(
-                    'group flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150',
+                    'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500',
+                    isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between',
                     isActive
                       ? 'bg-blue-50 text-blue-700 font-semibold shadow-xs dark:bg-blue-950/60 dark:text-blue-300'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100'
                   )}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className={cn('flex items-center gap-3 min-w-0', isCollapsed && 'justify-center')}>
                     <Icon
                       className={cn(
                         'h-4 w-4 shrink-0 transition-colors',
@@ -168,24 +182,32 @@ function NavContent({
                           ? 'text-blue-600 dark:text-blue-400'
                           : 'text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300'
                       )}
+                      aria-hidden="true"
                     />
-                    <span className="truncate">{item.name}</span>
+                    {!isCollapsed && <span className="truncate">{item.name}</span>}
                   </div>
-                  {item.href === '/notifications' && unreadCount > 0 ? (
-                    <span className="ml-auto mr-1.5 px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
-                  ) : null}
-                  {isActive ? (
-                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400 opacity-80" />
-                  ) : null}
+                  {item.href === '/notifications' && unreadCount > 0 && (
+                    isCollapsed ? (
+                      <span
+                        className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-950"
+                        title={`${unreadCount} thông báo chưa đọc`}
+                      />
+                    ) : (
+                      <span className="ml-auto mr-1.5 px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )
+                  )}
+                  {!isCollapsed && isActive && (
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400 opacity-80" aria-hidden="true" />
+                  )}
                 </Link>
               );
             })}
           </div>
         </div>
       ))}
-    </div>
+    </nav>
   );
 }
 
@@ -194,15 +216,15 @@ function TopbarBreadcrumb() {
   const currentModule = useMemo(() => findCurrentModule(pathname), [pathname]);
 
   return (
-    <div className="flex flex-col">
+    <nav aria-label="Đường dẫn phân hệ" className="flex flex-col min-w-0">
       <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-        <span className="font-medium truncate">{currentModule.groupTitle}</span>
-        <ChevronRight className="h-3 w-3 shrink-0 text-slate-400" />
+        <span className="font-medium truncate max-w-[120px] sm:max-w-none">{currentModule.groupTitle}</span>
+        <ChevronRight className="h-3 w-3 shrink-0 text-slate-400" aria-hidden="true" />
       </div>
-      <h1 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
+      <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight truncate max-w-[140px] sm:max-w-none">
         {currentModule.itemName}
       </h1>
-    </div>
+    </nav>
   );
 }
 
@@ -223,7 +245,58 @@ function AdminShellInner({ children }: AdminShellProps) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState<number>(0);
+
+  // Initialize collapse preference from localStorage and auto-collapse for tablet/laptop viewports
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('qlpk_sidebar_collapsed');
+      if (stored !== null) {
+        setIsCollapsed(stored === 'true');
+      } else if (window.innerWidth >= 1024 && window.innerWidth < 1280) {
+        // Auto-collapse on tablet / smaller desktop screens for comfortable table layout
+        setIsCollapsed(true);
+      }
+    } catch {}
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('qlpk_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Keyboard accessibility: Escape to close mobile menu, Ctrl+B / Cmd+B to toggle sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen, toggleSidebar]);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -271,7 +344,7 @@ function AdminShellInner({ children }: AdminShellProps) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-9 w-9 animate-spin rounded-full border-3 border-blue-600 border-t-transparent"></div>
+          <div className="h-9 w-9 animate-spin rounded-full border-3 border-blue-600 border-t-transparent" role="status" aria-label="Đang tải"></div>
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
             Đang tải phiên làm việc phòng khám...
           </p>
@@ -305,30 +378,69 @@ function AdminShellInner({ children }: AdminShellProps) {
         <MobileMenuCloseOnRouteChange onClose={closeMobileMenu} />
       </Suspense>
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-72 flex-shrink-0 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+      {/* Skip to Main Content Link for Keyboard and Screen Reader Accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-white text-sm font-medium"
+      >
+        Chuyển đến nội dung chính
+      </a>
+
+      {/* Desktop Sidebar (Collapsible: w-64 expanded, w-20 collapsed) */}
+      <aside
+        aria-label="Thanh điều hướng chính"
+        className={cn(
+          'hidden lg:flex flex-shrink-0 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 transition-all duration-300 ease-in-out',
+          isCollapsed ? 'w-20' : 'w-64'
+        )}
+      >
         {/* Sidebar Brand Header */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800">
-          <Link href="/admin" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20 group-hover:bg-blue-700 transition-colors">
+        <div
+          className={cn(
+            'h-16 flex items-center border-b border-slate-200 dark:border-slate-800',
+            isCollapsed ? 'justify-center px-2' : 'justify-between px-5'
+          )}
+        >
+          {isCollapsed ? (
+            <Link
+              href="/admin"
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-colors"
+              title="QLPK Clinic - Medical Smart SaaS"
+              aria-label="Trang chủ QLPK Clinic"
+            >
               <Hospital className="h-5 w-5" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
-                QLPK Clinic
-              </span>
-              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                Medical Smart SaaS
-              </span>
-            </div>
-          </Link>
-          <div className="flex items-center gap-1">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" title="Hệ thống online"></span>
-          </div>
+            </Link>
+          ) : (
+            <>
+              <Link href="/admin" className="flex items-center gap-2.5 group min-w-0" aria-label="Trang chủ QLPK Clinic">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20 group-hover:bg-blue-700 transition-colors shrink-0">
+                  <Hospital className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-tight truncate">
+                    QLPK Clinic
+                  </span>
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                    Medical Smart SaaS
+                  </span>
+                </div>
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="h-8 w-8 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                aria-label="Thu gọn thanh điều hướng (Ctrl+B)"
+                title="Thu gọn (Ctrl+B)"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Sidebar Navigation */}
-        <div className="flex-1 overflow-y-auto px-4 py-5 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin">
           <Suspense
             fallback={
               <div className="p-4 space-y-4 animate-pulse">
@@ -340,21 +452,43 @@ function AdminShellInner({ children }: AdminShellProps) {
               </div>
             }
           >
-            <NavContent groups={filteredGroups} unreadCount={unreadNotificationsCount} />
+            <NavContent
+              groups={filteredGroups}
+              unreadCount={unreadNotificationsCount}
+              isCollapsed={isCollapsed}
+            />
           </Suspense>
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-            <div className="flex items-center gap-1.5">
-              <Activity className="h-3.5 w-3.5 text-emerald-500" />
-              <span className="font-medium text-slate-700 dark:text-slate-300">Hệ thống QLPK v2.0</span>
-            </div>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">
-              Phase 2
-            </Badge>
-          </div>
+        <div
+          className={cn(
+            'p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50',
+            isCollapsed ? 'flex justify-center' : 'flex items-center justify-between'
+          )}
+        >
+          {isCollapsed ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="h-8 w-8 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              aria-label="Mở rộng thanh điều hướng (Ctrl+B)"
+              title="Mở rộng (Ctrl+B)"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 truncate">
+                <Activity className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <span className="font-medium text-slate-700 dark:text-slate-300 truncate">Hệ thống QLPK</span>
+              </div>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono shrink-0">
+                v2.0
+              </Badge>
+            </>
+          )}
         </div>
       </aside>
 
@@ -369,25 +503,31 @@ function AdminShellInner({ children }: AdminShellProps) {
 
       {/* Mobile Sidebar Drawer */}
       <aside
+        id="mobile-navigation-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Danh mục điều hướng di động"
+        tabIndex={-1}
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-slate-950 shadow-2xl flex flex-col lg:hidden transform transition-transform duration-200 ease-in-out',
+          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white dark:bg-slate-950 shadow-2xl flex flex-col lg:hidden transform transition-transform duration-200 ease-in-out',
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800">
+        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200 dark:border-slate-800">
           <Link
             href="/admin"
             onClick={closeMobileMenu}
-            className="flex items-center gap-2.5"
+            className="flex items-center gap-2.5 min-w-0"
+            aria-label="Trang chủ QLPK Clinic"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20 shrink-0">
               <Hospital className="h-5 w-5" />
             </div>
-            <div className="flex flex-col">
-              <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
+            <div className="flex flex-col min-w-0">
+              <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-tight truncate">
                 QLPK Clinic
               </span>
-              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
                 Medical Smart SaaS
               </span>
             </div>
@@ -396,8 +536,8 @@ function AdminShellInner({ children }: AdminShellProps) {
             variant="ghost"
             size="icon"
             onClick={closeMobileMenu}
-            aria-label="Đóng menu"
-            className="h-8 w-8 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            aria-label="Đóng danh mục điều hướng"
+            className="h-8 w-8 text-slate-500 hover:text-slate-900 dark:hover:text-white shrink-0"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -434,15 +574,20 @@ function AdminShellInner({ children }: AdminShellProps) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar Header */}
-        <header className="sticky top-0 z-30 h-16 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 lg:px-8 shadow-xs">
+        <header
+          role="banner"
+          className="sticky top-0 z-30 h-16 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-6 lg:px-8 shadow-xs"
+        >
           {/* Left section: Mobile menu toggle + Current Module Breadcrumb */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <Button
               variant="outline"
               size="icon"
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden h-9 w-9 text-slate-700 dark:text-slate-200"
+              className="lg:hidden h-9 w-9 text-slate-700 dark:text-slate-200 shrink-0"
               aria-label="Mở danh mục điều hướng"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation-drawer"
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -465,10 +610,14 @@ function AdminShellInner({ children }: AdminShellProps) {
           </div>
 
           {/* Right section: Search trigger + Notifications + User Profile + Logout */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* Quick search display */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-500 w-52 lg:w-60 shadow-xs">
-              <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <div
+              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-500 w-44 lg:w-60 shadow-xs"
+              role="search"
+              aria-label="Tìm kiếm nhanh phím tắt ⌘K"
+            >
+              <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" aria-hidden="true" />
               <span className="flex-1 truncate">Tìm kiếm nhanh...</span>
               <kbd className="rounded bg-white dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-500 border border-slate-200 dark:border-slate-700">
                 ⌘K
@@ -478,15 +627,19 @@ function AdminShellInner({ children }: AdminShellProps) {
             {/* Notifications Shortcut with Real Unread Badge */}
             <Link
               href="/notifications"
-              className="relative p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="relative p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
               title={
                 unreadNotificationsCount > 0
                   ? `Có ${unreadNotificationsCount} thông báo chưa đọc`
                   : 'Thông báo & Cảnh báo'
               }
-              aria-label="Thông báo và Cảnh báo"
+              aria-label={
+                unreadNotificationsCount > 0
+                  ? `Có ${unreadNotificationsCount} thông báo chưa đọc`
+                  : 'Thông báo & Cảnh báo'
+              }
             >
-              <Bell className="h-4 w-4" />
+              <Bell className="h-4 w-4" aria-hidden="true" />
               {unreadNotificationsCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-xs">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-60"></span>
@@ -497,10 +650,10 @@ function AdminShellInner({ children }: AdminShellProps) {
               )}
             </Link>
 
-            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 sm:mx-1" aria-hidden="true" />
 
             {/* User Profile Capsule */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <div className="hidden sm:flex flex-col text-right">
                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight">
                   {displayName}
@@ -512,7 +665,11 @@ function AdminShellInner({ children }: AdminShellProps) {
                 </div>
               </div>
 
-              <div className="h-9 w-9 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-sm border border-blue-200 dark:border-blue-800 shadow-xs">
+              <div
+                className="h-9 w-9 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-sm border border-blue-200 dark:border-blue-800 shadow-xs shrink-0"
+                aria-label={`Người dùng: ${displayName} (${roleName})`}
+                title={`${displayName} (${roleName})`}
+              >
                 {displayName.charAt(0).toUpperCase()}
               </div>
             </div>
@@ -523,9 +680,10 @@ function AdminShellInner({ children }: AdminShellProps) {
               size="sm"
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="ml-1 text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:border-rose-900/50 dark:hover:bg-rose-950/40 gap-1.5"
+              aria-label="Đăng xuất khỏi hệ thống"
+              className="ml-0.5 sm:ml-1 text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:border-rose-900/50 dark:hover:bg-rose-950/40 gap-1.5 shrink-0"
             >
-              <LogOut className="h-3.5 w-3.5" />
+              <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
               <span className="hidden sm:inline">
                 {isLoggingOut ? 'Đang thoát...' : 'Đăng xuất'}
               </span>
@@ -534,7 +692,13 @@ function AdminShellInner({ children }: AdminShellProps) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          role="main"
+          aria-label="Nội dung trang quản trị"
+          className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto focus:outline-none"
+        >
           {children}
         </main>
       </div>
@@ -548,7 +712,7 @@ export function AdminShell({ children }: AdminShellProps) {
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
           <div className="flex flex-col items-center gap-3">
-            <div className="h-9 w-9 animate-spin rounded-full border-3 border-blue-600 border-t-transparent"></div>
+            <div className="h-9 w-9 animate-spin rounded-full border-3 border-blue-600 border-t-transparent" role="status" aria-label="Đang tải"></div>
             <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
               Đang tải phiên làm việc phòng khám...
             </p>
