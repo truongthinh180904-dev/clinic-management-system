@@ -34,9 +34,11 @@ class RolePermissionSeeder extends Seeder
             ['module' => 'patients', 'action' => 'create', 'permission_key' => 'patients.create', 'description' => 'Tạo mới hồ sơ bệnh nhân'],
             ['module' => 'patients', 'action' => 'update', 'permission_key' => 'patients.update', 'description' => 'Cập nhật thông tin bệnh nhân'],
             ['module' => 'patients', 'action' => 'delete', 'permission_key' => 'patients.delete', 'description' => 'Đổi trạng thái hoặc vô hiệu hóa hồ sơ bệnh nhân'],
-            ['module' => 'patients', 'action' => 'view', 'permission_key' => 'patient_files.view', 'description' => 'Xem và tải tài liệu y tế bệnh nhân'],
-            ['module' => 'patients', 'action' => 'create', 'permission_key' => 'patient_files.upload', 'description' => 'Tải lên tài liệu y tế bệnh nhân'],
-            ['module' => 'patients', 'action' => 'delete', 'permission_key' => 'patient_files.delete', 'description' => 'Xóa tài liệu y tế bệnh nhân'],
+
+            // Module Patient Files (Tệp đính kèm y tế)
+            ['module' => 'patient_files', 'action' => 'view', 'permission_key' => 'patient_files.view', 'description' => 'Xem và tải tài liệu y tế bệnh nhân'],
+            ['module' => 'patient_files', 'action' => 'upload', 'permission_key' => 'patient_files.upload', 'description' => 'Tải lên tài liệu y tế bệnh nhân'],
+            ['module' => 'patient_files', 'action' => 'delete', 'permission_key' => 'patient_files.delete', 'description' => 'Xóa tài liệu y tế bệnh nhân'],
 
             // Module Services
             ['module' => 'services', 'action' => 'view', 'permission_key' => 'services.view', 'description' => 'Xem danh mục dịch vụ'],
@@ -68,6 +70,7 @@ class RolePermissionSeeder extends Seeder
             ['module' => 'medical_records', 'action' => 'view', 'permission_key' => 'medical_records.view', 'description' => 'Xem hồ sơ bệnh án chuyên môn'],
             ['module' => 'medical_records', 'action' => 'create', 'permission_key' => 'medical_records.create', 'description' => 'Lập bệnh án cho lượt khám'],
             ['module' => 'medical_records', 'action' => 'update', 'permission_key' => 'medical_records.update', 'description' => 'Cập nhật chẩn đoán và phác đồ điều trị'],
+            ['module' => 'medical_records', 'action' => 'history', 'permission_key' => 'medical_records.history.view', 'description' => 'Xem lịch sử chỉnh sửa và vết kiểm toán bệnh án'],
 
             // Module Invoices
             ['module' => 'invoices', 'action' => 'view', 'permission_key' => 'invoices.view', 'description' => 'Xem danh sách hóa đơn thanh toán'],
@@ -176,6 +179,7 @@ class RolePermissionSeeder extends Seeder
                     'visits.update',
                     'visits.cancel',
                     'medical_records.view',
+                    'medical_records.history.view',
                     'invoices.view',
                     'payments.view',
                     'expenses.view',
@@ -221,6 +225,20 @@ class RolePermissionSeeder extends Seeder
                     'medical_records.view',
                     'medical_records.create',
                     'medical_records.update',
+                    'medical_records.history.view',
+                    'notifications.view',
+                ],
+            ],
+            'NURSE' => [
+                'description' => 'Điều dưỡng / Kỹ thuật viên: Tiếp đón, hỗ trợ lâm sàng, xem thông tin bệnh nhân, xem và tải lên tệp đính kèm y tế, không lập/sửa bệnh án chuyên môn.',
+                'permissions' => [
+                    'patients.view',
+                    'patient_files.view',
+                    'patient_files.upload',
+                    'services.view',
+                    'appointments.view',
+                    'visits.view',
+                    'visits.update',
                     'notifications.view',
                 ],
             ],

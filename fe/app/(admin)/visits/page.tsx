@@ -93,6 +93,25 @@ function VisitsListContent() {
     hasPermission('medical_records.create') ||
     hasRole('ADMIN') ||
     hasRole('DOCTOR');
+  const canViewFiles =
+    hasPermission('patient_files.view') ||
+    hasRole('ADMIN') ||
+    hasRole('MANAGER') ||
+    hasRole('DOCTOR') ||
+    hasRole('NURSE') ||
+    hasRole('RECEPTIONIST');
+  const canUploadFiles =
+    hasPermission('patient_files.upload') ||
+    hasRole('ADMIN') ||
+    hasRole('MANAGER') ||
+    hasRole('DOCTOR') ||
+    hasRole('NURSE') ||
+    hasRole('RECEPTIONIST');
+  const canDeleteFiles =
+    hasPermission('patient_files.delete') ||
+    hasRole('ADMIN') ||
+    hasRole('MANAGER') ||
+    hasRole('DOCTOR');
 
   // List & pagination
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -899,15 +918,17 @@ function VisitsListContent() {
                             </Link>
                           )}
 
-                          <button
-                            type="button"
-                            onClick={() => setSelectedFileVisit(visit)}
-                            className="px-2.5 py-1.5 text-xs font-medium bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-md transition-colors inline-flex items-center gap-1"
-                            title="Quản lý và xem trước tệp y tế (X-quang, MRI, PDF)"
-                          >
-                            <FolderOpen className="h-3.5 w-3.5" />
-                            <span>Tệp y tế</span>
-                          </button>
+                          {canViewFiles && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedFileVisit(visit)}
+                              className="px-2.5 py-1.5 text-xs font-medium bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-md transition-colors inline-flex items-center gap-1"
+                              title="Quản lý và xem trước tệp y tế (X-quang, MRI, PDF)"
+                            >
+                              <FolderOpen className="h-3.5 w-3.5" />
+                              <span>Tệp y tế</span>
+                            </button>
+                          )}
 
                           {canUpdate && visit.status !== 'COMPLETED' && visit.status !== 'CANCELLED' && (
                             <button
@@ -1546,8 +1567,9 @@ function VisitsListContent() {
                 patientName={selectedFileVisit.patient?.full_name}
                 visitId={selectedFileVisit.id}
                 title={`Tệp y tế ca khám ${selectedFileVisit.visit_code}`}
-                canUpload={canUpdate && selectedFileVisit.status !== 'CANCELLED'}
-                canDelete={canUpdate}
+                canUpload={canUploadFiles && selectedFileVisit.status !== 'CANCELLED'}
+                canDelete={canDeleteFiles}
+                canView={canViewFiles}
                 compact={true}
               />
             </div>

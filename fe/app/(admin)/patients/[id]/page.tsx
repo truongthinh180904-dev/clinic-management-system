@@ -194,17 +194,20 @@ function PatientDetailContent({ patientId }: { patientId: string }) {
     hasPermission('patient_files.view') ||
     hasRole('ADMIN') ||
     hasRole('DOCTOR') ||
+    hasRole('NURSE') ||
     hasRole('RECEPTIONIST') ||
     hasRole('MANAGER');
   const canUploadFiles =
     hasPermission('patient_files.upload') ||
-    canUpdate ||
     hasRole('ADMIN') ||
     hasRole('DOCTOR') ||
+    hasRole('NURSE') ||
+    hasRole('RECEPTIONIST') ||
     hasRole('MANAGER');
   const canDeleteFiles =
     hasPermission('patient_files.delete') ||
     hasRole('ADMIN') ||
+    hasRole('DOCTOR') ||
     hasRole('MANAGER');
 
   const [patient, setPatient] = useState<Patient | null>(null);

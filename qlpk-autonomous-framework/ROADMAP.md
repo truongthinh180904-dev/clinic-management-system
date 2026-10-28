@@ -326,7 +326,7 @@
 
 ### TASK `P3-022` (`F3-07-01` / `F3-07-02`): Hoàn thiện Ma trận Phân quyền RBAC Chuyên sâu cho Hồ sơ Y tế và Tệp đính kèm
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-021`
 - **goal:** Bổ sung và đồng bộ các quyền chi tiết mới vào `RolePermissionSeeder`: `patient_files.view`, `patient_files.upload`, `patient_files.delete`, `medical_records.history.view`; phân định rõ ranh giới quyền giữa bác sĩ, điều dưỡng, và thu ngân/hành chính.
 - **scope:** `be/database/seeders/RolePermissionSeeder.php`, `be/app/Http/Controllers/Api/V1/RolePermissionController.php`.
