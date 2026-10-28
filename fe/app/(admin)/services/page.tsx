@@ -18,6 +18,7 @@ import {
 } from '@/types/service';
 import { PaginationMeta } from '@/types/auth';
 import { toast } from '@/components/ui/toast';
+import { ConfirmDialog } from '@/components/ui/alert-dialog';
 import { FormField, FormSubmitButton, FormAlert } from '@/components/ui/form-field';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -179,17 +180,27 @@ export default function ServicesPage() {
     }
   };
 
-  const handleDelete = async (service: Service) => {
-    if (!canDelete) return;
-    if (!confirm(`Bạn có chắc muốn ngừng cung cấp dịch vụ "${service.name}"?`)) return;
+  const [deleteServiceItem, setDeleteServiceItem] = useState<Service | null>(null);
+  const [isDeletingService, setIsDeletingService] = useState(false);
 
+  const handleDelete = (service: Service) => {
+    if (!canDelete) return;
+    setDeleteServiceItem(service);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteServiceItem) return;
+    setIsDeletingService(true);
     try {
-      await deleteService(service.id);
-      toast.success(`Đã xóa dịch vụ "${service.name}".`, 'Đã xóa');
+      await deleteService(deleteServiceItem.id);
+      toast.success(`Đã xóa dịch vụ "${deleteServiceItem.name}".`, 'Đã xóa');
+      setDeleteServiceItem(null);
       fetchServices();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Không thể xóa dịch vụ';
       toast.error(msg, 'Lỗi xóa dịch vụ');
+    } finally {
+      setIsDeletingService(false);
     }
   };
 
@@ -609,6 +620,34 @@ export default function ServicesPage() {
           </div>
         </div>
       )}
+      {/* DELETE SERVICE CONFIRMATION DIALOG */}
+      <ConfirmDialog
+        open={!!deleteServiceItem}
+        onOpenChange={(open) => {
+          if (!open && !isDeletingService) setDeleteServiceItem(null);
+        }}
+        title="Xác nhận xóa dịch vụ y tế"
+        description={
+          deleteServiceItem ? (
+            <div className="space-y-2">
+              <p>
+                Bạn có chắc chắn muốn xóa dịch vụ y tế{' '}
+                <strong className="text-slate-900 dark:text-white">&ldquo;{deleteServiceItem.name}&rdquo;</strong>{' '}
+                (Mã DV: <span className="font-mono text-blue-600 font-semibold">{deleteServiceItem.service_code}</span>)?
+              </p>
+              <div className="rounded-lg bg-rose-50 dark:bg-rose-950/50 p-2.5 text-xs text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                ⚠️ Cảnh báo: Các lượt khám hoặc hóa đơn trước đây đã áp dụng dịch vụ này vẫn lưu trữ dữ liệu lịch sử, nhưng dịch vụ sẽ không còn hiển thị để chỉ định mới.
+              </div>
+            </div>
+          ) : null
+        }
+        confirmText="Xác nhận xóa"
+        cancelText="Hủy bỏ"
+        variant="destructive"
+        isLoading={isDeletingService}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteServiceItem(null)}
+      />
     </div>
   );
 }

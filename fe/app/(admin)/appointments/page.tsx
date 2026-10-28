@@ -28,6 +28,16 @@ import { Patient } from '@/types/patient';
 import { Service } from '@/types/service';
 import { toast } from '@/components/ui/toast';
 import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  ConfirmDialog,
+} from '@/components/ui/alert-dialog';
+import {
   FormField,
   FormSection,
   FormSubmitButton,
@@ -423,24 +433,29 @@ function AppointmentsContent() {
   };
 
   // Delete Appointment
-  const handleDelete = async (appt: Appointment) => {
-    if (
-      !confirm(
-        `Bạn có chắc chắn muốn xóa vĩnh viễn lịch hẹn ${appt.appointment_code}?`
-      )
-    ) {
-      return;
-    }
+  const [deleteApptItem, setDeleteApptItem] = useState<Appointment | null>(null);
+  const [isDeletingAppt, setIsDeletingAppt] = useState(false);
+
+  const handleDelete = (appt: Appointment) => {
+    setDeleteApptItem(appt);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteApptItem) return;
+    setIsDeletingAppt(true);
     try {
-      await deleteAppointment(appt.id);
+      await deleteAppointment(deleteApptItem.id);
       const msg = 'Đã xóa lịch hẹn thành công.';
       setActionSuccess(msg);
       toast.success(msg, 'Xóa lịch hẹn');
       setTimeout(() => setActionSuccess(null), 3000);
+      setDeleteApptItem(null);
       fetchAppointments();
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Không thể xóa lịch hẹn.';
       toast.error(msg, 'Lỗi xóa lịch hẹn');
+    } finally {
+      setIsDeletingAppt(false);
     }
   };
 
@@ -1478,18 +1493,32 @@ function AppointmentsContent() {
         </div>
       )}
 
-      {/* CANCEL APPOINTMENT MODAL */}
-      {isCancelModalOpen && selectedAppointment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              Hủy Lịch Hẹn {selectedAppointment.appointment_code}
-            </h3>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Lịch sau khi hủy sẽ giải phóng khung giờ làm việc cho bác sĩ.
-            </p>
+      {/* CANCEL APPOINTMENT ALERT DIALOG */}
+      <AlertDialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+              <AlertTriangle className="h-5 w-5 shrink-0" />
+              <AlertDialogTitle>
+                Hủy Lịch Hẹn {selectedAppointment?.appointment_code}
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription>
+              Lịch sau khi hủy sẽ giải phóng khung giờ làm việc cho bác sĩ. Thao tác này sẽ ghi nhận vào audit log.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
 
-            <form onSubmit={handleCancelSubmit} className="mt-4 space-y-4">
+          {selectedAppointment && (
+            <form onSubmit={handleCancelSubmit} className="space-y-4 pt-1">
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-3 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+                <div>
+                  Bệnh nhân: <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppointment.patient?.full_name}</span>
+                </div>
+                <div>
+                  Ngày khám: <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedAppointment.appointment_date} ({selectedAppointment.start_time.substring(0, 5)} - {selectedAppointment.end_time.substring(0, 5)})</span>
+                </div>
+              </div>
+
               <FormField
                 label="Lý do hủy lịch"
                 required
@@ -1505,26 +1534,55 @@ function AppointmentsContent() {
                 />
               </FormField>
 
-              <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-                <button
-                  type="button"
+              <AlertDialogFooter>
+                <AlertDialogCancel
                   onClick={() => setIsCancelModalOpen(false)}
                   disabled={isSubmitting}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 disabled:opacity-50"
                 >
                   Đóng
-                </button>
+                </AlertDialogCancel>
                 <FormSubmitButton
                   variant="destructive"
                   isSubmitting={isSubmitting}
+                  disabled={!cancelReason.trim()}
                   loadingText="Đang hủy..."
                   submitText="Xác nhận hủy lịch"
                 />
-              </div>
+              </AlertDialogFooter>
             </form>
-          </div>
-        </div>
-      )}
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* DELETE APPOINTMENT CONFIRM DIALOG */}
+      <ConfirmDialog
+        open={!!deleteApptItem}
+        onOpenChange={(open) => {
+          if (!open && !isDeletingAppt) setDeleteApptItem(null);
+        }}
+        title="Xác nhận xóa vĩnh viễn lịch hẹn"
+        description={
+          deleteApptItem ? (
+            <div className="space-y-2">
+              <p>
+                Bạn có chắc chắn muốn xóa vĩnh viễn lịch hẹn{' '}
+                <strong className="font-mono text-rose-600 font-semibold">{deleteApptItem.appointment_code}</strong>{' '}
+                của bệnh nhân{' '}
+                <strong className="text-slate-900 dark:text-white">{deleteApptItem.patient?.full_name}</strong>?
+              </p>
+              <div className="rounded-lg bg-rose-50 dark:bg-rose-950/50 p-2 text-xs text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                ⚠️ Cảnh báo: Thao tác này sẽ xóa hoàn toàn lịch hẹn khỏi hệ thống và không thể phục hồi!
+              </div>
+            </div>
+          ) : null
+        }
+        confirmText="Xác nhận xóa"
+        cancelText="Hủy bỏ"
+        variant="destructive"
+        isLoading={isDeletingAppt}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteApptItem(null)}
+      />
     </div>
   );
 }

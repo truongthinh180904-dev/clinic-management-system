@@ -20,6 +20,23 @@ import {
 import { PaginationMeta } from '@/types/auth';
 import { Employee } from '@/types/employee';
 import { toast } from '@/components/ui/toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 import { FormField, FormSubmitButton } from '@/components/ui/form-field';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -664,16 +681,16 @@ function VisitsListContent() {
       </div>
 
       {/* Quick Status Modal */}
-      {statusModalVisit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 dark:border-slate-800">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-              Cập nhật trạng thái lượt khám #{statusModalVisit.visit_code}
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Bệnh nhân: <span className="font-semibold text-slate-800 dark:text-slate-200">{statusModalVisit.patient?.full_name}</span>
-            </p>
-            <form onSubmit={handleConfirmStatusChange} className="space-y-4">
+      <Dialog open={!!statusModalVisit} onOpenChange={(open) => !open && setStatusModalVisit(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cập nhật trạng thái lượt khám</DialogTitle>
+            <DialogDescription>
+              Lượt khám #{statusModalVisit?.visit_code} - Bệnh nhân: {statusModalVisit?.patient?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+          {statusModalVisit && (
+            <form onSubmit={handleConfirmStatusChange} className="space-y-4 pt-1">
               <FormField
                 label="Trạng thái mới"
                 required
@@ -703,7 +720,7 @@ function VisitsListContent() {
                 />
               </FormField>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <DialogFooter>
                 <button
                   type="button"
                   disabled={isSubmittingStatus}
@@ -717,23 +734,29 @@ function VisitsListContent() {
                   loadingText="Đang lưu..."
                   submitText="Xác nhận cập nhật"
                 />
-              </div>
+              </DialogFooter>
             </form>
-          </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
 
-      {/* Cancel Visit Modal */}
-      {cancelModalVisit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 dark:border-slate-800">
-            <h3 className="text-lg font-bold text-rose-600 dark:text-rose-400 mb-1">
-              Hủy lượt khám #{cancelModalVisit.visit_code}
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Bệnh nhân: <span className="font-semibold text-slate-800 dark:text-slate-200">{cancelModalVisit.patient?.full_name}</span>. Lưu ý: Nếu lượt khám có sử dụng gói dịch vụ, lượt sử dụng sẽ được hoàn lại an toàn vào gói của bệnh nhân.
-            </p>
-            <form onSubmit={handleConfirmCancel} className="space-y-4">
+      {/* Cancel Visit Alert Dialog */}
+      <AlertDialog open={!!cancelModalVisit} onOpenChange={(open) => !open && setCancelModalVisit(null)}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+              <XCircle className="h-5 w-5 shrink-0" />
+              <AlertDialogTitle>
+                Hủy lượt khám #{cancelModalVisit?.visit_code}
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription>
+              Bệnh nhân: <strong className="text-slate-800 dark:text-slate-200">{cancelModalVisit?.patient?.full_name}</strong>. Lưu ý: Nếu lượt khám có sử dụng gói dịch vụ, lượt sử dụng sẽ được hoàn lại an toàn vào gói của bệnh nhân.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {cancelModalVisit && (
+            <form onSubmit={handleConfirmCancel} className="space-y-4 pt-1">
               <FormField
                 label="Lý do hủy lượt khám"
                 required
@@ -749,15 +772,13 @@ function VisitsListContent() {
                 />
               </FormField>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
+              <AlertDialogFooter>
+                <AlertDialogCancel
                   disabled={isSubmittingCancel}
                   onClick={() => setCancelModalVisit(null)}
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg disabled:opacity-50"
                 >
                   Đóng
-                </button>
+                </AlertDialogCancel>
                 <FormSubmitButton
                   variant="destructive"
                   isSubmitting={isSubmittingCancel}
@@ -765,11 +786,11 @@ function VisitsListContent() {
                   loadingText="Đang hủy..."
                   submitText="Xác nhận hủy"
                 />
-              </div>
+              </AlertDialogFooter>
             </form>
-          </div>
-        </div>
-      )}
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

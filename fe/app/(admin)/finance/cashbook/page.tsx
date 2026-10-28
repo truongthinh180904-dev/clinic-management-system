@@ -75,6 +75,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ui/alert-dialog';
 
 import {
   CashbookSummary,
@@ -477,25 +478,34 @@ export default function FinanceCashbookPage() {
     }
   };
 
-  // Handle Quick Approve Expense
-  const handleApproveExpense = async (exp: Expense) => {
-    if (!window.confirm(`Xác nhận phê duyệt phiếu chi ${exp.expense_code} (${formatCurrency(exp.amount)})?\nSau khi duyệt, hệ thống sẽ tự động ghi bút toán CHI (OUT) vào sổ quỹ.`)) {
-      return;
-    }
+  // Approve Expense Confirmation State
+  const [approveExpenseItem, setApproveExpenseItem] = useState<Expense | null>(null);
+  const [isApprovingExp, setIsApprovingExp] = useState(false);
 
+  // Handle Quick Approve Expense
+  const handleApproveExpense = (exp: Expense) => {
+    setApproveExpenseItem(exp);
+  };
+
+  const handleConfirmApproveExpense = async () => {
+    if (!approveExpenseItem) return;
+    setIsApprovingExp(true);
     try {
-      const res = await approveExpense(exp.id);
+      const res = await approveExpense(approveExpenseItem.id);
       const msg = `Đã phê duyệt thành công phiếu chi ${res.data.expense_code}. Sổ quỹ đã được tự động cập nhật giảm ${formatCurrency(res.data.amount)}.`;
       setFeedbackMessage({
         type: 'success',
         text: msg,
       });
       toast.success(msg, 'Phê duyệt phiếu chi');
+      setApproveExpenseItem(null);
       loadData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi phê duyệt phiếu chi.';
       setFeedbackMessage({ type: 'error', text: msg });
       toast.error(msg, 'Lỗi phê duyệt');
+    } finally {
+      setIsApprovingExp(false);
     }
   };
 
@@ -2240,6 +2250,35 @@ export default function FinanceCashbookPage() {
           </form>
         </DialogContent>
       </Dialog>
+      {/* APPROVE EXPENSE CONFIRMATION DIALOG */}
+      <ConfirmDialog
+        open={!!approveExpenseItem}
+        onOpenChange={(open) => {
+          if (!open && !isApprovingExp) setApproveExpenseItem(null);
+        }}
+        title="Xác nhận phê duyệt phiếu chi"
+        description={
+          approveExpenseItem ? (
+            <div className="space-y-2">
+              <p>
+                Bạn có chắc chắn muốn phê duyệt phiếu chi{' '}
+                <strong className="font-mono text-blue-600 font-semibold">{approveExpenseItem.expense_code}</strong>{' '}
+                với số tiền{' '}
+                <strong className="text-rose-600 font-semibold">{formatCurrency(approveExpenseItem.amount)}</strong>?
+              </p>
+              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/50 p-2.5 text-xs text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900">
+                ✓ Sau khi phê duyệt, hệ thống sẽ tự động ghi nhận bút toán CHI (OUT) vào sổ quỹ của phòng khám.
+              </div>
+            </div>
+          ) : null
+        }
+        confirmText="Xác nhận phê duyệt"
+        cancelText="Hủy bỏ"
+        variant="default"
+        isLoading={isApprovingExp}
+        onConfirm={handleConfirmApproveExpense}
+        onCancel={() => setApproveExpenseItem(null)}
+      />
     </div>
   );
 }

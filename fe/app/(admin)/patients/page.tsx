@@ -20,6 +20,7 @@ import {
 } from '@/types/patient';
 import { PaginationMeta } from '@/types/auth';
 import { toast } from '@/components/ui/toast';
+import { ConfirmDialog } from '@/components/ui/alert-dialog';
 import {
   FormField,
   FormSection,
@@ -80,6 +81,10 @@ export default function PatientsPage() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [persistedWarnings, setPersistedWarnings] = useState<DuplicateWarning[] | null>(null);
   const [, startTransition] = useTransition();
+
+  // Delete Confirmation State
+  const [deletePatientItem, setDeletePatientItem] = useState<Patient | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -154,23 +159,27 @@ export default function PatientsPage() {
     }
   };
 
-  const handleDelete = async (patient: Patient) => {
+  const handleDelete = (patient: Patient) => {
     if (!canDelete) return;
-    const confirmed = window.confirm(
-      `CẢNH BÁO: Bạn có chắc chắn muốn xóa hồ sơ bệnh nhân "${patient.full_name}" (${patient.patient_code})?`
-    );
-    if (!confirmed) return;
+    setDeletePatientItem(patient);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!deletePatientItem) return;
+    setIsDeleting(true);
     try {
-      await deletePatient(patient.id);
-      const msg = `Đã xóa thành công hồ sơ bệnh nhân "${patient.full_name}".`;
+      await deletePatient(deletePatientItem.id);
+      const msg = `Đã xóa thành công hồ sơ bệnh nhân "${deletePatientItem.full_name}".`;
       setActionSuccess(msg);
       toast.success(msg, 'Xóa bệnh nhân');
       setTimeout(() => setActionSuccess(null), 4000);
+      setDeletePatientItem(null);
       fetchPatients(page);
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Không thể xóa hồ sơ bệnh nhân.';
       toast.error(msg, 'Lỗi xóa bệnh nhân');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -904,6 +913,36 @@ export default function PatientsPage() {
           </div>
         </div>
       )}
+      {/* DELETE PATIENT CONFIRMATION DIALOG */}
+      <ConfirmDialog
+        open={!!deletePatientItem}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setDeletePatientItem(null);
+        }}
+        title="Xác nhận xóa hồ sơ bệnh nhân"
+        description={
+          deletePatientItem ? (
+            <div className="space-y-2">
+              <p>
+                Bạn có chắc chắn muốn xóa vĩnh viễn hồ sơ bệnh nhân{' '}
+                <strong className="text-slate-900 dark:text-white">
+                  &ldquo;{deletePatientItem.full_name}&rdquo;
+                </strong>{' '}
+                (Mã BN: <span className="font-mono text-blue-600 font-semibold">{deletePatientItem.patient_code}</span>)?
+              </p>
+              <div className="rounded-lg bg-rose-50 dark:bg-rose-950/50 p-2.5 text-xs text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                ⚠️ Cảnh báo: Thao tác này sẽ xóa toàn bộ thông tin bệnh nhân và không thể hoàn tác!
+              </div>
+            </div>
+          ) : null
+        }
+        confirmText="Xác nhận xóa"
+        cancelText="Hủy bỏ"
+        variant="destructive"
+        isLoading={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeletePatientItem(null)}
+      />
     </div>
   );
 }

@@ -61,6 +61,15 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import {
   Invoice,
   InvoiceStatus,
   PaymentMethod,
@@ -1206,21 +1215,23 @@ export default function InvoicesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* DIALOG 3: HỦY HÓA ĐƠN */}
-      <Dialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-rose-600">
-              <Ban className="h-5 w-5" />
-              Xác nhận Hủy Hóa đơn
-            </DialogTitle>
-            <DialogDescription>
+      {/* ALERT DIALOG 3: HỦY HÓA ĐƠN */}
+      <AlertDialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+              <Ban className="h-5 w-5 shrink-0" />
+              <AlertDialogTitle>
+                Xác nhận Hủy Hóa đơn
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription>
               Chỉ được phép hủy hóa đơn khi chưa thu tiền (`paid_amount == 0`). Thao tác này không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
 
           {selectedInvoice && (
-            <form onSubmit={handleCancelInvoice} className="space-y-4 pt-2">
+            <form onSubmit={handleCancelInvoice} className="space-y-4 pt-1">
               {cancelError && (
                 <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0" />
@@ -1254,15 +1265,13 @@ export default function InvoicesPage() {
                 />
               </div>
 
-              <DialogFooter className="pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
+              <AlertDialogFooter>
+                <AlertDialogCancel
                   onClick={() => setIsCancelOpen(false)}
                   disabled={cancelSubmitting}
                 >
                   Quay lại
-                </Button>
+                </AlertDialogCancel>
                 <Button
                   type="submit"
                   variant="destructive"
@@ -1278,11 +1287,11 @@ export default function InvoicesPage() {
                     'Đồng ý hủy hóa đơn'
                   )}
                 </Button>
-              </DialogFooter>
+              </AlertDialogFooter>
             </form>
           )}
-        </DialogContent>
-      </Dialog>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

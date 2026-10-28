@@ -54,7 +54,7 @@
 | `P3-004` | `F3-02` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-004.md` | Chuẩn hóa bảng dữ liệu chống dồn cột (`whitespace-nowrap`) |
 | `P3-005` | `F3-02` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-005.md` | Chuẩn hóa Form, validation & loading spinner chống submit lặp |
 | `P3-006` | `F3-02` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-006.md` | Chuẩn hóa cấu trúc trang danh sách (List Page Pattern 8 khối) |
-| `P3-007` | `F3-02` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-007.md` | Chuẩn hóa Dialog xác nhận thao tác và Modal nghiệp vụ |
+| `P3-007` | `F3-02` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-007.md` | Chuẩn hóa Dialog xác nhận thao tác và Modal nghiệp vụ |
 | `P3-008` | `F3-02` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-008.md` | Tối ưu Responsive Desktop/Tablet/Mobile & Accessibility |
 | `P3-009` | `F3-02` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `docs/phase-3/UI_STANDARDIZATION_REPORT.md` | Kiểm chứng toàn diện giao diện & Lập biên bản nghiệm thu UI |
 | `P3-010` | `F3-03` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-010.md` | Hoàn thiện Hồ sơ bệnh nhân & Trục thời gian khám (Timeline) |

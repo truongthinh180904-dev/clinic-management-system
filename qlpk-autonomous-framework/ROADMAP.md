@@ -130,7 +130,7 @@
 
 ### TASK `P3-007` (`F3-02-04`): Chuẩn hóa Dialog Xác nhận Thao tác và Modal Nghiệp vụ
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-006`
 - **goal:** Thay thế toàn bộ hộp thoại `window.confirm` mặc định của trình duyệt bằng component `Dialog` / `AlertDialog` của `shadcn/ui`; thiết kế modal xác nhận rõ ràng cho các thao tác rủi ro cao (Hủy lịch, Hủy hóa đơn, Xóa bệnh nhân); đảm bảo dialog có thanh cuộn nội dung, không tràn màn hình nhỏ.
 - **scope:** `fe/components/ui/dialog.tsx`, `fe/app/(admin)/*`.

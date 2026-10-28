@@ -17,6 +17,7 @@ import {
 } from '@/types/employee';
 import { PaginationMeta } from '@/types/auth';
 import { toast } from '@/components/ui/toast';
+import { ConfirmDialog } from '@/components/ui/alert-dialog';
 import {
   FormField,
   FormSection,
@@ -154,23 +155,31 @@ export default function EmployeesPage() {
     }
   };
 
-  const handleDelete = async (employee: Employee) => {
-    if (!canDelete) return;
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn xóa nhân viên "${employee.full_name}" (${employee.employee_code})?`
-    );
-    if (!confirmed) return;
+  // Delete Confirmation State
+  const [deleteEmployeeItem, setDeleteEmployeeItem] = useState<Employee | null>(null);
+  const [isDeletingEmployee, setIsDeletingEmployee] = useState(false);
 
+  const handleDelete = (employee: Employee) => {
+    if (!canDelete) return;
+    setDeleteEmployeeItem(employee);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteEmployeeItem) return;
+    setIsDeletingEmployee(true);
     try {
-      await deleteEmployee(employee.id);
-      const msg = `Đã xóa thành công nhân viên ${employee.full_name}.`;
+      await deleteEmployee(deleteEmployeeItem.id);
+      const msg = `Đã xóa thành công nhân viên ${deleteEmployeeItem.full_name}.`;
       setActionSuccess(msg);
       toast.success(msg, 'Xóa nhân viên');
       setTimeout(() => setActionSuccess(null), 4000);
+      setDeleteEmployeeItem(null);
       fetchEmployees(page);
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Không thể xóa nhân viên.';
       toast.error(msg, 'Lỗi xóa nhân viên');
+    } finally {
+      setIsDeletingEmployee(false);
     }
   };
 
@@ -807,6 +816,34 @@ export default function EmployeesPage() {
           </div>
         </div>
       )}
+      {/* DELETE EMPLOYEE CONFIRMATION DIALOG */}
+      <ConfirmDialog
+        open={!!deleteEmployeeItem}
+        onOpenChange={(open) => {
+          if (!open && !isDeletingEmployee) setDeleteEmployeeItem(null);
+        }}
+        title="Xác nhận xóa hồ sơ nhân viên"
+        description={
+          deleteEmployeeItem ? (
+            <div className="space-y-2">
+              <p>
+                Bạn có chắc chắn muốn xóa hồ sơ nhân viên{' '}
+                <strong className="text-slate-900 dark:text-white">&ldquo;{deleteEmployeeItem.full_name}&rdquo;</strong>{' '}
+                (Mã NV: <span className="font-mono text-blue-600 font-semibold">{deleteEmployeeItem.employee_code}</span>)?
+              </p>
+              <div className="rounded-lg bg-rose-50 dark:bg-rose-950/50 p-2.5 text-xs text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                ⚠️ Cảnh báo: Thao tác này sẽ xóa hồ sơ nhân sự và vô hiệu hóa các liên kết phân công làm việc.
+              </div>
+            </div>
+          ) : null
+        }
+        confirmText="Xác nhận xóa"
+        cancelText="Hủy bỏ"
+        variant="destructive"
+        isLoading={isDeletingEmployee}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteEmployeeItem(null)}
+      />
     </div>
   );
 }

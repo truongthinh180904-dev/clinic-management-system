@@ -22,6 +22,7 @@ import {
 } from '@/types/user';
 import { PaginationMeta, UserStatus } from '@/types/auth';
 import { toast } from '@/components/ui/toast';
+import { ConfirmDialog } from '@/components/ui/alert-dialog';
 import { FormField, FormSubmitButton, FormAlert } from '@/components/ui/form-field';
 
 const STATUS_MAP: Record<UserStatus, { label: string; badgeClass: string }> = {
@@ -187,6 +188,10 @@ function UsersContent() {
     fetchUsers(1);
   };
 
+  // Delete User Confirmation State
+  const [deleteUserItem, setDeleteUserItem] = useState<UserItem | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+
   const handleStatusChange = async (targetUser: UserItem, newStatus: UserStatus) => {
     if (!canUpdate) return;
     try {
@@ -198,30 +203,34 @@ function UsersContent() {
       setTimeout(() => setActionSuccess(null), 4000);
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Lỗi cập nhật trạng thái.';
-      alert(msg);
+      toast.error(msg, 'Lỗi cập nhật');
     }
   };
 
-  const handleDeleteUser = async (targetUser: UserItem) => {
+  const handleDeleteUser = (targetUser: UserItem) => {
     if (!canDelete) return;
     if (currentUser?.id === targetUser.id) {
-      alert('Bạn không thể tự xóa tài khoản của chính mình.');
+      toast.warning('Bạn không thể tự xóa tài khoản của chính mình.', 'Không thể xóa');
       return;
     }
+    setDeleteUserItem(targetUser);
+  };
 
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn xóa tài khoản "${targetUser.username}" (${targetUser.email})?`
-    );
-    if (!confirmed) return;
-
+  const handleConfirmDeleteUser = async () => {
+    if (!deleteUserItem) return;
+    setIsDeletingUser(true);
     try {
-      await deleteUser(targetUser.id);
-      setActionSuccess(`Đã xóa tài khoản ${targetUser.username}.`);
+      await deleteUser(deleteUserItem.id);
+      setActionSuccess(`Đã xóa tài khoản ${deleteUserItem.username}.`);
+      toast.success(`Đã xóa tài khoản ${deleteUserItem.username}.`, 'Xóa tài khoản');
       setTimeout(() => setActionSuccess(null), 4000);
+      setDeleteUserItem(null);
       fetchUsers(page);
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Không thể xóa tài khoản.';
-      alert(`Lỗi: ${msg}`);
+      toast.error(msg, 'Lỗi xóa tài khoản');
+    } finally {
+      setIsDeletingUser(false);
     }
   };
 
@@ -1155,6 +1164,34 @@ function UsersContent() {
           </div>
         </div>
       )}
+      {/* DELETE USER CONFIRMATION DIALOG */}
+      <ConfirmDialog
+        open={!!deleteUserItem}
+        onOpenChange={(open) => {
+          if (!open && !isDeletingUser) setDeleteUserItem(null);
+        }}
+        title="Xác nhận xóa tài khoản người dùng"
+        description={
+          deleteUserItem ? (
+            <div className="space-y-2">
+              <p>
+                Bạn có chắc chắn muốn xóa tài khoản{' '}
+                <strong className="text-slate-900 dark:text-white">&ldquo;{deleteUserItem.username}&rdquo;</strong>{' '}
+                ({deleteUserItem.email})?
+              </p>
+              <div className="rounded-lg bg-rose-50 dark:bg-rose-950/50 p-2.5 text-xs text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                ⚠️ Cảnh báo: Tài khoản này sẽ bị thu hồi toàn bộ quyền đăng nhập vào hệ thống ngay lập tức!
+              </div>
+            </div>
+          ) : null
+        }
+        confirmText="Xác nhận xóa"
+        cancelText="Hủy bỏ"
+        variant="destructive"
+        isLoading={isDeletingUser}
+        onConfirm={handleConfirmDeleteUser}
+        onCancel={() => setDeleteUserItem(null)}
+      />
     </div>
   );
 }
