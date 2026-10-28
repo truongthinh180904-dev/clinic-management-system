@@ -152,7 +152,7 @@
 
 ### TASK `P3-009` (`F3-02-06` / `F3-02-07`): Kiểm chứng Toàn diện Giao diện Toàn Hệ thống & Lập Biên bản Nghiệm thu UI/UX
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-008`
 - **goal:** Rà soát toàn bộ 28 routes thực tế của hệ thống; đối chiếu các tiêu chí nghiệm thu của Feature `F3-02`: không còn bảng dồn cột, form nhất quán, modal không vỡ; lập tài liệu kiểm tra giao diện trước và sau chuẩn hóa tại `docs/phase-3/UI_STANDARDIZATION_REPORT.md`.
 - **scope:** `docs/phase-3/UI_STANDARDIZATION_REPORT.md`.
