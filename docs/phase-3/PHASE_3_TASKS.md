@@ -2,11 +2,11 @@
 ## Chuẩn hóa UI/UX Toàn diện, Bệnh án Điện tử, Quản lý Tệp Y tế, Báo cáo Nâng cao, Tối ưu & Vận hành
 
 - **Mã tài liệu:** `docs/phase-3/PHASE_3_TASKS.md`
-- **Phiên bản:** `1.0.0`
+- **Phiên bản:** `1.1.0`
 - **Giai đoạn:** `PHASE-03`
 - **Tổng số Feature:** `10 Features` (`F3-01` → `F3-10`)
 - **Tổng số Task:** `30 Tasks` (`P3-001` → `P3-030`)
-- **Tình trạng ban đầu:** `100% PENDING` (Chờ người dùng phê duyệt trước khi kích hoạt kịch bản thực thi tự động)
+- **Tình trạng tiến độ:** `3 / 30 DONE (10.0%)`, `27 / 30 PENDING (90.0%)` — Hoàn tất trọn bộ Feature `F3-01` (Audit & Planning)
 - **Cấu hình Model:**
   - **Planner:** `claude-sonnet-5-5-high`
   - **Coder:** `gemini-3.8-flash-high`
@@ -40,7 +40,7 @@
 
 #### TASK `P3-001` (`F3-01-01` / `F3-01-02` / `F3-01-03`): Khảo sát Git, Schema 30 Bảng MySQL và Danh mục API Backend
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P2-030`
 - **goal:** Khảo sát chi tiết hiện trạng mã nguồn, đối chiếu schema thực tế của 30 bảng MySQL trên `DBQLPK` với Eloquent models và 28 API controller groups; lập báo cáo audit kỹ thuật tại `docs/phase-3/PHASE_3_AUDIT_REPORT.md`.
 - **scope:** `be/app/Models/*`, `be/app/Http/Controllers/Api/V1/*`, `be/routes/api.php`, `docs/phase-3/PHASE_3_AUDIT_REPORT.md`.
@@ -53,20 +53,20 @@
 
 #### TASK `P3-002` (`F3-01-04` / `F3-01-05`): Khảo sát Frontend UI/UX, Bảng dữ liệu và Kiểm chứng Test Suites Hiện có
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-001`
 - **goal:** Rà soát toàn bộ các trang frontend trong `fe/app/(admin)/`, ghi nhận chi tiết hiện tượng dồn cột bảng, các form chưa đồng bộ validation, kiểm chứng kết quả chạy test suites thực tế (PHPUnit, Pint, Next.js build).
 - **scope:** `fe/app/(admin)/*`, `docs/phase-3/PHASE_3_AUDIT_REPORT.md`.
 - **deliverables:**
   - Cập nhật mục 4 và mục 5 trong `docs/phase-3/PHASE_3_AUDIT_REPORT.md`.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --colors=never`
+  - `cd be && php artisan test`
   - `test -f "docs/phase-3/PHASE_3_AUDIT_REPORT.md"`
 - **risks_and_mitigation:** Đảm bảo toàn bộ 285 tests hiện có tiếp tục vượt qua trước khi bắt đầu cải tiến code.
 
 #### TASK `P3-003` (`F3-01-06` / `F3-01-07`): Thẩm tra Logic Nghiệp vụ Tiềm ẩn & Hoàn tất Bộ Tài liệu Hoạch định Phase 3
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-002`
 - **goal:** Kiểm tra logic liên kết giữa Thanh toán, Sổ quỹ, Công nợ, Lượt khám, Kho dược và Bệnh án; hoàn thiện trọn bộ 4 tài liệu hoạch định Phase 3 (`PHASE_3_AUDIT_REPORT.md`, `PHASE_3_TASKS.md`, `PHASE_3_IMPLEMENTATION_PLAN.md`, `PHASE_3_RISK_REGISTER.md`).
 - **scope:** `docs/phase-3/*`, `qlpk-autonomous-framework/ROADMAP.md`, `qlpk-autonomous-framework/PROGRESS.md`.
@@ -177,7 +177,7 @@
 - **deliverables:**
   - Giao diện Timeline lâm sàng chi tiết và API trả về lịch sử khám đính kèm thông tin chẩn đoán.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --filter=PatientTest --colors=never`
+  - `cd be && php artisan test --filter=PatientTest`
   - `cd fe && npm run build`
 - **risks_and_mitigation:** Đảm bảo tối ưu eager loading (`with(['visits.doctor', 'visits.medicalRecord'])`) để tránh N+1 query.
 
@@ -190,7 +190,7 @@
 - **deliverables:**
   - Màn hình khám bệnh cho bác sĩ, form bệnh án chuẩn y khoa, API đồng bộ trạng thái lượt khám sang `COMPLETED` khi lưu bệnh án.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --filter=MedicalRecordTest --colors=never`
+  - `cd be && php artisan test --filter=MedicalRecordTest`
   - `cd fe && npm run build`
 - **risks_and_mitigation:** Tuân thủ nguyên tắc cốt lõi: Tuyệt đối không để AI tự động chẩn đoán hay kê đơn; hệ thống thuần túy hỗ trợ bác sĩ lưu trữ và theo dõi phác đồ.
 
@@ -203,7 +203,7 @@
 - **deliverables:**
   - API `GET /api/v1/visits/{visit}/medical-record/history` và giao diện xem lịch sử chỉnh sửa bệnh án có lưu vết thời gian và người sửa.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --filter=MedicalRecordTest --colors=never`
+  - `cd be && php artisan test --filter=MedicalRecordTest`
   - `cd fe && npm run build`
 - **risks_and_mitigation:** Đảm bảo các vai trò hành chính/thu ngân hoàn toàn bị chặn truy cập vào nội dung chẩn đoán nhạy cảm.
 
@@ -220,7 +220,7 @@
 - **deliverables:**
   - Logic xác thực chuyển trạng thái lịch hẹn chống nhảy cóc trạng thái bất hợp lệ; bộ lọc danh sách lịch hẹn mượt mà.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --filter=AppointmentTest --colors=never`
+  - `cd be && php artisan test --filter=AppointmentTest`
   - `cd fe && npm run build`
 - **risks_and_mitigation:** Ngăn chặn việc hủy hoặc sửa lịch hẹn đã chuyển sang trạng thái khám (`COMPLETED`).
 
@@ -233,7 +233,7 @@
 - **deliverables:**
   - Thao tác tiếp đón 1-click tại quầy, sinh lượt khám với trạng thái `WAITING` rõ ràng.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --filter=VisitTest --colors=never`
+  - `cd be && php artisan test --filter=VisitTest`
   - `cd fe && npm run build`
 - **risks_and_mitigation:** Kiểm tra cảnh báo trùng lặp bệnh nhân ngay tại quầy tiếp đón để tránh sinh nhiều mã bệnh nhân cho cùng một người.
 
@@ -246,7 +246,7 @@
 - **deliverables:**
   - API `POST /api/v1/appointments/{appointment}/check-in` hoạt động nguyên tử và UI nút tiếp nhận trực quan.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --filter=AppointmentCheckInTest --colors=never`
+  - `cd be && php artisan test --filter=AppointmentCheckInTest`
   - `cd fe && npm run build`
 - **risks_and_mitigation:** Sử dụng `lockForUpdate()` trên bản ghi `appointments` để ngăn chặn race condition.
 
@@ -267,7 +267,7 @@
 - **deliverables:**
   - API `POST /api/v1/patients/{patient}/files` và `POST /api/v1/visits/{visit}/files` kèm validation bảo mật.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --filter=PatientFileTest --colors=never`
+  - `cd be && php artisan test --filter=PatientFileTest`
 - **risks_and_mitigation:** Không bao giờ lưu file trực tiếp trong thư mục `public/`; chỉ lưu trong storage được bảo vệ bởi middleware xác thực.
 
 #### TASK `P3-017` (`F3-05-03` / `F3-05-04`): Xây dựng Backend API Tải xuống & Xem Trực tiếp Tệp Y tế có Phân quyền
@@ -279,7 +279,7 @@
 - **deliverables:**
   - API `GET /api/v1/patient-files/{id}/download`, `GET /api/v1/patient-files/{id}/preview`, `DELETE /api/v1/patient-files/{id}`.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --filter=PatientFileDownloadTest --colors=never`
+  - `cd be && php artisan test --filter=PatientFileDownloadTest`
 - **risks_and_mitigation:** Kiểm tra quyền sở hữu và chuyên khoa: tài khoản không có quyền xem bệnh án không thể tải file y tế của bệnh nhân khác.
 
 #### TASK `P3-018` (`F3-05-05` / `F3-05-06`): Xây dựng Giao diện Quản lý và Xem trước Tệp Y tế trên Frontend
@@ -347,7 +347,7 @@
 - **deliverables:**
   - Seeder quyền RBAC đầy đủ, kiểm soát chặt chẽ ở cấp Middleware API và ẩn/hiện nút bấm trên Frontend.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --filter=RolePermissionTest --colors=never`
+  - `cd be && php artisan test --filter=RolePermissionTest`
 - **risks_and_mitigation:** Chạy seeder theo cơ chế `updateOrCreate()` để không ghi đè mất các thiết lập phân quyền hiện tại.
 
 #### TASK `P3-023` (`F3-07-03` / `F3-07-04`): Nâng cấp Nhật ký Kiểm toán (Audit Log) Truy vết Truy cập và Thao tác Nhạy cảm
@@ -359,7 +359,7 @@
 - **deliverables:**
   - Cơ chế tự động ghi log kiểm toán không thể xóa sửa (Append-only Audit Log) và UI xem nhật ký quản trị.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --filter=AuditLogTest --colors=never`
+  - `cd be && php artisan test --filter=AuditLogTest`
 - **risks_and_mitigation:** Thiết kế ghi log bất đồng bộ hoặc tối ưu hóa để không làm chậm thời gian phản hồi của request chính.
 
 #### TASK `P3-024` (`F3-07-05` / `F3-07-06`): Che dấu Dữ liệu Nhạy cảm (Data Masking) và Giới hạn Tần suất Truy cập (Rate Limiting)
@@ -371,7 +371,7 @@
 - **deliverables:**
   - Cấu hình Rate Limiting theo chuẩn Laravel Throttle và các Resource che dấu thông tin cá nhân.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --filter=RateLimitTest --colors=never`
+  - `cd be && php artisan test --filter=RateLimitTest`
 - **risks_and_mitigation:** Thông báo lỗi rate limit rõ ràng (`429 Too Many Requests`) kèm thời gian chờ thử lại bằng tiếng Việt.
 
 ---
@@ -425,7 +425,7 @@
   - File migration bổ sung index an toàn (có kiểm tra `hasIndex` trước khi tạo để tránh lỗi trùng lặp).
 - **test_commands:**
   - `cd be && php artisan migrate --pretend`
-  - `cd be && ./vendor/bin/pest --colors=never`
+  - `cd be && php artisan test`
 - **risks_and_mitigation:** Chỉ sử dụng lệnh `php artisan migrate`, tuyệt đối không dùng `migrate:fresh` hay xóa dữ liệu đang có.
 
 #### TASK `P3-028` (`F3-09-03` / `F3-09-04`): Tối ưu Truy vấn Eloquent Chống N+1 và Tối ưu Phân trang Danh mục Lớn
@@ -437,7 +437,7 @@
 - **deliverables:**
   - Mã nguồn backend được tối ưu hóa truy vấn, kiểm thử hiệu năng thông suốt.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest --colors=never`
+  - `cd be && php artisan test`
   - `cd be && ./vendor/bin/pint --test`
 - **risks_and_mitigation:** Sử dụng `Pest` test suites để xác nhận việc tối ưu hóa truy vấn không làm thay đổi cấu trúc dữ liệu trả về của API.
 
@@ -462,7 +462,7 @@
 - **deliverables:**
   - File test suite E2E bao phủ toàn bộ vòng đời bệnh nhân và dòng tiền phòng khám, 100% assertions PASS.
 - **test_commands:**
-  - `cd be && ./vendor/bin/pest tests/Feature/EndToEndPhase3WorkflowTest.php --colors=never`
+  - `cd be && php artisan test tests/Feature/EndToEndPhase3WorkflowTest.php`
 - **risks_and_mitigation:** Kiểm thử trong môi trường transaction an toàn (DatabaseTransactions trait) để tự dọn dẹp dữ liệu test sau khi chạy xong.
 
 #### TASK `P3-030` (`F3-10-03` / `F3-10-04`): Nghiệm thu Toàn diện Hệ thống và Lập Hồ sơ Bàn giao Giai đoạn 3
@@ -482,7 +482,7 @@
 - **test_commands:**
   - `test -f "docs/phase-3/PHASE_3_REPORT.md"`
   - `test -f "docs/phase-3/OPERATIONAL_GUIDE.md"`
-  - `cd be && ./vendor/bin/pest --colors=never`
+  - `cd be && php artisan test`
   - `cd be && ./vendor/bin/pint --test`
   - `cd fe && npm run build`
 - **risks_and_mitigation:** Toàn bộ công việc bàn giao hoàn tất trên branch `dev`, sẵn sàng để người dùng nghiệm thu thực tế trước khi hòa nhập vào `main`.

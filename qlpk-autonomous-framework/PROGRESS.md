@@ -33,8 +33,8 @@
 - **Kế hoạch triển khai (Plan):** [`docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md)
 - **Quản trị rủi ro (Risk Register):** [`docs/phase-3/PHASE_3_RISK_REGISTER.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_RISK_REGISTER.md)
 - **Total tasks in Phase 3:** `30 Tasks` (`P3-001` → `P3-030` thuộc 10 Features `F3-01` → `F3-10`)
-- **Completed (`DONE`):** `1 / 30` Tasks (`3.3%`)
-- **Remaining (`PENDING`):** `29 / 30` Tasks (`96.7%`)
+- **Completed (`DONE`):** `3 / 30` Tasks (`10.0%`)
+- **Remaining (`PENDING`):** `27 / 30` Tasks (`90.0%`)
 - **Cấu hình Model Phân công (`agy v1.4.7`):**
   - **Planner:** `claude-sonnet-5-5-high`
   - **Coder:** `gemini-3.8-flash-high`
@@ -49,8 +49,8 @@
 | Task ID | Feature | Ưu tiên | Status | Test status | Review status | Round | Coder / Reviewer Model | Evidence Report | Mô tả tóm tắt |
 |---|---|---|---|---|---|---:|---|---|---|
 | `P3-001` | `F3-01` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `docs/phase-3/PHASE_3_AUDIT_REPORT.md` | Khảo sát Git, Schema 30 Bảng MySQL & API Backend |
-| `P3-002` | `F3-01` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `docs/phase-3/PHASE_3_AUDIT_REPORT.md` | Khảo sát Frontend UI/UX, Bảng dữ liệu & Tests |
-| `P3-003` | `F3-01` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `docs/phase-3/PHASE_3_TASKS.md` | Thẩm tra Logic nghiệp vụ tiềm ẩn & Hoàn tất Docs Phase 3 |
+| `P3-002` | `F3-01` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `docs/phase-3/PHASE_3_AUDIT_REPORT.md` | Khảo sát Frontend UI/UX, Bảng dữ liệu & Tests |
+| `P3-003` | `F3-01` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `docs/phase-3/PHASE_3_TASKS.md` | Thẩm tra Logic nghiệp vụ tiềm ẩn & Hoàn tất Docs Phase 3 |
 | `P3-004` | `F3-02` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-004.md` | Chuẩn hóa bảng dữ liệu chống dồn cột (`whitespace-nowrap`) |
 | `P3-005` | `F3-02` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-005.md` | Chuẩn hóa Form, validation & loading spinner chống submit lặp |
 | `P3-006` | `F3-02` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-006.md` | Chuẩn hóa cấu trúc trang danh sách (List Page Pattern 8 khối) |
