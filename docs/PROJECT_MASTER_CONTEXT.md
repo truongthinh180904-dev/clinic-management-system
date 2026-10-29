@@ -9,7 +9,7 @@
 - **Trạng thái tổng thể dự án:**
   - **Giai đoạn 1 (`PHASE-01`):** `30 / 30 Tasks DONE (100%)` — Hoàn tất nền tảng Core Clinical & RBAC.
   - **Giai đoạn 2 (`PHASE-02`):** `30 / 30 Tasks DONE (100%)` — Hoàn tất Tài chính, Kho Dược, Báo cáo & UI Design System.
-  - **Giai đoạn 3 (`PHASE-03`):** `21 / 30 Tasks DONE (70%)` — Đang triển khai (Chuẩn hóa UI/UX toàn diện, Bệnh án điện tử, Tệp y tế, Biểu đồ & Vận hành).
+  - **Giai đoạn 3 (`PHASE-03`):** `25 / 30 Tasks DONE (83.3%)` — Đang hoàn thiện 5 task cuối (Khôi phục CSDL, Composite Indexes, N+1 Query, E2E Test Suite, Báo cáo & Nghiệm thu).
 
 ---
 
