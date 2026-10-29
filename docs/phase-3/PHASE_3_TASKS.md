@@ -411,16 +411,16 @@
 
 #### TASK `P3-027` (`F3-09-01` / `F3-09-02`): Bổ sung Chỉ mục Phức hợp (Composite Indexes) trên các Bảng Giao dịch Lớn
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-026`
 - **goal:** Rà soát các câu truy vấn lọc, tìm kiếm và thống kê thời gian; tạo migration bổ sung các Composite Indexes chiến lược trên MySQL:
   - Bảng `visits`: index `(patient_id, status, created_at)`
   - Bảng `appointments`: index `(appointment_date, status, employee_id)`
-  - Bảng `invoices`: index `(patient_id, payment_status, created_at)`
-  - Bảng `cash_transactions`: index `(type, payment_method, transaction_date)`
-  - Bảng `inventory_transactions`: index `(product_id, type, created_at)`
+  - Bảng `invoices`: index `(patient_id, status, created_at)`
+  - Bảng `cash_transactions`: index `(transaction_type, payment_method, transaction_date)`
+  - Bảng `inventory_transactions`: index `(product_id, transaction_type, created_at)`
   - Bảng `audit_logs`: index `(user_id, action, created_at)`.
-- **scope:** `be/database/migrations/xxxx_xx_xx_add_phase_3_composite_indexes.php`.
+- **scope:** `be/database/migrations/2026_10_29_110000_add_phase_3_composite_indexes.php`.
 - **deliverables:**
   - File migration bổ sung index an toàn (có kiểm tra `hasIndex` trước khi tạo để tránh lỗi trùng lặp).
 - **test_commands:**
