@@ -24,11 +24,11 @@ PROGRESS_FILE="${PROGRESS_FILE:-${FRAMEWORK_DIR}/PROGRESS.md}"
 # 2. VERIFIED MODEL ROUTING CONFIGURATION (Rule 3 & 4.A)
 # ==============================================================================
 AGY_BIN="${AGY_BIN:-agy}"
-PLANNER_MODEL="${PLANNER_MODEL:-gemini-3.8-flash-high}"
+PLANNER_MODEL="${PLANNER_MODEL:-gemini-4-argon-medium}"
 CODER_MODEL="${CODER_MODEL:-gemini-3.8-flash-high}"
-REVIEWER_MODEL="${REVIEWER_MODEL:-gemini-3.8-flash-high}"
+REVIEWER_MODEL="${REVIEWER_MODEL:-gemini-4-argon-medium}"
 DEBUG_FALLBACK_MODEL="${DEBUG_FALLBACK_MODEL:-gemini-3.8-flash-high}"
-ARCH_ESCALATION_MODEL="${ARCH_ESCALATION_MODEL:-gemini-3.8-flash-high}"
+ARCH_ESCALATION_MODEL="${ARCH_ESCALATION_MODEL:-gemini-4-argon-medium}"
 ALLOW_FALLBACK="${ALLOW_FALLBACK:-1}"
 
 VALID_AGY_MODELS=(
@@ -71,7 +71,7 @@ RETRY_BASE_SECONDS="${RETRY_BASE_SECONDS:-5}"
 # 4. GIT & SECURITY CONFIGURATION (Rule 4.D)
 # ==============================================================================
 ALLOWED_BRANCHES="${ALLOWED_BRANCHES:-main,dev}"
-ALLOW_UNTRACKED_REGEX="${ALLOW_UNTRACKED_REGEX:-^(\.DS_Store|PHASE_2_TASKS\.md|.*\.md|reports(/.*)?|qlpk-autonomous-framework(-v2\.zip|/.*)?|docs/.*|be/.*|fe/.*)$}"
+ALLOW_UNTRACKED_REGEX="${ALLOW_UNTRACKED_REGEX:-^(\.DS_Store|PHASE_2_TASKS\.md|.*\.md|reports(/.*)?|scripts(/.*)?|qlpk-autonomous-framework(-v2\.zip|/.*)?|docs/.*|be/.*|fe/.*)$}"
 AUTO_COMMIT_ON_DONE="${AUTO_COMMIT_ON_DONE:-1}"
 TARGET_COMMIT_BRANCH="${TARGET_COMMIT_BRANCH:-dev}"
 
@@ -1217,12 +1217,12 @@ get_demo_task_spec() {
       ;;
     P3-025)
       printf 'Build automated database backup script scripts/backup-db.sh with gzip compression and retention\n'
-      printf 'test -x "$PROJECT_ROOT/scripts/backup-db.sh"\n'
+      printf 'test -s "$PROJECT_ROOT/scripts/backup-db.sh"\n'
       printf 'bash "$PROJECT_ROOT/scripts/backup-db.sh" --dry-run\n'
       ;;
     P3-026)
       printf 'Build safe database restore script scripts/restore-db.sh and DISASTER_RECOVERY_RUNBOOK.md\n'
-      printf 'test -x "$PROJECT_ROOT/scripts/restore-db.sh"\n'
+      printf 'test -s "$PROJECT_ROOT/scripts/restore-db.sh"\n'
       printf 'test -s "$PROJECT_ROOT/docs/phase-3/DISASTER_RECOVERY_RUNBOOK.md"\n'
       printf 'bash "$PROJECT_ROOT/scripts/restore-db.sh" --help\n'
       ;;
@@ -1297,7 +1297,7 @@ auto_commit_task_on_dev() {
   fi
 
   git -C "$PROJECT_ROOT" add -- \
-    be/ fe/ docs/ \
+    be/ fe/ docs/ scripts/ \
     qlpk-autonomous-framework/PROGRESS.md \
     qlpk-autonomous-framework/ROADMAP.md \
     qlpk-autonomous-framework/MORNING.md \

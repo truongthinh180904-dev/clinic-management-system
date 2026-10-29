@@ -457,17 +457,23 @@ function AppointmentsContent() {
   };
 
   // Check-in from appointment to visit (P3-015 atomic check-in)
+  const [checkInApptItem, setCheckInApptItem] = useState<Appointment | null>(null);
   const [checkingInId, setCheckingInId] = useState<number | null>(null);
 
-  const handleCheckIn = async (appt: Appointment) => {
-    if (checkingInId !== null) return;
-    setCheckingInId(appt.id);
+  const handleOpenCheckInModal = (appt: Appointment) => {
+    setCheckInApptItem(appt);
+  };
+
+  const handleConfirmCheckIn = async () => {
+    if (!checkInApptItem || checkingInId !== null) return;
+    setCheckingInId(checkInApptItem.id);
     try {
-      await checkInAppointment(appt.id);
-      const msg = `Tiếp nhận lịch hẹn ${appt.appointment_code} thành công! Đã tạo lượt khám vào hàng đợi.`;
+      await checkInAppointment(checkInApptItem.id);
+      const msg = `Tiếp nhận lịch hẹn ${checkInApptItem.appointment_code} thành công! Đã tạo lượt khám vào hàng đợi.`;
       setActionSuccess(msg);
       toast.success(msg, 'Tiếp nhận thành công');
       setTimeout(() => setActionSuccess(null), 4000);
+      setCheckInApptItem(null);
       fetchAppointments();
     } catch (err) {
       const msg =
@@ -989,7 +995,7 @@ function AppointmentsContent() {
                           {/* Atomic Check-in from Confirmed Appointment */}
                           {canUpdate && appt.status === 'CONFIRMED' && (
                             <button
-                              onClick={() => handleCheckIn(appt)}
+                              onClick={() => handleOpenCheckInModal(appt)}
                               disabled={checkingInId === appt.id}
                               title="Tiếp nhận từ Lịch hẹn"
                               className="inline-flex items-center gap-1 rounded bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-100 disabled:opacity-50 dark:bg-teal-950/60 dark:text-teal-300 dark:hover:bg-teal-900"
@@ -1726,6 +1732,57 @@ function AppointmentsContent() {
           )}
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* CHECK-IN FROM APPOINTMENT CONFIRM DIALOG */}
+      <ConfirmDialog
+        open={!!checkInApptItem}
+        onOpenChange={(open) => {
+          if (!open && checkingInId === null) setCheckInApptItem(null);
+        }}
+        title="Xác nhận tiếp nhận từ Lịch hẹn"
+        variant="success"
+        confirmText="Xác nhận tiếp nhận"
+        cancelText="Hủy bỏ"
+        isLoading={checkingInId !== null}
+        onConfirm={handleConfirmCheckIn}
+        onCancel={() => setCheckInApptItem(null)}
+        description={
+          checkInApptItem ? (
+            <div className="space-y-3">
+              <p>
+                Bạn có chắc chắn muốn tiếp nhận bệnh nhân{' '}
+                <strong className="text-slate-900 dark:text-white">
+                  {checkInApptItem.patient?.full_name}
+                </strong>{' '}
+                (Mã: <span className="font-mono">{checkInApptItem.appointment_code}</span>)?
+              </p>
+              <div className="rounded-lg bg-teal-50 dark:bg-teal-950/40 p-3 text-xs space-y-1.5 border border-teal-200 dark:border-teal-900 text-teal-800 dark:text-teal-200">
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Dịch vụ:</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {checkInApptItem.service?.name || `DV #${checkInApptItem.service_id}`}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Bác sĩ phụ trách:</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {checkInApptItem.employee?.full_name || `NV #${checkInApptItem.employee_id}`}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Giờ hẹn:</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {checkInApptItem.appointment_date} ({checkInApptItem.start_time.substring(0, 5)} - {checkInApptItem.end_time.substring(0, 5)})
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Hệ thống sẽ chuyển trạng thái lịch hẹn sang <strong>COMPLETED</strong> và tự động sinh lượt khám trong hàng đợi với cơ chế khóa bi quan chống tạo trùng.
+              </p>
+            </div>
+          ) : null
+        }
+      />
 
       {/* DELETE APPOINTMENT CONFIRM DIALOG */}
       <ConfirmDialog

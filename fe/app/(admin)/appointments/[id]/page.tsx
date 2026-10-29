@@ -23,6 +23,8 @@ import {
 } from '@/types/appointment';
 import { Employee } from '@/types/employee';
 import { Service } from '@/types/service';
+import { toast } from '@/components/ui/toast';
+import { ConfirmDialog } from '@/components/ui/alert-dialog';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -181,22 +183,24 @@ function AppointmentDetailContent({ appointmentId }: { appointmentId: string }) 
     }
   };
 
-  // Check-in from appointment into visit
+  // Check-in from appointment into visit (P3-015 atomic check-in)
+  const [isCheckInConfirmOpen, setIsCheckInConfirmOpen] = useState(false);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
-  const handleCheckIn = async () => {
+
+  const handleConfirmCheckIn = async () => {
     if (!appointment || isCheckingIn) return;
     setIsCheckingIn(true);
     try {
       await checkInAppointment(appointment.id);
-      setActionSuccess('Tiếp nhận thành công! Lịch hẹn đã chuyển thành lượt khám.');
+      const msg = `Tiếp nhận lịch hẹn ${appointment.appointment_code} thành công! Lịch hẹn đã chuyển thành lượt khám.`;
+      setActionSuccess(msg);
+      toast.success(msg, 'Tiếp nhận thành công');
+      setIsCheckInConfirmOpen(false);
       setTimeout(() => setActionSuccess(null), 4000);
       await fetchAppointmentDetail();
     } catch (err) {
-      if (err instanceof ApiError) {
-        alert(err.message);
-      } else {
-        alert('Không thể tiếp nhận lịch hẹn này.');
-      }
+      const msg = err instanceof ApiError ? err.message : 'Không thể tiếp nhận lịch hẹn này.';
+      toast.error(msg, 'Lỗi tiếp nhận');
     } finally {
       setIsCheckingIn(false);
     }
@@ -326,7 +330,7 @@ function AppointmentDetailContent({ appointmentId }: { appointmentId: string }) 
 
           {canUpdate && appointment.status === 'CONFIRMED' && (
             <button
-              onClick={handleCheckIn}
+              onClick={() => setIsCheckInConfirmOpen(true)}
               disabled={isCheckingIn}
               className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-teal-700 disabled:opacity-50"
             >
@@ -802,6 +806,56 @@ function AppointmentDetailContent({ appointmentId }: { appointmentId: string }) 
           </div>
         </div>
       )}
+
+      {/* CHECK-IN FROM APPOINTMENT CONFIRM DIALOG */}
+      <ConfirmDialog
+        open={isCheckInConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open && !isCheckingIn) setIsCheckInConfirmOpen(false);
+        }}
+        title="Xác nhận tiếp nhận từ Lịch hẹn"
+        variant="success"
+        confirmText="Xác nhận tiếp nhận"
+        cancelText="Hủy bỏ"
+        isLoading={isCheckingIn}
+        onConfirm={handleConfirmCheckIn}
+        onCancel={() => setIsCheckInConfirmOpen(false)}
+        description={
+          appointment ? (
+            <div className="space-y-3">
+              <p>
+                Xác nhận chuyển đổi lịch hẹn{' '}
+                <strong className="font-mono text-teal-600 font-semibold">{appointment.appointment_code}</strong>{' '}
+                thành lượt khám cho bệnh nhân{' '}
+                <strong className="text-slate-900 dark:text-white">{appointment.patient?.full_name}</strong>?
+              </p>
+              <div className="rounded-lg bg-teal-50 dark:bg-teal-950/40 p-3 text-xs space-y-1.5 border border-teal-200 dark:border-teal-900 text-teal-800 dark:text-teal-200">
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Dịch vụ:</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {appointment.service?.name || `DV #${appointment.service_id}`}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Bác sĩ phụ trách:</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {appointment.employee?.full_name || `NV #${appointment.employee_id}`}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Thời gian hẹn:</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {appointment.appointment_date} ({appointment.start_time.substring(0, 5)} - {appointment.end_time.substring(0, 5)})
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Lưu ý: Thao tác này sẽ cập nhật trạng thái lịch hẹn thành <strong>COMPLETED</strong> và tạo lượt khám mới với cơ chế khóa bi quan nguyên tử.
+              </p>
+            </div>
+          ) : null
+        }
+      />
     </div>
   );
 }

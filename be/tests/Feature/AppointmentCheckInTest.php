@@ -364,9 +364,13 @@ class AppointmentCheckInTest extends TestCase
         $this->assertInstanceOf(Visit::class, $visit);
         $this->assertEquals($appointment->id, $visit->appointment_id);
 
-        // Second execution throws InvalidArgumentException
-        $this->expectException(InvalidArgumentException::class);
-        $service->checkInAppointment($appointment);
+        // Second execution throws InvalidArgumentException and does not create duplicate
+        try {
+            $service->checkInAppointment($appointment);
+            $this->fail('Expected InvalidArgumentException was not thrown on duplicate check-in.');
+        } catch (InvalidArgumentException $e) {
+            $this->assertStringContainsString('Lịch hẹn này đã hoàn thành hoặc đã phát sinh lượt khám trước đó.', $e->getMessage());
+        }
 
         $this->assertEquals(1, Visit::where('appointment_id', $appointment->id)->count());
     }

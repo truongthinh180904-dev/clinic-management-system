@@ -33,14 +33,14 @@
 - **Kế hoạch triển khai (Plan):** [`docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md)
 - **Quản trị rủi ro (Risk Register):** [`docs/phase-3/PHASE_3_RISK_REGISTER.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_RISK_REGISTER.md)
 - **Total tasks in Phase 3:** `30 Tasks` (`P3-001` → `P3-030` thuộc 10 Features `F3-01` → `F3-10`)
-- **Completed (`DONE`):** `23 / 30` Tasks (`76.7%`)
-- **Remaining (`PENDING`):** `7 / 30` Tasks (`23.3%`)
+- **Completed (`DONE`):** `22 / 30` Tasks (`73.3%`)
+- **Remaining (`PENDING`):** `8 / 30` Tasks (`26.7%`)
 - **Cấu hình Model Phân công (`agy v1.4.7`):**
-  - **Planner:** `gemini-3.8-flash-high`
+  - **Planner:** `gemini-4-argon-medium`
   - **Coder:** `gemini-3.8-flash-high`
-  - **Reviewer:** `gemini-3.8-flash-high` *(Đã chuyển sang Gemini Flash theo yêu cầu để tránh hết quota)*
-  - **Tester / Debug Fallback:** `gemini-3.8-flash-high`
-  - **Arch Escalation:** `gemini-3.8-flash-high`
+  - **Reviewer / Tester:** `gemini-4-argon-medium`
+  - **Debug Fallback:** `gemini-3.8-flash-high`
+  - **Arch Escalation:** `gemini-4-argon-medium`
 
 ---
 
@@ -62,19 +62,19 @@
 | `P3-012` | `F3-03` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-012.md` | Phân quyền bảo mật & Lưu vết lịch sử sửa bệnh án (Audit Trail) |
 | `P3-013` | `F3-04` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-013.md` | Chuẩn hóa máy trạng thái Lịch hẹn & Bộ lọc đa tiêu chí |
 | `P3-014` | `F3-04` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-014.md` | Hoàn thiện luồng Tiếp đón bệnh nhân nhanh tại quầy lễ tân |
-| `P3-015` | `F3-04` | P0 | `BLOCKED` | `FAIL` | `FAIL` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-015.md` | Chuyển đổi nguyên tử từ Lịch hẹn sang Lượt khám chống trùng |
-| `P3-016` | `F3-05` | P0 | `BLOCKED` | `FAIL` | `FAIL` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-016.md` | Backend API Tải lên & Quản lý Tệp y tế (`patient_files`) |
+| `P3-015` | `F3-04` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `reports/tasks/P3-015.md` | Chuyển đổi nguyên tử từ Lịch hẹn sang Lượt khám chống trùng |
+| `P3-016` | `F3-05` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `reports/tasks/P3-016.md` | Backend API Tải lên & Quản lý Tệp y tế (`patient_files`) |
 | `P3-017` | `F3-05` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-017.md` | Backend API Tải xuống & Xem tệp có xác thực và phân quyền |
 | `P3-018` | `F3-05` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-018.md` | Frontend UI Quản lý & Xem trước Tệp Y tế (X-quang, Xét nghiệm) |
 | `P3-019` | `F3-06` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-019.md` | Chuẩn hóa Donut Chart cơ cấu Doanh thu, Thanh toán, Chi phí |
 | `P3-020` | `F3-06` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-020.md` | Chuẩn hóa Bar Chart so sánh hiệu suất Bác sĩ và chỉ tiêu KPI |
 | `P3-021` | `F3-06` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-021.md` | Chuẩn hóa Area Chart xu hướng Doanh thu & Lượt khám 12 tháng |
 | `P3-022` | `F3-07` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-022.md` | Phân quyền RBAC chuyên sâu cho Hồ sơ y tế và Tệp đính kèm |
-| `P3-023` | `F3-07` | P0 | `BLOCKED` | `FAIL` | `FAIL` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-023.md` | Nâng cấp Audit Log truy vết xem và thao tác dữ liệu nhạy cảm |
+| `P3-023` | `F3-07` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `reports/tasks/P3-023.md` | Nâng cấp Audit Log truy vết xem và thao tác dữ liệu nhạy cảm |
 | `P3-024` | `F3-07` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-024.md` | Che dấu dữ liệu cá nhân (Data Masking) & Rate Limiting |
-| `P3-025` | `F3-08` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `scripts/backup-db.sh` | Kịch bản sao lưu CSDL tự động nén gzip (`scripts/backup-db.sh`) |
-| `P3-026` | `F3-08` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `scripts/restore-db.sh` | Kịch bản khôi phục CSDL an toàn kèm dry-run & Sổ tay vận hành |
-| `P3-027` | `F3-09` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-027.md` | Bổ sung Composite Indexes MySQL cho các bảng giao dịch lớn |
-| `P3-028` | `F3-09` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-028.md` | Tối ưu truy vấn Eloquent chống N+1 và tối ưu phân trang |
-| `P3-029` | `F3-10` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `tests/Feature/EndToEndPhase3WorkflowTest.php` | Test Suite E2E toàn diện toàn bộ luồng nghiệp vụ phòng khám |
-| `P3-030` | `F3-10` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `docs/phase-3/PHASE_3_REPORT.md` | Tổng nghiệm thu toàn diện hệ thống và Hồ sơ bàn giao Phase 3 |
+| `P3-025` | `F3-08` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `scripts/backup-db.sh` | Kịch bản sao lưu CSDL tự động nén gzip (`scripts/backup-db.sh`) |
+| `P3-026` | `F3-08` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `scripts/restore-db.sh` | Kịch bản khôi phục CSDL an toàn kèm dry-run & Sổ tay vận hành |
+| `P3-027` | `F3-09` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `reports/tasks/P3-027.md` | Bổ sung Composite Indexes MySQL cho các bảng giao dịch lớn |
+| `P3-028` | `F3-09` | P1 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `reports/tasks/P3-028.md` | Tối ưu truy vấn Eloquent chống N+1 và tối ưu phân trang |
+| `P3-029` | `F3-10` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `tests/Feature/EndToEndPhase3WorkflowTest.php` | Test Suite E2E toàn diện toàn bộ luồng nghiệp vụ phòng khám |
+| `P3-030` | `F3-10` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `docs/phase-3/PHASE_3_REPORT.md` | Tổng nghiệm thu toàn diện hệ thống và Hồ sơ bàn giao Phase 3 |
