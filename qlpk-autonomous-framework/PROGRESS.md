@@ -33,8 +33,8 @@
 - **Kế hoạch triển khai (Plan):** [`docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md)
 - **Quản trị rủi ro (Risk Register):** [`docs/phase-3/PHASE_3_RISK_REGISTER.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_RISK_REGISTER.md)
 - **Total tasks in Phase 3:** `30 Tasks` (`P3-001` → `P3-030` thuộc 10 Features `F3-01` → `F3-10`)
-- **Completed (`DONE`):** `23 / 30` Tasks (`76.7%`)
-- **Remaining (`PENDING`):** `7 / 30` Tasks (`23.3%`)
+- **Completed (`DONE`):** `25 / 30` Tasks (`83.3%`)
+- **Remaining (`PENDING`):** `5 / 30` Tasks (`16.7%`)
 - **Cấu hình Model Phân công (`agy v1.4.7`):**
   - **Planner:** `gemini-4-argon-medium`
   - **Coder:** `gemini-3.8-flash-high`

@@ -17,6 +17,8 @@ be/storage/logs/*
 be/storage/framework/cache/*
 be/storage/framework/sessions/*
 be/storage/framework/views/
+storage/backups/
+be/storage/backups/
 
 # IDE and operating system
 .DS_Store

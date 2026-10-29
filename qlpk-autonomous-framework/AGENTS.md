@@ -31,7 +31,7 @@ Mỗi vai trò bắt buộc gọi đúng Model ID đã được xác minh trên 
 - **PLANNER (`claude-sonnet-5-5-high`)**: Phân tích yêu cầu, chia task, dependency, `allowed_files`, acceptance criteria và kế hoạch kiểm thử (`--mode plan --sandbox`).
 - **CODER (`gemini-3.8-flash-high`)**: Thực hiện từng task một theo thứ tự dependency, viết code, cập nhật test và tài liệu liên quan trong phạm vi `allowed_files` (`--mode accept-edits`).
 - **AUTOMATED TESTER (Shell Runner — Không dùng LLM)**: Chạy kiểm thử bằng lệnh thật, thu exit code và log đã redact; không coi phát biểu của AI là kết quả kiểm thử.
-- **REVIEWER (`gemini-4-argon-high`)**: Đánh giá code độc lập (`--mode plan --sandbox`), **chỉ được gọi sau khi tất cả các kiểm thử bắt buộc của task đã PASS (`exit_code == 0`)**.
+- **REVIEWER (`gemini-4-argon-medium`)**: Đánh giá code độc lập (`--mode plan --sandbox`), **chỉ được gọi sau khi tất cả các kiểm thử bắt buộc của task đã PASS (`exit_code == 0`)**.
 - **DEBUG FALLBACK (`claude-sonnet-5-5-high`)**: Dùng khi cần phân tích lỗi phức tạp kéo dài theo chính sách fallback.
 - **ARCH / SECURITY ESCALATION (`claude-opus-5-5-high`)**: Dùng cho vấn đề kiến trúc hoặc bảo mật nghiêm trọng.
 
