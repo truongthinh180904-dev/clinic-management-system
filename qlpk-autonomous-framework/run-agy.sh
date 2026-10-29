@@ -1339,6 +1339,10 @@ auto_commit_task_on_dev() {
 
 run_session() {
   local requested_task="${1:-}"
+  if [[ "$requested_task" == -* ]]; then
+    log "WARN: Unknown option '${requested_task}' passed to 'run'. Running all pending Phase 3 tasks."
+    requested_task=""
+  fi
   local tasks_to_run=()
   if [[ -n "$requested_task" ]]; then
     tasks_to_run=("$requested_task")
