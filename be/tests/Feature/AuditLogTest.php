@@ -433,4 +433,220 @@ class AuditLogTest extends TestCase
         $this->assertNotNull($exportLog);
         $this->assertSame($admin->id, $exportLog->user_id);
     }
+
+    /**
+     * Test updating medical record automatically creates audit log with old and new values.
+     */
+    public function test_updating_medical_record_automatically_creates_audit_log(): void
+    {
+        $doctor = $this->createUserWithRole('DOCTOR');
+
+        $patient = Patient::create([
+            'patient_code' => 'BN'.fake()->unique()->numerify('######'),
+            'full_name' => fake()->name(),
+            'gender' => 'MALE',
+            'status' => 'ACTIVE',
+        ]);
+
+        $service = Service::create([
+            'service_code' => 'DV'.fake()->unique()->numerify('######'),
+            'name' => 'Khám tổng quát Tai Mũi Họng',
+            'price' => 200000,
+            'duration_minutes' => 20,
+            'status' => 'ACTIVE',
+        ]);
+
+        $visit = Visit::create([
+            'patient_id' => $patient->id,
+            'employee_id' => $doctor->employee_id,
+            'service_id' => $service->id,
+            'visit_code' => 'LK'.fake()->unique()->numerify('######'),
+            'visit_date' => now(),
+            'quantity' => 1,
+            'unit_price' => 200000,
+            'discount_amount' => 0,
+            'total_amount' => 200000,
+            'payment_status' => Visit::PAYMENT_STATUS_PAID,
+            'status' => Visit::STATUS_COMPLETED,
+        ]);
+
+        $record = MedicalRecord::create([
+            'visit_id' => $visit->id,
+            'doctor_id' => $doctor->employee_id,
+            'diagnosis' => 'Viêm họng cấp',
+            'treatment' => 'Súc họng nước muối',
+        ]);
+
+        $response = $this->authenticate($doctor)
+            ->putJson("/api/v1/visits/{$visit->id}/medical-record", [
+                'diagnosis' => 'Viêm amidan cấp mủ',
+                'treatment' => 'Kháng sinh Augmentin 1g x 7 ngày',
+                'edit_reason' => 'Bệnh nhân tái khám có triệu chứng sốt cao và sưng amidan',
+            ]);
+
+        $response->assertStatus(200);
+
+        $updateLog = AuditLog::where('module', 'medical_records')
+            ->where('action', 'update')
+            ->where('record_id', (string) $record->id)
+            ->first();
+
+        $this->assertNotNull($updateLog);
+        $this->assertSame($doctor->id, $updateLog->user_id);
+        $this->assertSame('Viêm họng cấp', $updateLog->old_values['diagnosis']);
+        $this->assertSame('Viêm amidan cấp mủ', $updateLog->new_values['diagnosis']);
+        $this->assertSame('Bệnh nhân tái khám có triệu chứng sốt cao và sưng amidan', $updateLog->new_values['edit_reason']);
+    }
+
+    /**
+     * Test viewing medical record by direct ID automatically creates audit log.
+     */
+    public function test_viewing_medical_record_by_id_automatically_creates_audit_log(): void
+    {
+        $doctor = $this->createUserWithRole('DOCTOR');
+
+        $patient = Patient::create([
+            'patient_code' => 'BN'.fake()->unique()->numerify('######'),
+            'full_name' => fake()->name(),
+            'gender' => 'FEMALE',
+            'status' => 'ACTIVE',
+        ]);
+
+        $service = Service::create([
+            'service_code' => 'DV'.fake()->unique()->numerify('######'),
+            'name' => 'Khám Da liễu',
+            'price' => 300000,
+            'duration_minutes' => 30,
+            'status' => 'ACTIVE',
+        ]);
+
+        $visit = Visit::create([
+            'patient_id' => $patient->id,
+            'employee_id' => $doctor->employee_id,
+            'service_id' => $service->id,
+            'visit_code' => 'LK'.fake()->unique()->numerify('######'),
+            'visit_date' => now(),
+            'quantity' => 1,
+            'unit_price' => 300000,
+            'discount_amount' => 0,
+            'total_amount' => 300000,
+            'payment_status' => Visit::PAYMENT_STATUS_PAID,
+            'status' => Visit::STATUS_COMPLETED,
+        ]);
+
+        $record = MedicalRecord::create([
+            'visit_id' => $visit->id,
+            'doctor_id' => $doctor->employee_id,
+            'diagnosis' => 'Viêm da tiếp xúc dị ứng',
+            'treatment' => 'Bôi kem corticoid nhẹ',
+        ]);
+
+        $response = $this->authenticate($doctor)
+            ->getJson("/api/v1/medical-records/{$record->id}");
+
+        $response->assertStatus(200);
+
+        $viewLog = AuditLog::where('module', 'medical_records')
+            ->where('action', 'view')
+            ->where('record_id', (string) $record->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($viewLog);
+        $this->assertSame($doctor->id, $viewLog->user_id);
+    }
+
+    /**
+     * Test updating user status automatically creates audit log.
+     */
+    public function test_updating_user_status_automatically_creates_audit_log(): void
+    {
+        $admin = $this->createUserWithRole('ADMIN');
+        $targetNurse = $this->createUserWithRole('NURSE', 'ACTIVE');
+
+        $response = $this->authenticate($admin)
+            ->patchJson("/api/v1/users/{$targetNurse->id}/status", [
+                'status' => 'LOCKED',
+            ]);
+
+        $response->assertStatus(200);
+
+        $statusLog = AuditLog::where('module', 'users')
+            ->where('action', 'status_update')
+            ->where('record_id', (string) $targetNurse->id)
+            ->first();
+
+        $this->assertNotNull($statusLog);
+        $this->assertSame($admin->id, $statusLog->user_id);
+        $this->assertSame('ACTIVE', $statusLog->old_values['status']);
+        $this->assertSame('LOCKED', $statusLog->new_values['status']);
+    }
+
+    /**
+     * Test updating user roles automatically creates audit log.
+     */
+    public function test_updating_user_roles_automatically_creates_audit_log(): void
+    {
+        $admin = $this->createUserWithRole('ADMIN');
+        $targetUser = $this->createUserWithRole('NURSE');
+
+        $doctorRole = Role::where('name', 'DOCTOR')->firstOrFail();
+
+        $response = $this->authenticate($admin)
+            ->putJson("/api/v1/rbac/users/{$targetUser->id}/roles", [
+                'roles' => [$doctorRole->name],
+            ]);
+
+        $response->assertStatus(200);
+
+        $rolesLog = AuditLog::where('module', 'auth')
+            ->where('action', 'update_user_roles')
+            ->where('record_id', (string) $targetUser->id)
+            ->first();
+
+        $this->assertNotNull($rolesLog);
+        $this->assertSame($admin->id, $rolesLog->user_id);
+        $this->assertContains($doctorRole->id, $rolesLog->new_values['role_ids']);
+    }
+
+    /**
+     * Test export for patients, cashbook, and inventory creates audit logs.
+     */
+    public function test_exporting_all_modules_automatically_creates_audit_logs(): void
+    {
+        $admin = $this->createUserWithRole('ADMIN');
+
+        // Export patients
+        $responsePatients = $this->authenticate($admin)->get('/api/v1/exports/patients');
+        $responsePatients->assertStatus(200);
+
+        $patientLog = AuditLog::where('module', 'patients')
+            ->where('action', 'export_csv')
+            ->latest('id')
+            ->first();
+        $this->assertNotNull($patientLog);
+        $this->assertSame($admin->id, $patientLog->user_id);
+
+        // Export cashbook
+        $responseCashbook = $this->authenticate($admin)->get('/api/v1/exports/cashbook');
+        $responseCashbook->assertStatus(200);
+
+        $cashLog = AuditLog::where('module', 'cashbook')
+            ->where('action', 'export_csv')
+            ->latest('id')
+            ->first();
+        $this->assertNotNull($cashLog);
+        $this->assertSame($admin->id, $cashLog->user_id);
+
+        // Export inventory
+        $responseInventory = $this->authenticate($admin)->get('/api/v1/exports/inventory');
+        $responseInventory->assertStatus(200);
+
+        $invLog = AuditLog::where('module', 'inventory')
+            ->where('action', 'export_csv')
+            ->latest('id')
+            ->first();
+        $this->assertNotNull($invLog);
+        $this->assertSame($admin->id, $invLog->user_id);
+    }
 }

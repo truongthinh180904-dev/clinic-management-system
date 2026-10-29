@@ -417,7 +417,7 @@ class ExportController extends Controller
 
         AuditLog::create([
             'user_id' => $request->user()?->id,
-            'module' => 'cash_transactions',
+            'module' => 'cashbook',
             'action' => 'export_csv',
             'table_name' => 'cash_transactions',
             'record_id' => null,

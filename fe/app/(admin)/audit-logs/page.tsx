@@ -119,11 +119,14 @@ export default function AuditLogsPage() {
     switch (moduleName) {
       case 'patient_files':
         return <Badge className="bg-blue-600/10 text-blue-700 hover:bg-blue-600/20 border-blue-200">Tệp y tế</Badge>;
+      case 'patients':
+        return <Badge className="bg-teal-600/10 text-teal-700 hover:bg-teal-600/20 border-teal-200">Bệnh nhân</Badge>;
       case 'medical_records':
         return <Badge className="bg-purple-600/10 text-purple-700 hover:bg-purple-600/20 border-purple-200">Bệnh án</Badge>;
       case 'invoices':
       case 'finance':
       case 'cash_transactions':
+      case 'cashbook':
         return <Badge className="bg-emerald-600/10 text-emerald-700 hover:bg-emerald-600/20 border-emerald-200">Tài chính</Badge>;
       case 'inventory':
         return <Badge className="bg-amber-600/10 text-amber-700 hover:bg-amber-600/20 border-amber-200">Kho dược</Badge>;

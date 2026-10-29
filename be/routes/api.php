@@ -90,6 +90,24 @@ Route::prefix('v1')->group(function (): void {
             ->middleware('permission:roles.manage')
             ->name('api.v1.users.roles.update');
 
+        Route::prefix('rbac')->group(function (): void {
+            Route::get('/roles', [RolePermissionController::class, 'roles'])
+                ->middleware('permission:roles.view')
+                ->name('api.v1.rbac.roles.index');
+
+            Route::get('/permissions', [RolePermissionController::class, 'permissions'])
+                ->middleware('permission:permissions.view|roles.view')
+                ->name('api.v1.rbac.permissions.index');
+
+            Route::put('/roles/{role}/permissions', [RolePermissionController::class, 'updateRolePermissions'])
+                ->middleware('permission:roles.manage')
+                ->name('api.v1.rbac.roles.permissions.update');
+
+            Route::put('/users/{user}/roles', [RolePermissionController::class, 'updateUserRoles'])
+                ->middleware('permission:roles.manage')
+                ->name('api.v1.rbac.users.roles.update');
+        });
+
         // User Management
         Route::prefix('users')->group(function (): void {
             Route::get('/', [UserController::class, 'index'])

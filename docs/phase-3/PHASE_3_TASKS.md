@@ -352,7 +352,7 @@
 
 #### TASK `P3-023` (`F3-07-03` / `F3-07-04`): Nâng cấp Nhật ký Kiểm toán (Audit Log) Truy vết Truy cập và Thao tác Nhạy cảm
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-022`
 - **goal:** Tự động ghi nhật ký kiểm toán vào bảng `audit_logs` khi có người dùng: (1) Xem hoặc tải tệp hồ sơ y tế bệnh nhân, (2) Xuất file CSV báo cáo tài chính/kho, (3) Thay đổi thông tin bệnh án, (4) Thay đổi trạng thái tài khoản người dùng hoặc vai trò; lưu vết đầy đủ IP, User-Agent, thời gian và sự thay đổi dữ liệu cũ - mới.
 - **scope:** `be/app/Models/AuditLog.php`, `be/app/Http/Controllers/Api/V1/AuditLogController.php`.
