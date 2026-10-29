@@ -363,7 +363,7 @@
 
 ### TASK `P3-025` (`F3-08-01` / `F3-08-02`): Xây dựng Kịch bản Sao lưu Cơ sở Dữ liệu Tự động (`scripts/backup-db.sh`)
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-024`
 - **goal:** Xây dựng script shell an toàn `scripts/backup-db.sh`: tự động đọc thông tin kết nối từ file `.env`, trích xuất toàn bộ cấu trúc và dữ liệu 30 bảng MySQL sang file SQL nén `gzip`, đặt tên có nhãn thời gian, lưu trong thư mục `storage/backups/`, tự động dọn dẹp các bản sao lưu cũ quá 30 ngày; che giấu mật khẩu khỏi tiến trình hệ thống.
 - **scope:** `scripts/backup-db.sh`.

@@ -43,6 +43,11 @@ DEFAULT_RETENTION_DAYS=30
 RETENTION_DAYS="${RETENTION_DAYS:-$DEFAULT_RETENTION_DAYS}"
 CUSTOM_ENV_FILE=""
 CUSTOM_BACKUP_DIR=""
+CLI_DB_NAME=""
+CLI_DB_HOST=""
+CLI_DB_PORT=""
+CLI_DB_USER=""
+CLI_DB_PASSWORD=""
 DRY_RUN=0
 VERBOSE=0
 
@@ -84,21 +89,26 @@ Usage:
   backup-db.sh [options]
 
 Options:
-  --dry-run              Simulate backup execution, validate config & environment without dumping
-  --retention <days>     Number of days to keep backup archives (default: 30)
-  --output-dir <path>    Custom directory for backup archives (default: storage/backups)
-  --env <path>           Path to Laravel .env file (default: be/.env or .env)
-  -v, --verbose          Display verbose diagnostic logs
-  -h, --help             Display this help message and exit
+  --dry-run                 Simulate backup execution, validate config & environment without dumping
+  --retention, -r <days>    Number of days to keep backup archives (default: 30)
+  --output-dir, -o <path>   Custom directory for backup archives (default: storage/backups)
+  --env, -e <path>          Path to Laravel .env file (default: be/.env or .env)
+  --database, --db <name>   Override database name (default: from .env or DBQLPK)
+  --host <host>             Override database host (default: from .env or 127.0.0.1)
+  --port <port>             Override database port (default: from .env or 3306)
+  --user, -u <user>         Override database username (default: from .env or root)
+  -v, --verbose             Display verbose diagnostic logs
+  -h, --help                Display this help message and exit
 
 Cron Job Instructions:
   To schedule an automated backup every day at 02:00 AM:
-    0 2 * * * /path/to/clinic-management-system/scripts/backup-db.sh >> /path/to/clinic-management-system/storage/backups/backup.log 2>&1
+    0 2 * * * "/path/to/clinic-management-system/scripts/backup-db.sh" >> "/path/to/clinic-management-system/storage/backups/backup.log" 2>&1
 
 Examples:
   ./scripts/backup-db.sh --dry-run
   ./scripts/backup-db.sh --retention 45
   ./scripts/backup-db.sh --output-dir /mnt/secure-backups/qlpk
+  ./scripts/backup-db.sh --database DBQLPK_PROD
 EOF
 }
 
@@ -135,6 +145,42 @@ while [[ $# -gt 0 ]]; do
         shift 2
       else
         log_error "Option --env requires a path argument."
+        exit 1
+      fi
+      ;;
+    --database|--db)
+      if [[ -n "${2:-}" ]]; then
+        CLI_DB_NAME="$2"
+        shift 2
+      else
+        log_error "Option --database requires a database name argument."
+        exit 1
+      fi
+      ;;
+    --host)
+      if [[ -n "${2:-}" ]]; then
+        CLI_DB_HOST="$2"
+        shift 2
+      else
+        log_error "Option --host requires a host argument."
+        exit 1
+      fi
+      ;;
+    --port)
+      if [[ -n "${2:-}" ]]; then
+        CLI_DB_PORT="$2"
+        shift 2
+      else
+        log_error "Option --port requires a port argument."
+        exit 1
+      fi
+      ;;
+    --user|-u)
+      if [[ -n "${2:-}" ]]; then
+        CLI_DB_USER="$2"
+        shift 2
+      else
+        log_error "Option --user requires a username argument."
         exit 1
       fi
       ;;
@@ -180,27 +226,31 @@ get_env_value() {
     line="$(grep -E "^[[:space:]]*${key}=" "$file" | tail -n 1 || true)"
     if [[ -n "$line" ]]; then
       local val="${line#*=}"
-      # Remove comments after value (outside quotes)
-      val="$(echo "$val" | sed -E -e 's/^[[:space:]]+//' -e 's/[[:space:]]+$//')"
+      # Strip trailing comments if unquoted
+      if [[ ! "$val" =~ ^\".*\"$ && ! "$val" =~ ^\'.*\'$ ]]; then
+        val="${val%%#*}"
+      fi
+      val="$(printf '%s' "$val" | sed -E -e 's/^[[:space:]]+//' -e 's/[[:space:]]+$//')"
       # Strip wrapping quotes
       if [[ "$val" =~ ^\"(.*)\"$ ]]; then
         val="${BASH_REMATCH[1]}"
       elif [[ "$val" =~ ^\'(.*)\'$ ]]; then
         val="${BASH_REMATCH[1]}"
       fi
-      echo "$val"
+      printf '%s\n' "$val"
       return 0
     fi
   fi
-  echo "$default_val"
+  printf '%s\n' "$default_val"
 }
 
 DB_CONNECTION="$(get_env_value "DB_CONNECTION" "$ENV_FILE" "mysql")"
-DB_HOST="$(get_env_value "DB_HOST" "$ENV_FILE" "127.0.0.1")"
-DB_PORT="$(get_env_value "DB_PORT" "$ENV_FILE" "3306")"
-DB_DATABASE="$(get_env_value "DB_DATABASE" "$ENV_FILE" "DBQLPK")"
-DB_USERNAME="$(get_env_value "DB_USERNAME" "$ENV_FILE" "root")"
-DB_PASSWORD="$(get_env_value "DB_PASSWORD" "$ENV_FILE" "")"
+DB_HOST="${CLI_DB_HOST:-$(get_env_value "DB_HOST" "$ENV_FILE" "127.0.0.1")}"
+DB_PORT="${CLI_DB_PORT:-$(get_env_value "DB_PORT" "$ENV_FILE" "3306")}"
+DB_DATABASE="${CLI_DB_NAME:-$(get_env_value "DB_DATABASE" "$ENV_FILE" "DBQLPK")}"
+DB_USERNAME="${CLI_DB_USER:-$(get_env_value "DB_USERNAME" "$ENV_FILE" "root")}"
+DB_PASSWORD="${CLI_DB_PASSWORD:-$(get_env_value "DB_PASSWORD" "$ENV_FILE" "")}"
+DB_SOCKET="$(get_env_value "DB_SOCKET" "$ENV_FILE" "")"
 
 # Normalize localhost to 127.0.0.1 for standard TCP connection if needed
 DB_TARGET_HOST="$DB_HOST"
@@ -236,7 +286,7 @@ check_disk_space() {
   local min_required_mb=50
   if command -v df >/dev/null 2>&1; then
     local available_kb
-    available_kb="$(df -k "$target_dir" 2>/dev/null | awk 'NR==2 {print $4}' || true)"
+    available_kb="$( (df -k "$target_dir" 2>/dev/null || true) | awk 'NR==2 {print $4}' )"
     if [[ -n "$available_kb" && "$available_kb" =~ ^[0-9]+$ ]]; then
       local available_mb=$(( available_kb / 1024 ))
       if (( available_mb < min_required_mb )); then
@@ -295,8 +345,8 @@ EOF
   fi
 
   # Simulate retention purge count
-  expired_count=$(find "$BACKUP_DIR" -maxdepth 1 -name "backup_${DB_DATABASE}_*.sql.gz" -type f -mtime +"${RETENTION_DAYS}" 2>/dev/null | wc -l | tr -d ' ' || echo 0)
-  log_info "Retention check: Found ${expired_count} backup files older than ${RETENTION_DAYS} days to be purged."
+  expired_count=$( (find "$BACKUP_DIR" -maxdepth 1 -name "backup_${DB_DATABASE}_*.sql.gz" -type f -mtime +"${RETENTION_DAYS}" 2>/dev/null || true) | wc -l | tr -d ' ' )
+  log_info "Retention check: Found ${expired_count:-0} backup files older than ${RETENTION_DAYS} days to be purged."
 
   cat <<EOF
 --------------------------------------------------------------------------------
@@ -307,7 +357,7 @@ Security Compliance & Masking:
 --------------------------------------------------------------------------------
 Automated Cron Job Schedule Example:
   # Daily database backup at 02:00 AM:
-  0 2 * * * ${SCRIPT_DIR}/backup-db.sh >> ${BACKUP_DIR}/backup.log 2>&1
+  0 2 * * * "${SCRIPT_DIR}/backup-db.sh" >> "${BACKUP_DIR}/backup.log" 2>&1
 ================================================================================
 EOF
   log_success "Dry-run verification completed successfully. All pre-flight checks passed."
@@ -345,6 +395,9 @@ port=${DB_PORT}
 user=${DB_USERNAME}
 password=${DB_PASSWORD}
 EOF
+if [[ -n "${DB_SOCKET:-}" ]]; then
+  echo "socket=${DB_SOCKET}" >> "$TEMP_CNF"
+fi
 
 log_info "Extracting schema and data with single-transaction snapshot..."
 

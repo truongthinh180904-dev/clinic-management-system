@@ -1,131 +1,213 @@
-# TÀI LIỆU HƯỚNG DẪN SAO LƯU CƠ SỞ DỮ LIỆU TỰ ĐỘNG (`scripts/backup-db.sh`)
-## Feature `F3-08` — Sao lưu, Khôi phục & Quy trình Vận hành | Task `P3-025`
+# HƯỚNG DẪN SAO LƯU CƠ SỞ DỮ LIỆU TỰ ĐỘNG & CẤU HÌNH CRON JOB
+## Feature `F3-08` — Task `P3-025`: Automated Database Backup with Gzip Compression & Retention
 
-- **Tên tài liệu:** `DATABASE_BACKUP_GUIDE.md`
-- **Phiên bản:** `1.0.0`
-- **Hệ thống áp dụng:** Hệ thống Quản lý Phòng khám (`clinic-management-system`)
-- **Kịch bản thực thi:** [`scripts/backup-db.sh`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/scripts/backup-db.sh)
-- **Cơ sở dữ liệu mục tiêu:** MySQL 8.0 InnoDB (`DBQLPK` — 30 bảng quan hệ)
-- **Mức độ an toàn:** Chuẩn Enterprise Medical SaaS (Zero Password Exposure in Process Table)
-
----
-
-## 1. TỔNG QUAN VÀ MỤC TIÊU
-
-Kịch bản [`scripts/backup-db.sh`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/scripts/backup-db.sh) được xây dựng nhằm tự động hóa hoàn toàn quy trình trích xuất, nén, lưu trữ và luân chuyển các bản sao lưu cơ sở dữ liệu cho toàn bộ 30 bảng của hệ thống phòng khám.
-
-### 1.1. Các đặc tính cốt lõi
-1. **Toàn vẹn dữ liệu lâm sàng (InnoDB Single-Transaction):**
-   Sử dụng cờ `--single-transaction` kết hợp `--quick` của `mysqldump` để tạo bản trích xuất nhất quán mà không khóa bảng (non-locking read), đảm bảo phòng khám vẫn tiếp đón bệnh nhân và lập hóa đơn bình thường trong lúc sao lưu.
-2. **Nén Gzip tỷ lệ cao (Gzip Level 9 Streaming):**
-   Dữ liệu từ `mysqldump` được truyền qua pipe trực tiếp đến `gzip -9` mà không cần ghi file SQL tạm trung gian, tiết kiệm I/O ổ đĩa và giảm 85–90% dung lượng lưu trữ.
-3. **Bảo mật thông tin đăng nhập tuyệt đối (Process Table Masking):**
-   Tuyệt đối không truyền tham số `-p` hoặc `--password` trên dòng lệnh. Script khởi tạo tệp cấu hình tạm MySQL (`--defaults-extra-file`) với quyền truy cập khắt khe `0600`, tự động hủy tệp thông qua signal trap ngay khi hoàn tất hoặc gặp lỗi.
-4. **Quy tắc luân chuyển và dọn dẹp tự động (Retention Policy):**
-   Mặc định lưu giữ các bản sao lưu trong 30 ngày (có thể tùy chỉnh qua biến hoặc tham số `--retention`). Tự động quét và xóa an toàn các bản sao lưu quá hạn.
-5. **Chế độ kiểm thử an toàn (Dry-Run Mode):**
-   Hỗ trợ cờ `--dry-run` cho phép kiểm tra thông số kết nối, tính khả dụng của công cụ (`mysqldump`, `gzip`), dung lượng ổ cứng khả dụng và chính sách dọn dẹp mà không can thiệp vào cơ sở dữ liệu.
+- **Hệ thống:** Quản lý Phòng Khám Đa Khoa (QLPK)
+- **Tập lệnh sao lưu:** [`scripts/backup-db.sh`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/scripts/backup-db.sh)
+- **Cơ sở dữ liệu mục tiêu:** `DBQLPK` (Toàn bộ cấu trúc và dữ liệu 30 bảng MySQL)
+- **Định dạng lưu trữ:** SQL nén `gzip` (`.sql.gz`)
+- **Thư mục lưu trữ mặc định:** `storage/backups/`
+- **Chính sách lưu trữ mặc định:** 30 ngày (Retention: 30 days)
 
 ---
 
-## 2. THÔNG SỐ VÀ CẤU TRÚC ĐẶT TÊN
+## 1. TỔNG QUAN VÀ NGUYÊN TẮC THIẾT KẾ
 
-### 2.1. Quy ước đặt tên file sao lưu
-Các bản sao lưu được lưu trữ tại thư mục `storage/backups/` theo định dạng chuẩn:
+Tập lệnh [`scripts/backup-db.sh`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/scripts/backup-db.sh) được xây dựng tuân thủ nghiêm ngặt các tiêu chuẩn an toàn dữ liệu y tế và vận hành hệ thống cấp doanh nghiệp:
+
+1. **Đọc cấu hình động từ `.env`:**
+   - Tự động dò tìm và nạp thông tin kết nối từ `be/.env` (hoặc `.env` tại thư mục gốc dự án).
+   - Tuyệt đối không hardcode mật khẩu hay thông số nhạy cảm trong mã nguồn script.
+   - Hỗ trợ các biến cấu hình: `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_SOCKET`.
+
+2. **Bảo mật thông tin xác thực chống lộ vết (Process Masking):**
+   - Mật khẩu MySQL **không bao giờ** được truyền trực tiếp qua cờ dòng lệnh (`-p` hoặc `--password=`).
+   - Sử dụng tệp tùy chọn tạm thời có cấp quyền nghiêm ngặt `chmod 600` thông qua cờ `--defaults-extra-file`.
+   - Ngăn chặn hoàn toàn việc rò rỉ thông tin đăng nhập khi người dùng khác hoặc công cụ giám sát kiểm tra bảng tiến trình hệ thống qua lệnh `ps aux`, `top` hoặc `/proc/*/cmdline`.
+   - Cơ chế bẫy tín hiệu (`trap cleanup EXIT INT TERM`) bảo đảm tệp cấu hình tạm thời lập tức được xóa bỏ sau khi hoàn thành hoặc khi script bị ngắt đột ngột.
+
+3. **Nén Stream Trực tiếp Gzip Cấp độ 9 (`gzip -9`):**
+   - Luồng dữ liệu xuất từ `mysqldump` được truyền qua pipe (`|`) trực tiếp vào tiến trình `gzip -9` mà không ghi tệp trung gian không nén lên đĩa.
+   - Tiết kiệm 80% – 90% dung lượng lưu trữ so với tệp `.sql` thô.
+   - Kiểm tra tính toàn vẹn của tệp nén ngay sau khi xuất bằng lệnh `gzip -t`.
+
+4. **Kiểm tra trước khi thực thi (Pre-flight Checks):**
+   - Kiểm tra dung lượng trống của phân vùng đĩa trước khi trích xuất (yêu cầu tối thiểu 50MB dung lượng khả dụng).
+   - Kiểm tra sự hiện diện của các công cụ bắt buộc (`mysqldump`, `gzip`, `df`).
+   - Hỗ trợ chế độ chạy thử nghiệm `--dry-run` để kiểm chứng toàn bộ thông số mà không tác động dữ liệu.
+
+5. **Tự động áp dụng chính sách lưu trữ (Retention Policy):**
+   - Tự động dò tìm và xóa các bản sao lưu cũ vượt quá số ngày quy định (mặc định 30 ngày).
+   - Cho phép điều chỉnh linh hoạt số ngày lưu trữ thông qua tham số `--retention <days>`.
+
+---
+
+## 2. QUY CÁCH ĐẶT TÊN BẢN SAO LƯU
+
+Mỗi bản sao lưu được lưu trữ theo cấu trúc tên định danh thời gian chuẩn:
 ```text
-backup_<TÊN_CSDL>_<YYYYMMDD>_<HHMMSS>.sql.gz
+backup_${DB_DATABASE}_${TIMESTAMP}.sql.gz
 ```
-- **Ví dụ thực tế:** `backup_DBQLPK_20261028_020000.sql.gz`
 
-### 2.2. Nguồn nạp cấu hình CSDL
-Kịch bản tự động dò tìm cấu hình kết nối từ các file sau (theo thứ tự ưu tiên):
-1. Tham số `--env <path>` hoặc biến môi trường `ENV_FILE`.
-2. `be/.env` (Laravel backend environment file).
-3. `.env` (Project root environment file).
+**Ví dụ:**
+- `backup_DBQLPK_20261029_020000.sql.gz` (Bản sao lưu ngày 29/10/2026 lúc 02:00:00 AM)
+- `backup_DBQLPK_20261030_020000.sql.gz` (Bản sao lưu ngày 30/10/2026 lúc 02:00:00 AM)
 
-Các biến môi trường được trích xuất:
-- `DB_CONNECTION` (Mặc định: `mysql`)
-- `DB_HOST` (Mặc định: `127.0.0.1` / `localhost`)
-- `DB_PORT` (Mặc định: `3306`)
-- `DB_DATABASE` (Mặc định: `DBQLPK`)
-- `DB_USERNAME` (Mặc định: `root`)
-- `DB_PASSWORD` (Mật khẩu được che giấu trong mọi log và tiến trình `ps`)
+Phân quyền tệp sao lưu tự động được gán ở mức `chmod 600` (chỉ cho phép user sở hữu đọc và ghi, ngăn chặn truy cập trái phép từ các tiến trình khác trên máy chủ).
 
 ---
 
-## 3. HƯỚNG DẪN CẤU HÌNH CRON JOB TỰ ĐỘNG
+## 3. HƯỚNG DẪN CẤU HÌNH CRON JOB TRÊN MÁY CHỦ
 
-Nhằm đảm bảo dữ liệu phòng khám được sao lưu định kỳ hàng ngày vào thời điểm lưu lượng truy cập thấp nhất (02:00 AM), thực hiện cấu hình crontab trên máy chủ:
-
-### 3.1. Mở trình biên tập Cron
+### 3.1. Mở Trình Quản Lý Crontab
+Đăng nhập vào máy chủ bằng tài khoản vận hành (`deploy` hoặc `root`) và mở trình soạn thảo crontab:
 ```bash
 crontab -e
 ```
 
-### 3.2. Thêm chỉ thị Cron
+### 3.2. Cấu hình Sao lưu Định kỳ Hàng ngày (Khuyến nghị: 02:00 AM)
+Thời điểm 02:00 AM là khung giờ thấp điểm của phòng khám, hạn chế ảnh hưởng đến hiệu năng truy vấn của người dùng. Thêm dòng sau vào crontab:
+
 ```cron
 # ==============================================================================
-# QLPK Automated Database Backup Cron Job
-# Lên lịch sao lưu CSDL hàng ngày lúc 02:00 sáng, ghi log vào storage/backups/
+# QLPK Automated Database Backup (Daily at 02:00 AM)
 # ==============================================================================
-0 2 * * * /Users/truongthinh/Documents/UIT/Manage\ Infomation/clinic-management-system/scripts/backup-db.sh >> /Users/truongthinh/Documents/UIT/Manage\ Infomation/clinic-management-system/storage/backups/backup.log 2>&1
+PATH=/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin
+0 2 * * * "/Users/truongthinh/Documents/UIT/Manage Infomation/clinic-management-system/scripts/backup-db.sh" >> "/Users/truongthinh/Documents/UIT/Manage Infomation/clinic-management-system/storage/backups/backup.log" 2>&1
 ```
 
-### 3.3. Xem danh sách Cron Job hiện tại
+> [!NOTE]
+> Đường dẫn có khoảng trắng (ví dụ `Manage Infomation`) **bắt buộc phải bọc trong dấu ngoặc kép** `"` để trình lập lịch Cron không phân tách sai đối số.
+
+### 3.3. Các Lịch Trình Cron Thay Thế Phù Hợp với Quy Mô
+
+1. **Sao lưu 2 lần/ngày (Khung giờ trưa và đêm):**
+   ```cron
+   0 12,2 * * * "/Users/truongthinh/Documents/UIT/Manage Infomation/clinic-management-system/scripts/backup-db.sh" >> "/Users/truongthinh/Documents/UIT/Manage Infomation/clinic-management-system/storage/backups/backup.log" 2>&1
+   ```
+
+2. **Sao lưu hàng ngày với thời gian lưu trữ 60 ngày:**
+   ```cron
+   0 2 * * * "/Users/truongthinh/Documents/UIT/Manage Infomation/clinic-management-system/scripts/backup-db.sh" --retention 60 >> "/Users/truongthinh/Documents/UIT/Manage Infomation/clinic-management-system/storage/backups/backup.log" 2>&1
+   ```
+
+3. **Sao lưu sang thư mục gắn kết bên ngoài (NFS / External Volume / NAS):**
+   ```cron
+   0 2 * * * "/Users/truongthinh/Documents/UIT/Manage Infomation/clinic-management-system/scripts/backup-db.sh" --output-dir "/mnt/nas-backup/qlpk" >> "/mnt/nas-backup/qlpk/backup.log" 2>&1
+   ```
+
+### 3.4. Kiểm Tra Danh Sách Crontab Đã Lưu
 ```bash
 crontab -l
 ```
 
 ---
 
-## 4. HƯỚNG DẪN SỬ DỤNG DÒNG LỆNH (CLI)
+## 4. HƯỚNG DẪN SỬ DỤNG LỆNH DÒNG LỆNH (CLI REFERENCE)
 
 ### 4.1. Cú pháp cơ bản
 ```bash
+./scripts/backup-db.sh [options]
+# hoặc
 bash scripts/backup-db.sh [options]
 ```
 
-### 4.2. Danh mục tham số hỗ trợ
+### 4.2. Bảng Tùy Chọn Đầy Đủ
 
-| Tham số | Viết tắt | Ý nghĩa | Mặc định |
+| Tham số | Dạng ngắn | Mặc định | Ý nghĩa & Tác vụ |
 |---|---|---|---|
-| `--dry-run` | *(không)* | Chạy thử nghiệm giả lập, kiểm tra pre-flight | Tắt (`0`) |
-| `--retention <days>` | `-r` | Số ngày lưu giữ bản sao lưu trước khi dọn dẹp | `30` ngày |
-| `--output-dir <path>`| `-o` | Thư mục đích lưu trữ tệp `.sql.gz` | `storage/backups/` |
-| `--env <path>` | `-e` | Đường dẫn tùy biến tới tệp cấu hình `.env` | `be/.env` |
-| `--verbose` | `-v` | Bật chế độ ghi log chi tiết chẩn đoán | Tắt (`0`) |
-| `--help` | `-h` | Hiển thị trợ giúp và cú pháp dòng lệnh | *(không)* |
+| `--dry-run` | | `tắt` | Mô phỏng quá trình sao lưu, kiểm tra công cụ, cấu hình và dung lượng ổ đĩa mà không tác động dữ liệu |
+| `--retention <days>` | `-r <days>` | `30` | Số ngày lưu trữ các bản sao lưu. Tệp cũ hơn sẽ tự động bị xóa |
+| `--output-dir <path>` | `-o <path>` | `storage/backups` | Thư mục đích lưu trữ các tệp `.sql.gz` |
+| `--env <path>` | `-e <path>` | `be/.env` | Đường dẫn chỉ định tới tệp `.env` |
+| `--database <name>` | `--db <name>` | Lấy từ `.env` (`DBQLPK`) | Chỉ định tên CSDL cần trích xuất |
+| `--host <host>` | | Lấy từ `.env` (`127.0.0.1`) | Chỉ định máy chủ MySQL |
+| `--port <port>` | | Lấy từ `.env` (`3306`) | Chỉ định cổng kết nối MySQL |
+| `--user <user>` | `-u <user>` | Lấy từ `.env` (`root`) | Tên người dùng MySQL |
+| `--verbose` | `-v` | `tắt` | Hiển thị nhật ký chẩn đoán chi tiết |
+| `--help` | `-h` | | Hiển thị màn hình hướng dẫn trợ giúp |
 
-### 4.3. Các kịch bản sử dụng điển hình
+### 4.3. Các Ví Dụ Lệnh Thực Tế
 
-#### Kịch bản 1: Chạy giả lập kiểm tra môi trường (Dry-Run)
+#### 1. Chạy thử nghiệm kiểm chứng môi trường (`--dry-run`)
 ```bash
-bash scripts/backup-db.sh --dry-run
+./scripts/backup-db.sh --dry-run
 ```
-*Kết quả:* Kiểm tra và hiển thị các biến kết nối, đường dẫn tệp, dung lượng ổ đĩa, kiểm tra `mysqldump` & `gzip`, số tệp quá hạn sẽ xóa mà không thực hiện sao lưu thật.
-
-#### Kịch bản 2: Thực hiện sao lưu tức thời (Thủ công trước đợt bảo trì)
-```bash
-bash scripts/backup-db.sh
+**Kết quả đầu ra mẫu:**
+```text
+================================================================================
+  QLPK AUTOMATED DATABASE BACKUP — PRE-FLIGHT / DRY-RUN SIMULATION
+================================================================================
+[2026-10-29 02:00:00] [INFO] Mode: DRY-RUN (No files will be modified or database queries executed)
+[2026-10-29 02:00:00] [INFO] Project Root: /Users/truongthinh/Documents/UIT/Manage Infomation/clinic-management-system
+[2026-10-29 02:00:00] [INFO] Environment File: .../be/.env
+[2026-10-29 02:00:00] [INFO] Database Driver: mysql
+[2026-10-29 02:00:00] [INFO] Database Host: localhost (Target: 127.0.0.1)
+[2026-10-29 02:00:00] [INFO] Database Port: 3306
+[2026-10-29 02:00:00] [INFO] Database Name: DBQLPK
+[2026-10-29 02:00:00] [INFO] Database User: root
+[2026-10-29 02:00:00] [INFO] Database Password: ****** [REDACTED / MASKED FROM PROCESS LIST]
+[2026-10-29 02:00:00] [INFO] Backup Directory: .../storage/backups
+[2026-10-29 02:00:00] [INFO] Retention Policy: 30 days
+[2026-10-29 02:00:00] [INFO] Simulated Backup Filename: backup_DBQLPK_20261029_020000.sql.gz
+[2026-10-29 02:00:00] [INFO] Tool check [gzip]: PASS (/usr/bin/gzip)
+[2026-10-29 02:00:00] [INFO] Tool check [mysqldump]: PASS (/usr/local/bin/mysqldump)
+[2026-10-29 02:00:00] [INFO] Disk space check: PASS
+[2026-10-29 02:00:00] [INFO] Retention check: Found 0 backup files older than 30 days to be purged.
+[2026-10-29 02:00:00] [SUCCESS] Dry-run verification completed successfully. All pre-flight checks passed.
 ```
 
-#### Kịch bản 3: Tăng thời hạn lưu trữ lên 60 ngày
+#### 2. Kích hoạt sao lưu thủ công tức thời
 ```bash
-bash scripts/backup-db.sh --retention 60
+./scripts/backup-db.sh
 ```
 
-#### Kịch bản 4: Sao lưu ra ổ cứng gắn ngoài hoặc phân vùng dự phòng
+#### 3. Sao lưu với thời gian lưu trữ dài hạn (90 ngày)
 ```bash
-bash scripts/backup-db.sh --output-dir /mnt/external_backup/qlpk
+./scripts/backup-db.sh --retention 90
+```
+
+#### 4. Sao lưu CSDL sang thư mục lưu trữ ngoài
+```bash
+./scripts/backup-db.sh --output-dir /Volumes/SecureStorage/ClinicBackups
 ```
 
 ---
 
-## 5. CƠ CHẾ KIỂM TRA TÍNH TOÀN VẸN VÀ BẢO MẬT
+## 5. KIỂM TRA NHẬT KÝ & GIÁM SÁT BẢN SAO LƯU
 
-1. **Kiểm tra tính hợp lệ của tệp nén (`gzip -t`):**
-   Sau khi hoàn tất dump, script lập tức chạy `gzip -t "$BACKUP_FILE"` để kiểm tra header và checksum CRC32 của tệp nén. Nếu phát hiện tệp hỏng hoặc bị đứt đoạn, script lập tức hủy tệp và trả về mã lỗi (`exit 1`).
-2. **Quyền truy cập tệp sao lưu (`chmod 600`):**
-   Mọi tệp backup được phân quyền `rw-------` (chỉ chủ sở hữu tiến trình sao lưu mới có quyền đọc/ghi), ngăn chặn truy cập trái phép từ các tài khoản người dùng khác trên cùng máy chủ.
-3. **Phát hiện dung lượng ổ cứng thấp:**
-   Trước khi tiến hành dump, script kiểm tra phân vùng đích với ngưỡng tối thiểu an toàn (50MB). Nếu không đủ dung lượng, script sẽ dừng ngay lập tức kèm thông báo lỗi rõ ràng thay vì làm đầy phân vùng hệ thống.
+### 5.1. Xem Nhật Ký Sao Lưu (Log File)
+```bash
+tail -n 50 storage/backups/backup.log
+```
+
+### 5.2. Kiểm Tra Tính Toàn Vẹn Của Một Bản Sao Lưu Cụ Thể
+Sử dụng cờ `-t` của `gzip` để giải nén thử trong bộ nhớ mà không ghi tệp ra đĩa:
+```bash
+gzip -t storage/backups/backup_DBQLPK_20261029_020000.sql.gz
+echo $?
+# Kết quả trả về 0: Tệp hoàn toàn nguyên vẹn, không bị hỏng cấu trúc nén.
+```
+
+### 5.3. Xem Xem Trước Một Phần Dữ Liệu Mà Không Giải Nén Toàn Bộ Tệp
+```bash
+zcat storage/backups/backup_DBQLPK_20261029_020000.sql.gz | head -n 40
+```
+
+---
+
+## 6. XỬ LÝ SỰ CỐ THƯỜNG GẶP (TROUBLESHOOTING)
+
+| Hiện tượng | Nguyên nhân có thể | Cách khắc phục |
+|---|---|---|
+| `mysqldump utility is required but not found in PATH` | Đường dẫn `mysqldump` chưa nằm trong biến `PATH` của shell hoặc Cron | Bổ sung `PATH=/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:$PATH` vào đầu Crontab hoặc file `.bashrc` / `.zshrc` |
+| `Low disk space on storage/backups: only X MB available` | Phân vùng ổ đĩa chứa thư mục sao lưu còn dưới 50MB dung lượng khả dụng | Dọn dẹp bớt dung lượng đĩa hoặc chỉ định `--output-dir` sang phân vùng khác có dung lượng lớn hơn |
+| `mysqldump execution failed for database DBQLPK` | Mật khẩu MySQL không chính xác hoặc dịch vụ MySQL bị tắt | Kiểm tra lại thông tin `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD` trong `be/.env`; đảm bảo service MySQL đang chạy |
+| Cron job không tự động chạy | Đường dẫn crontab bị lỗi phân tách do dấu cách trong tên thư mục | Bọc toàn bộ đường dẫn tập lệnh và đường dẫn log trong dấu ngoặc kép `"` như hướng dẫn mục 3.2 |
+
+---
+
+## 7. LIÊN KẾT TÁC VỤ KẾ TIẾP
+
+Bản sao lưu tạo bởi `scripts/backup-db.sh` được đồng bộ chuẩn định dạng để phục vụ việc khôi phục nhanh thông qua:
+- **Task `P3-026`:** Script khôi phục an toàn [`scripts/restore-db.sh`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/scripts/restore-db.sh) kèm chế độ kiểm thử dry-run trên database độc lập.
+- **Tài liệu Khôi phục Thảm họa:** `docs/phase-3/DISASTER_RECOVERY_RUNBOOK.md`.
