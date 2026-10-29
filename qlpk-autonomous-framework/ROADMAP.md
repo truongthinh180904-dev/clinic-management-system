@@ -420,7 +420,7 @@
 
 ### TASK `P3-029` (`F3-10-01` / `F3-10-02`): Xây dựng Bộ Kiểm thử Tích hợp Toàn diện Toàn bộ Luồng Nghiệp vụ (E2E)
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-028`
 - **goal:** Xây dựng bộ test suite tích hợp tự động kịch bản trọn vẹn từ đầu đến cuối (End-to-End Workflow Test): Đặt lịch -> Tiếp đón -> Khám -> Đính kèm tệp -> Kê đơn -> Trừ kho -> Lập hóa đơn -> Thu tiền nhiều đợt -> Giảm công nợ -> Sổ quỹ -> Kết thúc lượt khám -> Ghi log kiểm toán.
 - **scope:** `be/tests/Feature/EndToEndPhase3WorkflowTest.php`.

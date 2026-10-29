@@ -362,6 +362,8 @@ class DebtController extends Controller
             'success' => true,
             'message' => 'Lấy sổ công nợ bệnh nhân thành công.',
             'data' => [
+                'total_debt' => round($totalRemainingDebt, 2),
+                'total_remaining_debt' => round($totalRemainingDebt, 2),
                 'patient' => [
                     'id' => $patient->id,
                     'patient_code' => $patient->patient_code,
@@ -373,6 +375,7 @@ class DebtController extends Controller
                     'address' => $patient->address,
                 ],
                 'summary' => [
+                    'total_debt' => round($totalRemainingDebt, 2),
                     'total_invoiced' => round($totalInvoiced, 2),
                     'total_paid' => round($totalPaid, 2),
                     'total_collected' => round($totalPaid, 2),

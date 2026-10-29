@@ -33,8 +33,8 @@
 - **Kế hoạch triển khai (Plan):** [`docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md)
 - **Quản trị rủi ro (Risk Register):** [`docs/phase-3/PHASE_3_RISK_REGISTER.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_RISK_REGISTER.md)
 - **Total tasks in Phase 3:** `30 Tasks` (`P3-001` → `P3-030` thuộc 10 Features `F3-01` → `F3-10`)
-- **Completed (`DONE`):** `28 / 30` Tasks (`93.3%`)
-- **Remaining (`PENDING`):** `2 / 30` Tasks (`6.7%`)
+- **Completed (`DONE`):** `29 / 30` Tasks (`96.7%`)
+- **Remaining (`PENDING`):** `1 / 30` Tasks (`3.3%`)
 - **Cấu hình Model Phân công (`agy v1.4.7`):**
   - **Planner:** `gemini-4-argon-medium`
   - **Coder:** `gemini-3.8-flash-high`
@@ -76,5 +76,5 @@
 | `P3-026` | `F3-08` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `reports/tasks/P3-026.md` | Kịch bản khôi phục CSDL an toàn kèm dry-run & Sổ tay vận hành |
 | `P3-027` | `F3-09` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `reports/tasks/P3-027.md` | Bổ sung Composite Indexes MySQL cho các bảng giao dịch lớn |
 | `P3-028` | `F3-09` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `reports/tasks/P3-028.md` | Tối ưu truy vấn Eloquent chống N+1 và tối ưu phân trang |
-| `P3-029` | `F3-10` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `tests/Feature/EndToEndPhase3WorkflowTest.php` | Test Suite E2E toàn diện toàn bộ luồng nghiệp vụ phòng khám |
+| `P3-029` | `F3-10` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `reports/tasks/P3-029.md` | Test Suite E2E toàn diện toàn bộ luồng nghiệp vụ phòng khám |
 | `P3-030` | `F3-10` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `docs/phase-3/PHASE_3_REPORT.md` | Tổng nghiệm thu toàn diện hệ thống và Hồ sơ bàn giao Phase 3 |
