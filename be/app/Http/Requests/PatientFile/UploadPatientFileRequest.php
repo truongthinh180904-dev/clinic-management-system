@@ -27,7 +27,7 @@ class UploadPatientFileRequest extends FormRequest
                 'required',
                 'file',
                 'max:10240', // Giới hạn tối đa 10MB (10240 KB)
-                'mimes:pdf,jpeg,jpg,png,webp,tiff,doc,docx,dicom',
+                'mimes:pdf,jpeg,jpg,png,webp,tiff,tif,doc,docx,dicom,dcm',
             ],
             'file_name' => ['nullable', 'string', 'max:255'],
             'visit_id' => ['nullable', 'integer', 'exists:visits,id'],

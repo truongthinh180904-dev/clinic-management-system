@@ -430,7 +430,7 @@ class PatientFileController extends Controller
         $directory = "patient_files/{$patientId}";
         $storedPath = $file->storeAs($directory, $uniqueFilename, 'local');
 
-        return PatientFile::create([
+        $patientFile = PatientFile::create([
             'patient_id' => $patientId,
             'visit_id' => $visitId,
             'file_name' => $originalName,
@@ -440,5 +440,26 @@ class PatientFileController extends Controller
             'uploaded_by' => $request->user()?->id,
             'created_at' => now(),
         ]);
+
+        AuditLog::create([
+            'user_id' => $request->user()?->id,
+            'module' => 'patient_files',
+            'action' => 'upload',
+            'table_name' => 'patient_files',
+            'record_id' => (string) $patientFile->id,
+            'old_values' => null,
+            'new_values' => [
+                'file_name' => $patientFile->file_name,
+                'patient_id' => $patientFile->patient_id,
+                'visit_id' => $patientFile->visit_id,
+                'mime_type' => $patientFile->mime_type,
+                'file_size' => $patientFile->file_size,
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
+        ]);
+
+        return $patientFile;
     }
 }

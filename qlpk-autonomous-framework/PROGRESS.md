@@ -63,7 +63,7 @@
 | `P3-013` | `F3-04` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-013.md` | Chuẩn hóa máy trạng thái Lịch hẹn & Bộ lọc đa tiêu chí |
 | `P3-014` | `F3-04` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-014.md` | Hoàn thiện luồng Tiếp đón bệnh nhân nhanh tại quầy lễ tân |
 | `P3-015` | `F3-04` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `reports/tasks/P3-015.md` | Chuyển đổi nguyên tử từ Lịch hẹn sang Lượt khám chống trùng |
-| `P3-016` | `F3-05` | P0 | `PENDING` | `PENDING` | `PENDING` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `reports/tasks/P3-016.md` | Backend API Tải lên & Quản lý Tệp y tế (`patient_files`) |
+| `P3-016` | `F3-05` | P0 | `DONE` | `PASS` | `PASS` | 0/3 | `gemini-3.8-flash-high` / `gemini-4-argon-medium` | `reports/tasks/P3-016.md` | Backend API Tải lên & Quản lý Tệp y tế (`patient_files`) |
 | `P3-017` | `F3-05` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `gemini-3.8-flash-high` | `reports/tasks/P3-017.md` | Backend API Tải xuống & Xem tệp có xác thực và phân quyền |
 | `P3-018` | `F3-05` | P0 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-018.md` | Frontend UI Quản lý & Xem trước Tệp Y tế (X-quang, Xét nghiệm) |
 | `P3-019` | `F3-06` | P1 | `DONE` | `PASS` | `PASS` | 1/3 | `gemini-3.8-flash-high` / `claude-sonnet-5-5-high` | `reports/tasks/P3-019.md` | Chuẩn hóa Donut Chart cơ cấu Doanh thu, Thanh toán, Chi phí |
