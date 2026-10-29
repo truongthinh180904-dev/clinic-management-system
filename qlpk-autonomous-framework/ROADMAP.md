@@ -375,7 +375,7 @@
 
 ### TASK `P3-026` (`F3-08-03` / `F3-08-04`): Xây dựng Kịch bản Khôi phục CSDL (`scripts/restore-db.sh`) và Sổ tay Vận hành Khẩn cấp
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-025`
 - **goal:** Xây dựng script khôi phục cơ sở dữ liệu `scripts/restore-db.sh` với cơ chế kiểm tra an toàn cao nhất: (1) Luôn yêu cầu xác nhận rõ ràng từ người vận hành, (2) Có chế độ dry-run kiểm tra tính toàn vẹn của tệp sao lưu trên một database thử nghiệm tạm thời (`DBQLPK_TEST_RESTORE`), (3) Tuyệt đối không bao giờ tự động ghi đè lên database chính `DBQLPK` khi chưa có xác nhận; biên soạn Sổ tay Vận hành Khôi phục thảm họa tại `docs/phase-3/DISASTER_RECOVERY_RUNBOOK.md`.
 - **scope:** `scripts/restore-db.sh`, `docs/phase-3/DISASTER_RECOVERY_RUNBOOK.md`.
