@@ -431,7 +431,7 @@
 
 ### TASK `P3-030` (`F3-10-03` / `F3-10-04`): Nghiệm thu Toàn diện Hệ thống và Lập Hồ sơ Bàn giao Giai đoạn 3
 - **priority:** `P0`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-029`
 - **goal:** Tiến hành tổng nghiệm thu toàn bộ 30 Tasks Giai đoạn 3; rà soát chuẩn hóa mã nguồn với Pint (PHP) và ESLint/TypeScript (Next.js); biên soạn tài liệu Báo cáo Hoàn thành Giai đoạn 3 tại `docs/phase-3/PHASE_3_REPORT.md` và Cập nhật Hướng dẫn Vận hành Hệ thống tại `docs/phase-3/OPERATIONAL_GUIDE.md`.
 - **scope:**

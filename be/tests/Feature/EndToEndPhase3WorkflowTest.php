@@ -4,14 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Appointment;
 use App\Models\AuditLog;
-use App\Models\CashTransaction;
 use App\Models\Employee;
 use App\Models\InventoryTransaction;
 use App\Models\Invoice;
-use App\Models\MedicalRecord;
 use App\Models\Patient;
 use App\Models\PatientFile;
-use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\Service;
