@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Role;
 use App\Models\User;
 use App\Services\DataMaskingService;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'status' => $this->status,
             'last_login_at' => $this->last_login_at?->toIso8601String(),
-            'employee' => $this->employee ? [
+            'employee' => $this->relationLoaded('employee') ? ($this->employee ? [
                 'id' => $this->employee->id,
                 'employee_code' => $this->employee->employee_code,
                 'full_name' => $this->employee->full_name,
@@ -39,15 +40,19 @@ class UserResource extends JsonResource
                 'position' => $this->employee->position,
                 'department' => $this->employee->department,
                 'status' => $this->employee->status,
-            ] : null,
-            'roles' => $this->roles->map(function ($role) {
+            ] : null) : null,
+            'roles' => $this->relationLoaded('roles') ? $this->roles->map(function ($role) {
                 return [
                     'id' => $role->id,
                     'name' => $role->name,
                     'description' => $role->description,
                 ];
-            })->values(),
-            'permissions' => $this->permissions()->pluck('permission_key')->values(),
+            })->values() : [],
+            'permissions' => $this->relationLoaded('roles')
+                ? $this->roles->flatMap(function (Role $role) {
+                    return $role->relationLoaded('permissions') ? $role->permissions : [];
+                })->pluck('permission_key')->unique()->values()
+                : [],
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

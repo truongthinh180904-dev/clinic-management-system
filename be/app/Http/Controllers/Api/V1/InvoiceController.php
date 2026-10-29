@@ -25,7 +25,14 @@ class InvoiceController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Invoice::query()
-            ->with(['patient', 'visit', 'patientPackage', 'creator', 'payments']);
+            ->with([
+                'patient',
+                'visit.employee',
+                'visit.service',
+                'patientPackage.package',
+                'creator',
+                'payments.receiver',
+            ]);
 
         // Search by keyword across invoice_code, patient full_name, phone, patient_code
         $searchTerm = trim((string) ($request->input('search') ?? $request->input('q', '')));
@@ -222,7 +229,7 @@ class InvoiceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Tạo hóa đơn mới thành công.',
-            'data' => new InvoiceResource($invoice->load(['patient', 'visit', 'patientPackage', 'creator', 'payments'])),
+            'data' => new InvoiceResource($invoice->load(['patient', 'visit.employee', 'visit.service', 'patientPackage.package', 'creator', 'payments.receiver'])),
         ], 201);
     }
 
@@ -231,7 +238,7 @@ class InvoiceController extends Controller
      */
     public function show(Invoice $invoice): JsonResponse
     {
-        $invoice->load(['patient', 'visit', 'patientPackage', 'creator', 'payments.receiver']);
+        $invoice->load(['patient', 'visit.employee', 'visit.service', 'patientPackage.package', 'creator', 'payments.receiver']);
 
         return response()->json([
             'success' => true,
@@ -354,7 +361,7 @@ class InvoiceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Cập nhật hóa đơn thành công.',
-            'data' => new InvoiceResource($updatedInvoice->load(['patient', 'visit', 'patientPackage', 'creator', 'payments'])),
+            'data' => new InvoiceResource($updatedInvoice->load(['patient', 'visit.employee', 'visit.service', 'patientPackage.package', 'creator', 'payments.receiver'])),
         ], 200);
     }
 

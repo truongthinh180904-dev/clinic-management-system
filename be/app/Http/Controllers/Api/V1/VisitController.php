@@ -166,7 +166,7 @@ class VisitController extends Controller
             'patientPackage.package',
             'appointment',
             'creator',
-            'invoices',
+            'invoices.payments',
         ];
 
         if ($request->user()?->hasPermission('medical_records.view')) {

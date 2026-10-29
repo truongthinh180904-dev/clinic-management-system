@@ -404,7 +404,7 @@
 
 ### TASK `P3-028` (`F3-09-03` / `F3-09-04`): Tối ưu Truy vấn Eloquent Chống N+1 và Tối ưu Phân trang Danh mục Lớn
 - **priority:** `P1`
-- **status:** `PENDING`
+- **status:** `DONE`
 - **dependencies:** `P3-027`
 - **goal:** Rà soát toàn bộ các Controller báo cáo, hóa đơn, tồn kho và lượt khám; áp dụng triệt để Eager Loading (`with()`) loại bỏ hoàn toàn các điểm nghẽn N+1 Query; tối ưu các truy vấn đếm tổng (`count()`) và phân trang danh mục lớn; đảm bảo thời gian phản hồi của 95% API đạt dưới 100ms.
 - **scope:** `be/app/Http/Controllers/Api/V1/*`.

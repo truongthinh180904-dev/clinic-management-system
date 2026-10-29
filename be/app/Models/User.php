@@ -197,11 +197,15 @@ class User extends Authenticatable
     {
         $roleList = is_array($roles) ? $roles : func_get_args();
 
-        if ($this->relationLoaded('roles')) {
-            return $this->roles->pluck('name')->intersect($roleList)->isNotEmpty();
+        if (! $this->relationLoaded('roles')) {
+            if ($this->exists) {
+                $this->load('roles');
+            } else {
+                return false;
+            }
         }
 
-        return $this->roles()->whereIn('name', $roleList)->exists();
+        return $this->roles->pluck('name')->intersect($roleList)->isNotEmpty();
     }
 
     /**
@@ -211,11 +215,15 @@ class User extends Authenticatable
      */
     public function hasAllRoles(array $roles): bool
     {
-        if ($this->relationLoaded('roles')) {
-            $userRoles = $this->roles->pluck('name')->all();
-        } else {
-            $userRoles = $this->roles()->pluck('name')->all();
+        if (! $this->relationLoaded('roles')) {
+            if ($this->exists) {
+                $this->load('roles');
+            } else {
+                return false;
+            }
         }
+
+        $userRoles = $this->roles->pluck('name')->all();
 
         return empty(array_diff($roles, $userRoles));
     }
@@ -227,15 +235,21 @@ class User extends Authenticatable
      */
     public function permissions(): Collection
     {
-        if ($this->relationLoaded('roles')) {
-            return $this->roles->flatMap(function (Role $role) {
-                return $role->relationLoaded('permissions') ? $role->permissions : $role->permissions()->get();
-            })->unique('id')->values();
+        if (! $this->relationLoaded('roles')) {
+            if ($this->exists) {
+                $this->load('roles.permissions');
+            } else {
+                return collect();
+            }
         }
 
-        return Permission::whereHas('roles', function ($query) {
-            $query->whereIn('roles.id', $this->roles()->pluck('roles.id'));
-        })->get();
+        return $this->roles->flatMap(function (Role $role) {
+            if (! $role->relationLoaded('permissions') && $role->exists) {
+                $role->load('permissions');
+            }
+
+            return $role->permissions;
+        })->unique('id')->values();
     }
 
     /**

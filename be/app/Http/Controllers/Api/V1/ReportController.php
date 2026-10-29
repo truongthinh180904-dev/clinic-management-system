@@ -86,7 +86,9 @@ class ReportController extends Controller
 
         // 5. Expenses by category
         $expensesByCategoryRaw = (clone $expensesQuery)
-            ->with('category')
+            ->with(['category' => function ($q) {
+                $q->select(['id', 'name']);
+            }])
             ->selectRaw('category_id, SUM(amount) as total_amount, COUNT(*) as expense_count')
             ->groupBy('category_id')
             ->get();
@@ -325,7 +327,9 @@ class ReportController extends Controller
             ->whereNotNull('employee_id')
             ->selectRaw('employee_id, COUNT(*) as total_visits, SUM(CASE WHEN status = "COMPLETED" THEN 1 ELSE 0 END) as completed_visits, SUM(total_amount) as total_revenue')
             ->groupBy('employee_id')
-            ->with('employee')
+            ->with(['employee' => function ($q) {
+                $q->select(['id', 'employee_code', 'full_name', 'phone', 'position']);
+            }])
             ->get();
 
         $visitsByDoctor = $doctorsQuery->map(function ($item) {
@@ -351,7 +355,9 @@ class ReportController extends Controller
             ->whereNotNull('service_id')
             ->selectRaw('service_id, COUNT(*) as total_visits, SUM(CASE WHEN status = "COMPLETED" THEN 1 ELSE 0 END) as completed_visits, SUM(total_amount) as total_revenue')
             ->groupBy('service_id')
-            ->with('service')
+            ->with(['service' => function ($q) {
+                $q->select(['id', 'service_code', 'name', 'price']);
+            }])
             ->get();
 
         $visitsByService = $servicesQuery->map(function ($item) {
@@ -487,6 +493,7 @@ class ReportController extends Controller
 
         // 1. Fetch products
         $productsQuery = Product::query()
+            ->select(['id', 'product_code', 'name', 'unit', 'minimum_stock'])
             ->when($searchTerm !== '', function ($q) use ($searchTerm) {
                 $q->where(function ($sub) use ($searchTerm) {
                     $sub->where('name', 'LIKE', "%{$searchTerm}%")

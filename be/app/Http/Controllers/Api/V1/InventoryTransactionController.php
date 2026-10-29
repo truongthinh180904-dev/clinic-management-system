@@ -23,7 +23,12 @@ class InventoryTransactionController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = InventoryTransaction::query()->with(['product', 'creator']);
+        $query = InventoryTransaction::query()->with([
+            'product' => function ($pq) {
+                $pq->withCurrentStock();
+            },
+            'creator',
+        ]);
 
         // Filter by product_id
         if ($request->filled('product_id')) {
@@ -114,7 +119,12 @@ class InventoryTransactionController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        $transaction = InventoryTransaction::with(['product', 'creator'])->findOrFail($id);
+        $transaction = InventoryTransaction::with([
+            'product' => function ($pq) {
+                $pq->withCurrentStock();
+            },
+            'creator',
+        ])->findOrFail($id);
 
         return response()->json([
             'success' => true,
@@ -128,7 +138,7 @@ class InventoryTransactionController extends Controller
      */
     public function summary(Request $request): JsonResponse
     {
-        $products = Product::query()->withCurrentStock()->get();
+        $products = Product::query()->select(['id', 'minimum_stock'])->withCurrentStock()->get();
         $totalProducts = $products->count();
         $inStockCount = 0;
         $lowStockCount = 0;

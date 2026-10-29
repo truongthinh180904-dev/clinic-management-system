@@ -70,19 +70,35 @@ class DataMaskingService
     }
 
     /**
+     * In-memory cache for resolved masking bypass permissions per User object instance.
+     *
+     * @var \WeakMap<User, bool>|null
+     */
+    protected static ?\WeakMap $bypassCache = null;
+
+    /**
      * Determine if a user has authority to bypass data masking.
      * Roles with direct administrative authority: ADMIN, MANAGER.
      * Permissions: patients.mask_bypass, patients.update (receptionists/managers updating patients).
      */
     public static function canBypassMasking(?User $user): bool
     {
-        if (! $user) {
+        if ($user === null) {
             return false;
         }
 
-        return $user->hasRole('ADMIN')
+        self::$bypassCache ??= new \WeakMap;
+        if (isset(self::$bypassCache[$user])) {
+            return self::$bypassCache[$user];
+        }
+
+        $canBypass = $user->hasRole('ADMIN')
             || $user->hasRole('MANAGER')
             || $user->hasPermission('patients.mask_bypass')
             || $user->hasPermission('patients.update');
+
+        self::$bypassCache[$user] = $canBypass;
+
+        return $canBypass;
     }
 }

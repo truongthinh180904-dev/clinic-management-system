@@ -53,7 +53,7 @@ class PatientFileController extends Controller
             ], 404);
         }
 
-        $query = PatientFile::with(['uploader', 'visit'])
+        $query = PatientFile::with(['uploader', 'patient', 'visit'])
             ->where('patient_id', $patient->id);
 
         if ($request->filled('visit_id')) {
@@ -87,7 +87,7 @@ class PatientFileController extends Controller
             ], 404);
         }
 
-        $files = PatientFile::with(['uploader', 'patient'])
+        $files = PatientFile::with(['uploader', 'patient', 'visit'])
             ->where('visit_id', $visit->id)
             ->latest('id')
             ->get();

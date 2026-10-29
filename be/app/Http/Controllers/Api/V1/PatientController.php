@@ -31,6 +31,11 @@ class PatientController extends Controller
     {
         $query = Patient::query();
 
+        // Eager count relationships when requested to avoid N+1 count queries
+        if ($request->boolean('with_counts') || $request->boolean('include_counts')) {
+            $query->withCount(['appointments', 'visits', 'invoices', 'patientPackages']);
+        }
+
         // Search by keyword across code, name, phone, email, emergency phone
         $searchTerm = trim((string) ($request->input('search') ?? $request->input('q', '')));
         if ($searchTerm !== '') {
