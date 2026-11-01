@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AlertRule;
+use App\Models\Employee;
 use App\Models\ExpenseCategory;
 use App\Models\Product;
 use App\Models\Service;
@@ -252,6 +253,82 @@ class DemoCatalogSeeder extends Seeder
             AlertRule::updateOrCreate(
                 ['alert_type' => $rule['alert_type']],
                 $rule
+            );
+        }
+
+        // Demo Doctors & Examining Employees
+        $employeesData = [
+            [
+                'employee_code' => 'EMP-001',
+                'full_name' => 'BS.CKI Nguyễn Văn An',
+                'phone' => '0901234567',
+                'email' => 'bacsi.an@clinic.local',
+                'date_of_birth' => '1982-05-15',
+                'gender' => 'MALE',
+                'position' => 'Bác sĩ Trưởng khoa Nội',
+                'department' => 'Khoa Khám Bệnh',
+                'hire_date' => '2020-01-15',
+                'status' => 'ACTIVE',
+                'notes' => 'Chuyên gia nội tiêu hóa và tim mạch',
+            ],
+            [
+                'employee_code' => 'EMP-002',
+                'full_name' => 'ThS.BS Trần Thị Mai',
+                'phone' => '0912345678',
+                'email' => 'bacsi.mai@clinic.local',
+                'date_of_birth' => '1988-08-20',
+                'gender' => 'FEMALE',
+                'position' => 'Bác sĩ Da liễu',
+                'department' => 'Khoa Da liễu & Thẩm mỹ',
+                'hire_date' => '2021-03-01',
+                'status' => 'ACTIVE',
+                'notes' => 'Chuyên khoa da liễu và laser thẩm mỹ',
+            ],
+            [
+                'employee_code' => 'EMP-003',
+                'full_name' => 'BS Lê Hoàng Nam',
+                'phone' => '0923456789',
+                'email' => 'bacsi.nam@clinic.local',
+                'date_of_birth' => '1985-11-10',
+                'gender' => 'MALE',
+                'position' => 'Bác sĩ Siêu âm & CĐHA',
+                'department' => 'Khoa Chẩn đoán hình ảnh',
+                'hire_date' => '2021-06-15',
+                'status' => 'ACTIVE',
+                'notes' => 'Chuyên siêu âm tổng quát và X-quang',
+            ],
+            [
+                'employee_code' => 'EMP-004',
+                'full_name' => 'BS.CKI Phạm Thu Hà',
+                'phone' => '0934567890',
+                'email' => 'bacsi.ha@clinic.local',
+                'date_of_birth' => '1990-03-25',
+                'gender' => 'FEMALE',
+                'position' => 'Bác sĩ Răng Hàm Mặt',
+                'department' => 'Khoa Răng Hàm Mặt',
+                'hire_date' => '2022-02-01',
+                'status' => 'ACTIVE',
+                'notes' => 'Chuyên nha khoa tổng quát và phục hình',
+            ],
+            [
+                'employee_code' => 'EMP-005',
+                'full_name' => 'BS Vũ Minh Đức',
+                'phone' => '0945678901',
+                'email' => 'bacsi.duc@clinic.local',
+                'date_of_birth' => '1987-09-12',
+                'gender' => 'MALE',
+                'position' => 'Bác sĩ Tai Mũi Họng',
+                'department' => 'Khoa Tai Mũi Họng',
+                'hire_date' => '2022-05-10',
+                'status' => 'ACTIVE',
+                'notes' => 'Chuyên nội soi TMH và phẫu thuật tiểu phẫu',
+            ],
+        ];
+
+        foreach ($employeesData as $empData) {
+            Employee::updateOrCreate(
+                ['employee_code' => $empData['employee_code']],
+                $empData
             );
         }
     }

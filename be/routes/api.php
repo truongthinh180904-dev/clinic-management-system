@@ -146,7 +146,7 @@ Route::prefix('v1')->group(function (): void {
         // Employee Management
         Route::prefix('employees')->group(function (): void {
             Route::get('/', [EmployeeController::class, 'index'])
-                ->middleware('permission:employees.view')
+                ->middleware('permission:employees.view|visits.create|appointments.create|visits.view|appointments.view')
                 ->name('api.v1.employees.index');
 
             Route::post('/', [EmployeeController::class, 'store'])

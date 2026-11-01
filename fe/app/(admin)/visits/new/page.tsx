@@ -73,15 +73,27 @@ function CreateVisitContent() {
   // Load Employees and Services
   useEffect(() => {
     async function loadRefs() {
-      try {
-        const [empRes, servRes] = await Promise.all([
-          getEmployees({ per_page: 100 }),
-          getServices({ per_page: 100 }),
-        ]);
-        setEmployees(empRes.data || []);
-        setServices(servRes.data || []);
-      } catch (err) {
-        console.error('Failed to load initial data', err);
+      const [empRes, servRes] = await Promise.allSettled([
+        getEmployees({ per_page: 100, status: 'ACTIVE' }),
+        getServices({ per_page: 100, status: 'ACTIVE' }),
+      ]);
+      if (empRes.status === 'fulfilled') {
+        const empList = empRes.value?.data || [];
+        setEmployees(empList);
+        if (empList.length > 0 && !employeeId) {
+          setEmployeeId(empList[0].id);
+        }
+      } else {
+        console.error('Failed to load employees', empRes.reason);
+      }
+      if (servRes.status === 'fulfilled') {
+        const servList = servRes.value?.data || [];
+        setServices(servList);
+        if (servList.length > 0 && !serviceId) {
+          setServiceId(servList[0].id);
+        }
+      } else {
+        console.error('Failed to load services', servRes.reason);
       }
     }
     loadRefs();

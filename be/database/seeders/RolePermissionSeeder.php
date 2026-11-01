@@ -216,6 +216,7 @@ class RolePermissionSeeder extends Seeder
             'DOCTOR' => [
                 'description' => 'Bác sĩ điều trị: Xem lịch khám, thực hiện khám, cập nhật hồ sơ bệnh án, kê đơn, chỉ định dịch vụ.',
                 'permissions' => [
+                    'employees.view',
                     'patients.view',
                     'patient_files.view',
                     'patient_files.upload',
@@ -237,6 +238,7 @@ class RolePermissionSeeder extends Seeder
             'NURSE' => [
                 'description' => 'Điều dưỡng / Kỹ thuật viên: Tiếp đón, hỗ trợ lâm sàng, xem thông tin bệnh nhân, xem và tải lên tệp đính kèm y tế, không lập/sửa bệnh án chuyên môn.',
                 'permissions' => [
+                    'employees.view',
                     'patients.view',
                     'patient_files.view',
                     'patient_files.upload',
@@ -250,6 +252,7 @@ class RolePermissionSeeder extends Seeder
             'RECEPTIONIST' => [
                 'description' => 'Nhân viên tiếp đón: Tiếp đón bệnh nhân, tra cứu hồ sơ, đặt lịch hẹn, tạo lượt khám mới (không xem bệnh án).',
                 'permissions' => [
+                    'employees.view',
                     'patients.view',
                     'patients.create',
                     'patients.update',

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -188,25 +188,52 @@ function VisitsListContent() {
   }, [fastCheckInParam]);
 
   // Load Reference Data (Employees & Services)
-  useEffect(() => {
-    async function loadRefs() {
-      try {
-        const [empRes, srvRes] = await Promise.all([
-          getEmployees({ per_page: 100 }),
-          getServices({ per_page: 100, status: 'ACTIVE' }),
-        ]);
-        setEmployees(empRes.data || []);
-        const activeServices = srvRes.data || [];
+  const [isLoadingRefs, setIsLoadingRefs] = useState(false);
+
+  const loadRefs = useCallback(async () => {
+    setIsLoadingRefs(true);
+    try {
+      const [empRes, srvRes] = await Promise.allSettled([
+        getEmployees({ per_page: 100, status: 'ACTIVE' }),
+        getServices({ per_page: 100, status: 'ACTIVE' }),
+      ]);
+
+      if (srvRes.status === 'fulfilled') {
+        const activeServices = srvRes.value?.data || [];
         setServices(activeServices);
         if (activeServices.length > 0) {
-          setCheckInServiceId(activeServices[0].id);
+          setCheckInServiceId((prev) => (prev ? prev : activeServices[0].id));
         }
-      } catch (err) {
-        console.error('Failed to load references', err);
+      } else {
+        console.error('Failed to load services', srvRes.reason);
       }
+
+      if (empRes.status === 'fulfilled') {
+        const activeEmployees = empRes.value?.data || [];
+        setEmployees(activeEmployees);
+        if (activeEmployees.length > 0) {
+          setCheckInDoctorId((prev) => (prev ? prev : activeEmployees[0].id));
+        }
+      } else {
+        console.error('Failed to load employees', empRes.reason);
+      }
+    } catch (err) {
+      console.error('Failed to load references', err);
+    } finally {
+      setIsLoadingRefs(false);
     }
-    loadRefs();
   }, []);
+
+  useEffect(() => {
+    loadRefs();
+  }, [loadRefs]);
+
+  // When reception modal opens, reload if references are empty
+  useEffect(() => {
+    if (isReceptionModalOpen && (services.length === 0 || employees.length === 0)) {
+      loadRefs();
+    }
+  }, [isReceptionModalOpen, services.length, employees.length, loadRefs]);
 
   // Debounced patient search for existing mode
   useEffect(() => {
@@ -388,9 +415,13 @@ function VisitsListContent() {
     setDuplicateOverride(false);
     if (services.length > 0) {
       setCheckInServiceId(services[0].id);
+    } else {
+      setCheckInServiceId('');
     }
     if (employees.length > 0) {
       setCheckInDoctorId(employees[0].id);
+    } else {
+      setCheckInDoctorId('');
     }
     setCheckInNotes('');
     setCheckInError(null);
@@ -1456,22 +1487,47 @@ function VisitsListContent() {
 
             {/* Phân luồng phòng khám chuyên khoa & Bác sĩ */}
             <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center justify-between">
-                <span>Phân luồng Chuyên khoa & Bác sĩ Khám</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">
-                  STT Chờ khám: #{String(todayQueueNumber).padStart(2, '0')}
-                </span>
-              </h4>
+              <div className="flex items-center justify-between pb-1">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  Phân luồng Chuyên khoa & Bác sĩ Khám
+                </h4>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => loadRefs()}
+                    disabled={isLoadingRefs}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50 inline-flex items-center gap-1"
+                    title="Nhấn để tải lại danh mục dịch vụ và bác sĩ từ máy chủ"
+                  >
+                    <span>🔄</span>
+                    <span>Tải lại danh sách</span>
+                  </button>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold text-xs">
+                    STT Chờ khám: #{String(todayQueueNumber).padStart(2, '0')}
+                  </span>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <FormField label="Dịch vụ / Chuyên khoa khám" required>
+                <FormField
+                  label="Dịch vụ / Chuyên khoa khám"
+                  required
+                  hint={!isLoadingRefs && services.length === 0 ? '⚠️ Chưa có dịch vụ nào trong hệ thống' : undefined}
+                >
                   <select
                     value={checkInServiceId}
                     onChange={(e) => setCheckInServiceId(e.target.value ? Number(e.target.value) : '')}
                     required
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    disabled={isLoadingRefs}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:opacity-50"
                   >
-                    <option value="">-- Chọn dịch vụ khám --</option>
+                    <option value="">
+                      {isLoadingRefs
+                        ? '⏳ Đang tải danh sách dịch vụ...'
+                        : services.length === 0
+                        ? '-- Chưa có dịch vụ nào --'
+                        : '-- Chọn dịch vụ khám --'}
+                    </option>
                     {services.map((srv) => (
                       <option key={srv.id} value={srv.id}>
                         {srv.name} ({formatMoney(srv.price)})
@@ -1480,14 +1536,25 @@ function VisitsListContent() {
                   </select>
                 </FormField>
 
-                <FormField label="Bác sĩ tiếp nhận thăm khám" required>
+                <FormField
+                  label="Bác sĩ tiếp nhận thăm khám"
+                  required
+                  hint={!isLoadingRefs && employees.length === 0 ? '⚠️ Chưa có bác sĩ nào trong hệ thống' : undefined}
+                >
                   <select
                     value={checkInDoctorId}
                     onChange={(e) => setCheckInDoctorId(e.target.value ? Number(e.target.value) : '')}
                     required
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    disabled={isLoadingRefs}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:opacity-50"
                   >
-                    <option value="">-- Chọn bác sĩ phụ trách --</option>
+                    <option value="">
+                      {isLoadingRefs
+                        ? '⏳ Đang tải danh sách bác sĩ...'
+                        : employees.length === 0
+                        ? '-- Chưa có bác sĩ nào --'
+                        : '-- Chọn bác sĩ phụ trách --'}
+                    </option>
                     {employees.map((emp) => (
                       <option key={emp.id} value={emp.id}>
                         {emp.full_name} ({emp.employee_code}) - {emp.position || 'Bác sĩ'}

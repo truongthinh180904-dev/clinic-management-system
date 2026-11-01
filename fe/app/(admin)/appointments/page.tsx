@@ -133,15 +133,19 @@ function AppointmentsContent() {
   // Load reference data
   useEffect(() => {
     async function loadReferenceData() {
-      try {
-        const [empRes, servRes] = await Promise.all([
-          getEmployees({ per_page: 100 }),
-          getServices({ per_page: 100 }),
-        ]);
-        setEmployees(empRes.data || []);
-        setServices(servRes.data || []);
-      } catch (err) {
-        console.error('Lỗi khi tải dữ liệu bác sĩ/dịch vụ:', err);
+      const [empRes, servRes] = await Promise.allSettled([
+        getEmployees({ per_page: 100, status: 'ACTIVE' }),
+        getServices({ per_page: 100, status: 'ACTIVE' }),
+      ]);
+      if (empRes.status === 'fulfilled') {
+        setEmployees(empRes.value?.data || []);
+      } else {
+        console.error('Lỗi khi tải dữ liệu bác sĩ/nhân viên:', empRes.reason);
+      }
+      if (servRes.status === 'fulfilled') {
+        setServices(servRes.value?.data || []);
+      } else {
+        console.error('Lỗi khi tải dữ liệu dịch vụ:', servRes.reason);
       }
     }
     loadReferenceData();
