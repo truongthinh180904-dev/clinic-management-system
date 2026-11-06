@@ -271,8 +271,8 @@ export async function downloadModuleTemplate(module: ImportModule): Promise<void
       content =
         bom +
         'patient_code,full_name,date_of_birth,gender,phone,email,address,emergency_contact_name,emergency_contact_phone,notes\n' +
-        'BN000001,Nguyễn Văn An,1990-05-15,MALE,0901234567,an.nguyen@example.com,123 Lê Lợi TP.HCM,Trần Thị Mai,0909999888,Tiền sử dị ứng penicillin\n' +
-        'BN000002,Trần Thị Bình,1985-11-20,FEMALE,0912345678,binh.tran@example.com,456 Nguyễn Huệ TP.HCM,Trần Văn Cường,0919888777,Khám sức khỏe tổng quát\n';
+        'BN000001,Nguyễn Văn An,15/05/1990,MALE,0901234567,an.nguyen@example.com,123 Lê Lợi TP.HCM,Trần Thị Mai,0909999888,Tiền sử dị ứng penicillin\n' +
+        'BN000002,Trần Thị Bình,20/11/1985,FEMALE,0912345678,binh.tran@example.com,456 Nguyễn Huệ TP.HCM,Trần Văn Cường,0919888777,Khám sức khỏe tổng quát\n';
     } else if (module === 'services') {
       content =
         bom +
@@ -300,17 +300,19 @@ export async function downloadModuleTemplate(module: ImportModule): Promise<void
 }
 
 /**
- * Xuất dữ liệu báo cáo ra CSV UTF-8 BOM trực tiếp
+ * Xuất dữ liệu báo cáo ra Excel (.xls) hoặc CSV UTF-8 BOM
  * GET /api/v1/exports/{type}
  */
-export async function downloadExportCsv(
+export async function downloadExport(
   type: ExportType,
-  params?: ExportParams
+  params?: ExportParams,
+  format: 'excel' | 'csv' = 'excel'
 ): Promise<void> {
   const baseUrl = getBaseUrl();
   const token = getStoredToken();
 
   const searchParams = new URLSearchParams();
+  searchParams.append('format', format);
   if (params?.start_date) searchParams.append('start_date', params.start_date);
   if (params?.end_date) searchParams.append('end_date', params.end_date);
   if (params?.status) searchParams.append('status', params.status);
@@ -333,7 +335,7 @@ export async function downloadExportCsv(
     });
 
     if (!response.ok) {
-      throw new Error(`Xuất file CSV thất bại với mã lỗi ${response.status}`);
+      throw new Error(`Xuất file thất bại với mã lỗi ${response.status}`);
     }
 
     const blob = await response.blob();
@@ -341,7 +343,8 @@ export async function downloadExportCsv(
     const link = document.createElement('a');
     link.href = blobUrl;
     const dateStr = new Date().toISOString().split('T')[0];
-    link.download = `export_${type}_${dateStr}.csv`;
+    const ext = format === 'csv' ? 'csv' : 'xls';
+    link.download = `export_${type}_${dateStr}.${ext}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -350,4 +353,15 @@ export async function downloadExportCsv(
     console.warn(`Export download failed:`, error);
     throw error;
   }
+}
+
+/**
+ * Xuất dữ liệu báo cáo ra CSV UTF-8 BOM trực tiếp (tương thích ngược)
+ * GET /api/v1/exports/{type}
+ */
+export async function downloadExportCsv(
+  type: ExportType,
+  params?: ExportParams
+): Promise<void> {
+  return downloadExport(type, params, 'csv');
 }

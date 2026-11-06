@@ -2,12 +2,14 @@
 
 import React, { useEffect, useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth/auth-context';
 import { ApiError } from '@/lib/api/client';
 import {
   createEmployee,
   deleteEmployee,
   getEmployees,
+  getNextEmployeeCode,
   updateEmployeeStatus,
 } from '@/lib/api/employees';
 import {
@@ -28,7 +30,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { Pagination } from '@/components/ui/pagination';
 import { EmptySearchState, EmptyDataState, ErrorState } from '@/components/ui/empty-state';
-import { User, Briefcase, FileText, UserCog, UserCheck, UserMinus, UserX, Search, X } from 'lucide-react';
+import { User, Briefcase, FileText, UserCog, UserCheck, UserMinus, UserX, Search, X, Sparkles, RefreshCw, Check } from 'lucide-react';
 
 const DEPARTMENTS = [
   'Tất cả phòng ban',
@@ -85,6 +87,22 @@ export default function EmployeesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalErrors, setModalErrors] = useState<Record<string, string[]> | null>(null);
   const [modalGeneralError, setModalGeneralError] = useState<string | null>(null);
+  const [suggestedCode, setSuggestedCode] = useState<string>('');
+  const [loadingSuggestedCode, setLoadingSuggestedCode] = useState<boolean>(false);
+
+  const fetchSuggestedCode = async () => {
+    setLoadingSuggestedCode(true);
+    try {
+      const res = await getNextEmployeeCode();
+      if (res?.data?.suggested_code) {
+        setSuggestedCode(res.data.suggested_code);
+      }
+    } catch (e) {
+      console.warn('Could not fetch suggested employee code:', e);
+    } finally {
+      setLoadingSuggestedCode(false);
+    }
+  };
 
   const [formData, setFormData] = useState<CreateEmployeeInput>({
     employee_code: '',
@@ -199,7 +217,9 @@ export default function EmployeesPage() {
     });
     setModalErrors(null);
     setModalGeneralError(null);
+    setSuggestedCode('');
     setIsModalOpen(true);
+    fetchSuggestedCode();
   };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -591,213 +611,278 @@ export default function EmployeesPage() {
 
       {/* Modal: Thêm nhân viên mới */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 my-8">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                Thêm nhân viên mới
-              </h2>
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-slate-900/60 p-2 sm:p-4 md:p-6 backdrop-blur-xs overflow-y-auto">
+          <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto animate-in fade-in-0 zoom-in-95 duration-200">
+            {/* STICKY HEADER - KHÔNG BAO GIỜ BỊ CHE */}
+            <div className="sticky top-0 z-20 shrink-0 flex items-center justify-between border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <UserCog className="h-5 w-5 text-blue-600" />
+                  Thêm nhân viên mới
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Tạo hồ sơ nhân viên, chức danh chuyên môn và thiết lập mã định danh
+                </p>
+              </div>
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg"
+                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition-colors"
+                title="Đóng modal"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="p-6 space-y-5">
-              {modalGeneralError && (
-                <FormAlert
-                  type="error"
-                  title="Không thể tạo nhân viên mới"
-                  message={modalGeneralError}
-                  onDismiss={() => setModalGeneralError(null)}
-                />
-              )}
-
-              {/* Nhóm 1: Thông tin cá nhân */}
-              <FormSection
-                title="Thông tin cá nhân & Định danh"
-                description="Họ tên, ngày sinh, giới tính và thông tin liên hệ của nhân sự"
-                icon={User}
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    label="Họ và tên nhân viên"
-                    required
-                    error={modalErrors?.full_name}
-                  >
-                    <input
-                      type="text"
-                      required
-                      value={formData.full_name}
-                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                      placeholder="Nguyễn Văn A"
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </FormField>
-
-                  <FormField
-                    label="Mã nhân viên"
-                    hint="NV-000001 (để trống tự sinh)"
-                    error={modalErrors?.employee_code}
-                  >
-                    <input
-                      type="text"
-                      value={formData.employee_code || ''}
-                      onChange={(e) => setFormData({ ...formData, employee_code: e.target.value })}
-                      placeholder="NV-000001"
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
-                    />
-                  </FormField>
-
-                  <FormField
-                    label="Số điện thoại"
-                    error={modalErrors?.phone}
-                  >
-                    <input
-                      type="tel"
-                      value={formData.phone || ''}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="0987654321"
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </FormField>
-
-                  <FormField
-                    label="Địa chỉ email"
-                    error={modalErrors?.email}
-                  >
-                    <input
-                      type="email"
-                      value={formData.email || ''}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="nhanvien@qlpk.vn"
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </FormField>
-
-                  <FormField
-                    label="Ngày sinh"
-                    error={modalErrors?.date_of_birth}
-                  >
-                    <input
-                      type="date"
-                      value={formData.date_of_birth || ''}
-                      onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </FormField>
-
-                  <FormField
-                    label="Giới tính"
-                    required
-                    error={modalErrors?.gender}
-                  >
-                    <select
-                      value={formData.gender || 'MALE'}
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'MALE' | 'FEMALE' | 'OTHER' })}
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value="MALE">Nam</option>
-                      <option value="FEMALE">Nữ</option>
-                      <option value="OTHER">Khác</option>
-                    </select>
-                  </FormField>
-                </div>
-              </FormSection>
-
-              {/* Nhóm 2: Vị trí công tác */}
-              <FormSection
-                title="Vị trí công tác & Phòng ban"
-                description="Bộ phận, chức danh và tình trạng công tác"
-                icon={Briefcase}
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    label="Phòng ban"
-                    error={modalErrors?.department}
-                  >
-                    <input
-                      type="text"
-                      list="dept-list"
-                      value={formData.department || ''}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                      placeholder="VD: Khám bệnh, Dược..."
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    <datalist id="dept-list">
-                      {DEPARTMENTS.slice(1).map((d) => (
-                        <option key={d} value={d} />
-                      ))}
-                    </datalist>
-                  </FormField>
-
-                  <FormField
-                    label="Chức vụ / Chức danh"
-                    error={modalErrors?.position}
-                  >
-                    <input
-                      type="text"
-                      value={formData.position || ''}
-                      onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                      placeholder="VD: Bác sĩ chuyên khoa, Điều dưỡng, Dược sĩ..."
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </FormField>
-
-                  <FormField
-                    label="Ngày vào làm"
-                    error={modalErrors?.hire_date}
-                  >
-                    <input
-                      type="date"
-                      value={formData.hire_date || ''}
-                      onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </FormField>
-
-                  <FormField
-                    label="Trạng thái làm việc"
-                    required
-                    error={modalErrors?.status}
-                  >
-                    <select
-                      value={formData.status || 'ACTIVE'}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as EmployeeStatus })}
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value="ACTIVE">Đang làm việc</option>
-                      <option value="INACTIVE">Tạm nghỉ</option>
-                      <option value="LOCKED">Đã nghỉ việc</option>
-                    </select>
-                  </FormField>
-                </div>
-              </FormSection>
-
-              {/* Nhóm 3: Ghi chú */}
-              <FormSection
-                title="Ghi chú hồ sơ"
-                description="Thông tin chứng chỉ hành nghề, bằng cấp chuyên môn nếu có"
-                icon={FileText}
-              >
-                <FormField
-                  label="Ghi chú bổ sung"
-                  error={modalErrors?.notes}
-                >
-                  <textarea
-                    rows={2}
-                    value={formData.notes || ''}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Ghi chú về văn bằng, chứng chỉ hành nghề CCHN, phân công đặc thù..."
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            {/* FORM BODY WITH SCROLLABLE CONTENT */}
+            <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                {modalGeneralError && (
+                  <FormAlert
+                    type="error"
+                    title="Không thể tạo nhân viên mới"
+                    message={modalGeneralError}
+                    onDismiss={() => setModalGeneralError(null)}
                   />
-                </FormField>
-              </FormSection>
+                )}
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                {/* Nhóm 1: Thông tin cá nhân */}
+                <FormSection
+                  title="Thông tin cá nhân & Định danh"
+                  description="Họ tên, ngày sinh, giới tính và thông tin liên hệ của nhân sự"
+                  icon={User}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      label="Họ và tên nhân viên"
+                      required
+                      error={modalErrors?.full_name}
+                    >
+                      <input
+                        type="text"
+                        required
+                        value={formData.full_name}
+                        onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                        placeholder="Nguyễn Văn A"
+                        className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </FormField>
+
+                    {/* MÃ NHÂN VIÊN VỚI GỢI Ý TỰ ĐỘNG TĂNG */}
+                    <FormField
+                      label="Mã nhân viên"
+                      hint="Nhập mã riêng hoặc nhấn mã gợi ý bên dưới để chọn tự động"
+                      error={modalErrors?.employee_code}
+                    >
+                      <div className="space-y-1.5">
+                        <div className="relative flex items-center">
+                          <input
+                            type="text"
+                            value={formData.employee_code || ''}
+                            onChange={(e) => setFormData({ ...formData, employee_code: e.target.value })}
+                            placeholder="VD: NV000001 (để trống tự sinh)"
+                            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 pr-8 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                          />
+                          {formData.employee_code && (
+                            <button
+                              type="button"
+                              onClick={() => setFormData({ ...formData, employee_code: '' })}
+                              className="absolute right-2.5 text-xs text-slate-400 hover:text-slate-600"
+                              title="Xóa mã đã nhập"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Gợi ý mã tăng tự động tương tác 1-Click */}
+                        {suggestedCode ? (
+                          <div className="flex items-center flex-wrap gap-1.5 text-xs">
+                            <span className="text-slate-500 dark:text-slate-400 text-[11px]">Mã đề xuất kế tiếp:</span>
+                            <button
+                              type="button"
+                              onClick={() => setFormData({ ...formData, employee_code: suggestedCode })}
+                              className={cn(
+                                "inline-flex items-center gap-1 px-2 py-0.5 rounded border font-mono font-bold text-xs transition-all",
+                                formData.employee_code === suggestedCode
+                                  ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700"
+                                  : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:border-blue-300 dark:bg-blue-950/70 dark:text-blue-300 dark:border-blue-800 cursor-pointer shadow-2xs active:scale-95"
+                              )}
+                              title="Nhấn vào đây để tự động điền mã này"
+                            >
+                              <Sparkles className="h-3 w-3 text-amber-500 shrink-0" />
+                              <span>{suggestedCode}</span>
+                              <span className="font-sans text-[10px] font-medium underline ml-1">
+                                {formData.employee_code === suggestedCode ? '✓ Đã chọn' : '← Nhấn để chọn'}
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={fetchSuggestedCode}
+                              disabled={loadingSuggestedCode}
+                              className="text-slate-400 hover:text-blue-600 p-0.5 rounded transition-colors"
+                              title="Tải lại mã gợi ý mới nhất"
+                            >
+                              <RefreshCw className={cn("h-3 w-3", loadingSuggestedCode && "animate-spin")} />
+                            </button>
+                          </div>
+                        ) : loadingSuggestedCode ? (
+                          <div className="text-[11px] text-slate-400 flex items-center gap-1 font-mono">
+                            <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />
+                            Đang lấy gợi ý mã nhân viên...
+                          </div>
+                        ) : null}
+                      </div>
+                    </FormField>
+
+                    <FormField
+                      label="Số điện thoại"
+                      error={modalErrors?.phone}
+                    >
+                      <input
+                        type="tel"
+                        value={formData.phone || ''}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="0987654321"
+                        className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </FormField>
+
+                    <FormField
+                      label="Địa chỉ email"
+                      error={modalErrors?.email}
+                    >
+                      <input
+                        type="email"
+                        value={formData.email || ''}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="nhanvien@qlpk.vn"
+                        className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </FormField>
+
+                    <FormField
+                      label="Ngày sinh"
+                      error={modalErrors?.date_of_birth}
+                    >
+                      <input
+                        type="date"
+                        value={formData.date_of_birth || ''}
+                        onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                        className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </FormField>
+
+                    <FormField
+                      label="Giới tính"
+                      required
+                      error={modalErrors?.gender}
+                    >
+                      <select
+                        value={formData.gender || 'MALE'}
+                        onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'MALE' | 'FEMALE' | 'OTHER' })}
+                        className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="MALE">Nam</option>
+                        <option value="FEMALE">Nữ</option>
+                        <option value="OTHER">Khác</option>
+                      </select>
+                    </FormField>
+                  </div>
+                </FormSection>
+
+                {/* Nhóm 2: Vị trí công tác */}
+                <FormSection
+                  title="Vị trí công tác & Phòng ban"
+                  description="Bộ phận, chức danh và tình trạng công tác"
+                  icon={Briefcase}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      label="Phòng ban"
+                      error={modalErrors?.department}
+                    >
+                      <input
+                        type="text"
+                        list="dept-list"
+                        value={formData.department || ''}
+                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                        placeholder="VD: Khám bệnh, Dược..."
+                        className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <datalist id="dept-list">
+                        {DEPARTMENTS.slice(1).map((d) => (
+                          <option key={d} value={d} />
+                        ))}
+                      </datalist>
+                    </FormField>
+
+                    <FormField
+                      label="Chức vụ / Chức danh"
+                      error={modalErrors?.position}
+                    >
+                      <input
+                        type="text"
+                        value={formData.position || ''}
+                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                        placeholder="VD: Bác sĩ chuyên khoa, Điều dưỡng, Dược sĩ..."
+                        className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </FormField>
+
+                    <FormField
+                      label="Ngày vào làm"
+                      error={modalErrors?.hire_date}
+                    >
+                      <input
+                        type="date"
+                        value={formData.hire_date || ''}
+                        onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
+                        className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </FormField>
+
+                    <FormField
+                      label="Trạng thái làm việc"
+                      required
+                      error={modalErrors?.status}
+                    >
+                      <select
+                        value={formData.status || 'ACTIVE'}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value as EmployeeStatus })}
+                        className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="ACTIVE">Đang làm việc</option>
+                        <option value="INACTIVE">Tạm nghỉ</option>
+                        <option value="LOCKED">Đã nghỉ việc</option>
+                      </select>
+                    </FormField>
+                  </div>
+                </FormSection>
+
+                {/* Nhóm 3: Ghi chú */}
+                <FormSection
+                  title="Ghi chú hồ sơ"
+                  description="Thông tin chứng chỉ hành nghề, bằng cấp chuyên môn nếu có"
+                  icon={FileText}
+                >
+                  <FormField
+                    label="Ghi chú bổ sung"
+                    error={modalErrors?.notes}
+                  >
+                    <textarea
+                      rows={2}
+                      value={formData.notes || ''}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="Ghi chú về văn bằng, chứng chỉ hành nghề CCHN, phân công đặc thù..."
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </FormField>
+                </FormSection>
+              </div>
+
+              {/* STICKY FOOTER - LUÔN HIỂN THỊ CỐ ĐỊNH Ở DƯỚI */}
+              <div className="sticky bottom-0 z-20 shrink-0 flex items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-6 py-3.5 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

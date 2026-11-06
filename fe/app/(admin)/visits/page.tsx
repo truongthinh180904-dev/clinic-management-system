@@ -68,7 +68,10 @@ import { PatientFileManager } from '@/components/patient-files';
 function VisitsListContent() {
   const searchParams = useSearchParams();
   const fastCheckInParam = searchParams.get('fastCheckIn');
-  const { hasPermission, hasRole } = useAuth();
+  const { user, hasPermission, hasRole } = useAuth();
+
+  const isDoctorOnly = hasRole('DOCTOR') && !hasRole('ADMIN') && !hasRole('MANAGER');
+  const loggedInDoctorId = user?.employee?.id || user?.employee_id;
 
   const canCreate =
     hasPermission('visits.create') ||
@@ -212,7 +215,10 @@ function VisitsListContent() {
         const activeEmployees = empRes.value?.data || [];
         setEmployees(activeEmployees);
         if (activeEmployees.length > 0) {
-          setCheckInDoctorId((prev) => (prev ? prev : activeEmployees[0].id));
+          setCheckInDoctorId((prev) => {
+            if (isDoctorOnly && loggedInDoctorId) return Number(loggedInDoctorId);
+            return prev ? prev : activeEmployees[0].id;
+          });
         }
       } else {
         console.error('Failed to load employees', empRes.reason);
@@ -222,11 +228,19 @@ function VisitsListContent() {
     } finally {
       setIsLoadingRefs(false);
     }
-  }, []);
+  }, [isDoctorOnly, loggedInDoctorId]);
 
   useEffect(() => {
     loadRefs();
   }, [loadRefs]);
+
+  // If logged in as Doctor only, lock employee filter & check-in doctor to themselves
+  useEffect(() => {
+    if (isDoctorOnly && loggedInDoctorId) {
+      setEmployeeFilter(Number(loggedInDoctorId));
+      setCheckInDoctorId(Number(loggedInDoctorId));
+    }
+  }, [isDoctorOnly, loggedInDoctorId]);
 
   // When reception modal opens, reload if references are empty
   useEffect(() => {
@@ -301,7 +315,7 @@ function VisitsListContent() {
         per_page: perPage,
         search: searchTerm || undefined,
         visit_date: dateFilter || undefined,
-        employee_id: employeeFilter || undefined,
+        employee_id: (isDoctorOnly && loggedInDoctorId) ? Number(loggedInDoctorId) : (employeeFilter || undefined),
         patient_id: patientFilter || undefined,
         status: statusFilter || undefined,
         payment_status: paymentStatusFilter || undefined,
@@ -597,14 +611,14 @@ function VisitsListContent() {
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm"
               >
                 <Zap className="h-4 w-4" />
-                <span>Tiếp đón nhanh tại quầy</span>
+                <span>Tiếp đón nhanh (Tạo lượt khám)</span>
               </button>
               <Link
                 href="/visits/new"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm"
+                className="inline-flex items-center justify-center gap-2 px-3 py-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-medium transition-colors"
+                title="Dành cho ca đặc thù: Bệnh nhân sử dụng gói liệu trình dài hạn hoặc cần chiết khấu riêng"
               >
-                <span>➕</span>
-                <span>Tạo lượt khám</span>
+                <span>➕ Tạo thủ công / Dùng gói</span>
               </Link>
             </div>
           ) : undefined
@@ -751,21 +765,32 @@ function VisitsListContent() {
             <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
               Bác sĩ / Nhân viên phụ trách
             </label>
-            <select
-              value={employeeFilter}
-              onChange={(e) => {
-                setEmployeeFilter(e.target.value ? Number(e.target.value) : '');
-                setCurrentPage(1);
-              }}
-              className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Tất cả bác sĩ / nhân viên</option>
-              {employees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.full_name} ({emp.employee_code}) - {emp.position || 'Nhân viên'}
-                </option>
-              ))}
-            </select>
+            {isDoctorOnly ? (
+              <div className="w-full px-3 py-2 text-sm bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg text-blue-700 dark:text-blue-300 font-medium flex items-center justify-between">
+                <span className="truncate">
+                  🔒 {user?.employee?.full_name || 'Bác sĩ'} ({user?.employee?.employee_code || 'BS'})
+                </span>
+                <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-1.5 py-0.5 rounded">
+                  Của bạn
+                </span>
+              </div>
+            ) : (
+              <select
+                value={employeeFilter}
+                onChange={(e) => {
+                  setEmployeeFilter(e.target.value ? Number(e.target.value) : '');
+                  setCurrentPage(1);
+                }}
+                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Tất cả bác sĩ / nhân viên</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.full_name} ({emp.employee_code}) - {emp.position || 'Nhân viên'}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Quick Clear Filter */}
@@ -774,7 +799,7 @@ function VisitsListContent() {
               onClick={() => {
                 setSearchTerm('');
                 setDateFilter('');
-                setEmployeeFilter('');
+                setEmployeeFilter(isDoctorOnly && loggedInDoctorId ? Number(loggedInDoctorId) : '');
                 setPatientFilter('');
                 setStatusFilter('');
                 setPaymentStatusFilter('');
@@ -1541,26 +1566,37 @@ function VisitsListContent() {
                   required
                   hint={!isLoadingRefs && employees.length === 0 ? '⚠️ Chưa có bác sĩ nào trong hệ thống' : undefined}
                 >
-                  <select
-                    value={checkInDoctorId}
-                    onChange={(e) => setCheckInDoctorId(e.target.value ? Number(e.target.value) : '')}
-                    required
-                    disabled={isLoadingRefs}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:opacity-50"
-                  >
-                    <option value="">
-                      {isLoadingRefs
-                        ? '⏳ Đang tải danh sách bác sĩ...'
-                        : employees.length === 0
-                        ? '-- Chưa có bác sĩ nào --'
-                        : '-- Chọn bác sĩ phụ trách --'}
-                    </option>
-                    {employees.map((emp) => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.full_name} ({emp.employee_code}) - {emp.position || 'Bác sĩ'}
+                  {isDoctorOnly ? (
+                    <div className="w-full px-3 py-2 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                      <span className="font-medium">
+                        👨‍⚕️ {user?.employee?.full_name || 'Bác sĩ'} ({user?.employee?.employee_code || 'BS'})
+                      </span>
+                      <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-2 py-0.5 rounded font-mono">
+                        Cố định
+                      </span>
+                    </div>
+                  ) : (
+                    <select
+                      value={checkInDoctorId}
+                      onChange={(e) => setCheckInDoctorId(e.target.value ? Number(e.target.value) : '')}
+                      required
+                      disabled={isLoadingRefs}
+                      className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:opacity-50"
+                    >
+                      <option value="">
+                        {isLoadingRefs
+                          ? '⏳ Đang tải danh sách bác sĩ...'
+                          : employees.length === 0
+                          ? '-- Chưa có bác sĩ nào --'
+                          : '-- Chọn bác sĩ phụ trách --'}
                       </option>
-                    ))}
-                  </select>
+                      {employees.map((emp) => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.full_name} ({emp.employee_code}) - {emp.position || 'Bác sĩ'}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </FormField>
               </div>
 

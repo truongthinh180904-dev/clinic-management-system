@@ -145,6 +145,10 @@ Route::prefix('v1')->group(function (): void {
 
         // Employee Management
         Route::prefix('employees')->group(function (): void {
+            Route::get('/next-code', [EmployeeController::class, 'nextCode'])
+                ->middleware('permission:employees.view|employees.create')
+                ->name('api.v1.employees.next-code');
+
             Route::get('/', [EmployeeController::class, 'index'])
                 ->middleware('permission:employees.view|visits.create|appointments.create|visits.view|appointments.view')
                 ->name('api.v1.employees.index');

@@ -249,6 +249,8 @@ function AdminShellInner({ children }: AdminShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState<number>(0);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Initialize collapse preference from localStorage and auto-collapse for tablet/laptop viewports
   useEffect(() => {
@@ -273,20 +275,25 @@ function AdminShellInner({ children }: AdminShellProps) {
     });
   }, []);
 
-  // Keyboard accessibility: Escape to close mobile menu, Ctrl+B / Cmd+B to toggle sidebar
+  // Keyboard accessibility: Escape to close mobile menu / search, Ctrl+B / Cmd+B to toggle sidebar, Cmd+K to search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && mobileMenuOpen) {
-        setMobileMenuOpen(false);
+      if (e.key === 'Escape') {
+        if (isSearchOpen) setIsSearchOpen(false);
+        if (mobileMenuOpen) setMobileMenuOpen(false);
       }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         toggleSidebar();
       }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mobileMenuOpen, toggleSidebar]);
+  }, [mobileMenuOpen, isSearchOpen, toggleSidebar]);
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -342,6 +349,24 @@ function AdminShellInner({ children }: AdminShellProps) {
       .filter((group) => group.items.length > 0);
   }, [hasRole, hasPermission]);
 
+  const matchingSearchItems = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const allItems: (NavItem & { groupTitle: string })[] = [];
+    filteredGroups.forEach((g) => {
+      g.items.forEach((item) => {
+        allItems.push({ ...item, groupTitle: g.title });
+      });
+    });
+
+    if (!q) return allItems;
+    return allItems.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.groupTitle.toLowerCase().includes(q) ||
+        item.href.toLowerCase().includes(q)
+    );
+  }, [filteredGroups, searchQuery]);
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -392,7 +417,7 @@ function AdminShellInner({ children }: AdminShellProps) {
       <aside
         aria-label="Thanh điều hướng chính"
         className={cn(
-          'hidden lg:flex flex-shrink-0 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 transition-all duration-300 ease-in-out',
+          'hidden lg:flex flex-shrink-0 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 transition-all duration-300 ease-in-out print:hidden',
           isCollapsed ? 'w-20' : 'w-64'
         )}
       >
@@ -511,7 +536,7 @@ function AdminShellInner({ children }: AdminShellProps) {
         aria-label="Danh mục điều hướng di động"
         tabIndex={-1}
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white dark:bg-slate-950 shadow-2xl flex flex-col lg:hidden transform transition-transform duration-200 ease-in-out',
+          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white dark:bg-slate-950 shadow-2xl flex flex-col lg:hidden transform transition-transform duration-200 ease-in-out print:hidden',
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -578,7 +603,7 @@ function AdminShellInner({ children }: AdminShellProps) {
         {/* Topbar Header */}
         <header
           role="banner"
-          className="sticky top-0 z-30 h-16 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-6 lg:px-8 shadow-xs"
+          className="sticky top-0 z-30 h-16 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-6 lg:px-8 shadow-xs print:hidden"
         >
           {/* Left section: Mobile menu toggle + Current Module Breadcrumb */}
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
@@ -613,18 +638,20 @@ function AdminShellInner({ children }: AdminShellProps) {
 
           {/* Right section: Search trigger + Notifications + User Profile + Logout */}
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-            {/* Quick search display */}
-            <div
-              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-500 w-44 lg:w-60 shadow-xs"
+            {/* Quick search interactive trigger */}
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800/80 text-xs text-slate-500 w-36 sm:w-48 lg:w-64 shadow-xs transition-colors cursor-pointer text-left"
               role="search"
-              aria-label="Tìm kiếm nhanh phím tắt ⌘K"
+              aria-label="Tìm kiếm nhanh phân hệ & chức năng (⌘K)"
             >
               <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" aria-hidden="true" />
-              <span className="flex-1 truncate">Tìm kiếm nhanh...</span>
-              <kbd className="rounded bg-white dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-500 border border-slate-200 dark:border-slate-700">
+              <span className="flex-1 truncate">Tìm kiếm nhanh tab, phân hệ...</span>
+              <kbd className="hidden sm:inline-block rounded bg-white dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-500 border border-slate-200 dark:border-slate-700">
                 ⌘K
               </kbd>
-            </div>
+            </button>
 
             {/* Notifications Shortcut with Real Unread Badge */}
             <Link
@@ -704,6 +731,87 @@ function AdminShellInner({ children }: AdminShellProps) {
           {children}
         </main>
       </div>
+
+      {/* Quick Search / Command Palette Modal */}
+      {isSearchOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-slate-900/60 backdrop-blur-xs"
+          onClick={() => {
+            setIsSearchOpen(false);
+            setSearchQuery('');
+          }}
+        >
+          <div
+            className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Search Input Header */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+              <Search className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <input
+                type="text"
+                autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm nhanh phân hệ, chức năng được phân quyền..."
+                className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white placeholder:text-slate-400 outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSearchOpen(false);
+                  setSearchQuery('');
+                }}
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
+              >
+                <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px]">
+                  ESC
+                </kbd>
+              </button>
+            </div>
+
+            {/* Search Results List */}
+            <div className="max-h-80 overflow-y-auto p-2 space-y-1">
+              {matchingSearchItems.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  Không tìm thấy chức năng hoặc phân hệ nào khớp với từ khóa &ldquo;{searchQuery}&rdquo;.
+                </div>
+              ) : (
+                matchingSearchItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.href}
+                      type="button"
+                      onClick={() => {
+                        setIsSearchOpen(false);
+                        setSearchQuery('');
+                        router.push(item.href);
+                      }}
+                      className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-800/80 text-left transition-colors group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
+                            {item.name}
+                          </div>
+                          <div className="text-[11px] text-slate-400">
+                            {item.groupTitle} • {item.href}
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 shrink-0 transition-colors" />
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

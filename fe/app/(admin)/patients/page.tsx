@@ -239,7 +239,7 @@ export default function PatientsPage() {
 
     try {
       const payload: CreatePatientInput = {
-        patient_code: formData.patient_code?.trim() || undefined,
+        patient_code: undefined,
         full_name: formData.full_name.trim(),
         date_of_birth: formData.date_of_birth || null,
         gender: (formData.gender as Gender) || null,
@@ -653,21 +653,24 @@ export default function PatientsPage() {
 
       {/* Modal: Thêm bệnh nhân mới */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 my-8">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-slate-900/60 p-2 sm:p-4 md:p-6 backdrop-blur-xs overflow-y-auto">
+          <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto animate-in fade-in-0 zoom-in-95 duration-200">
+            {/* STICKY HEADER */}
+            <div className="sticky top-0 z-20 shrink-0 flex items-center justify-between border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                 Thêm hồ sơ bệnh nhân mới
               </h2>
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg"
+                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
               {modalGeneralError && (
                 <FormAlert
                   type="error"
@@ -724,17 +727,15 @@ export default function PatientsPage() {
                   </FormField>
 
                   <FormField
-                    label="Mã bệnh nhân"
-                    hint="Để trống hệ thống sẽ tự sinh BNxxxxxx"
-                    error={modalErrors?.patient_code}
+                    label="Mã bệnh nhân (Định danh)"
+                    hint="Hệ thống tự động cấp phát mã chuẩn để chống trùng lặp dữ liệu"
                   >
-                    <input
-                      type="text"
-                      value={formData.patient_code || ''}
-                      onChange={(e) => setFormData({ ...formData, patient_code: e.target.value })}
-                      placeholder="BN000001"
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
-                    />
+                    <div className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-2 text-xs text-slate-500 font-mono flex items-center justify-between">
+                      <span>✨ Hệ thống tự động cấp phát duy nhất</span>
+                      <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-sans font-semibold text-[10px]">
+                        TỰ ĐỘNG SINH MÃ
+                      </span>
+                    </div>
                   </FormField>
 
                   <FormField
@@ -892,9 +893,10 @@ export default function PatientsPage() {
                   </FormField>
                 </div>
               </FormSection>
+              </div>
 
-              {/* Modal Actions */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+              {/* STICKY FOOTER */}
+              <div className="sticky bottom-0 z-20 shrink-0 flex items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-6 py-3.5 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

@@ -28,6 +28,9 @@ import {
   UpdateMedicalRecordInput,
 } from '@/types/medical-record';
 import { PatientFileManager } from '@/components/patient-files';
+import { Receipt, Wallet, CreditCard } from 'lucide-react';
+import { getInvoices } from '@/lib/api/invoices';
+import { Invoice } from '@/types/invoice';
 
 
 interface PageProps {
@@ -52,29 +55,37 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
     hasRole('RECEPTIONIST');
 
   // Medical Record Permissions (Acceptance Criteria #2)
-  const canViewMedical =
-    hasPermission('medical_records.view') ||
-    hasRole('ADMIN') ||
-    hasRole('DOCTOR');
-  const canCreateMedical =
-    hasPermission('medical_records.create') ||
-    hasRole('ADMIN') ||
-    hasRole('DOCTOR');
-  const canUpdateMedical =
-    hasPermission('medical_records.update') ||
-    hasRole('ADMIN') ||
-    hasRole('DOCTOR');
-
   // Visit Data
   const [visit, setVisit] = useState<Visit | null>(null);
   const [isLoadingVisit, setIsLoadingVisit] = useState(true);
   const [visitError, setVisitError] = useState<string | null>(null);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
+  // Doctor Isolation & Clinical Permissions
+  const isSuperUser = hasRole('ADMIN') || hasRole('MANAGER') || Boolean((user as any)?.is_super_admin);
+  const isAssignedDoctor = !visit?.employee_id || !user?.employee?.id || (Number(user.employee.id) === Number(visit.employee_id));
+  const canDoctorOperate = isSuperUser || isAssignedDoctor;
+  const isRecordLocked = (visitInvoice?.status === 'PAID' || visit?.payment_status === 'PAID') && !isSuperUser;
+
+  // Medical permissions
+  const canViewMedical =
+    hasPermission('medical_records.view') ||
+    hasRole('ADMIN') ||
+    hasRole('DOCTOR');
+  const canCreateMedical =
+    (hasPermission('medical_records.create') ||
+    hasRole('ADMIN') ||
+    hasRole('DOCTOR')) && canDoctorOperate;
+  const canUpdateMedical =
+    (hasPermission('medical_records.update') ||
+    hasRole('ADMIN') ||
+    hasRole('DOCTOR')) && canDoctorOperate;
+
   // Medical Record Data
   const [medicalRecord, setMedicalRecord] = useState<MedicalRecord | null>(null);
   const [isLoadingMedical, setIsLoadingMedical] = useState(false);
   const [medicalError, setMedicalError] = useState<string | null>(null);
+  const [visitInvoice, setVisitInvoice] = useState<Invoice | null>(null);
 
   // Status Change Modal
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
@@ -168,8 +179,20 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
     }
   };
 
+  // Load Invoice Details for this visit
+  const loadInvoiceData = async () => {
+    try {
+      const res = await getInvoices({ visit_id: Number(visitId) });
+      const found = res.data?.find((i) => i.status !== 'CANCELLED');
+      setVisitInvoice(found || null);
+    } catch {
+      setVisitInvoice(null);
+    }
+  };
+
   useEffect(() => {
     loadVisitData();
+    loadInvoiceData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visitId]);
 
@@ -245,6 +268,10 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
   // Open Edit Medical Record Modal
   const handleOpenEditMedical = () => {
     if (!medicalRecord) return;
+    if (isRecordLocked) {
+      alert('Ca khám này đã được tất toán viện phí (PAID). Bệnh án và đơn thuốc đã bị khóa để bảo toàn số liệu kế toán.');
+      return;
+    }
     setIsEditingMedical(true);
     setMedicalFormError(null);
     setMedicalEditReason('');
@@ -414,6 +441,25 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
+          <Link
+            href={
+              visitInvoice
+                ? visitInvoice.status === 'PAID'
+                  ? `/invoices/${visitInvoice.id}`
+                  : `/invoices?visit_id=${visit.id}`
+                : `/invoices?visit_id=${visit.id}&patient_id=${visit.patient_id}`
+            }
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors shadow-sm"
+            title="Mở Quầy Thu Ngân để thu tiền hoặc xem hóa đơn ca khám này"
+          >
+            <Receipt className="w-4 h-4" />
+            <span>
+              {visitInvoice && visitInvoice.status === 'PAID'
+                ? 'Xem Hóa Đơn'
+                : 'Quầy Thu Ngân'}
+            </span>
+          </Link>
+
           {canUpdateVisit && visit.status !== 'COMPLETED' && visit.status !== 'CANCELLED' && (
             <button
               onClick={() => {
@@ -635,6 +681,40 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
                 <span className="text-slate-700 dark:text-slate-300">{visit.notes}</span>
               </div>
             )}
+
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500">Trạng thái viện phí:</span>
+                  <span className={`px-2.5 py-0.5 rounded-full font-semibold ${paymentInfo.badgeClass}`}>
+                    {paymentInfo.label}
+                  </span>
+                </div>
+
+                {visitInvoice ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-slate-500 text-[11px]">
+                      HĐ: <strong className="text-slate-800 dark:text-slate-200">{visitInvoice.invoice_code}</strong> (Tổng: <strong className="text-emerald-600">{formatMoney(visitInvoice.total_amount)}</strong>)
+                    </span>
+                    <Link
+                      href={visitInvoice.status === 'PAID' ? `/invoices/${visitInvoice.id}` : `/invoices?visit_id=${visit.id}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors"
+                    >
+                      <Receipt className="w-3.5 h-3.5" />
+                      <span>{visitInvoice.status === 'PAID' ? 'Xem & In Hóa đơn' : `Thu tiền (${formatMoney(visitInvoice.remaining_amount)}) →`}</span>
+                    </Link>
+                  </div>
+                ) : (
+                  <Link
+                    href={`/invoices?visit_id=${visit.id}&patient_id=${visit.patient_id}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors"
+                  >
+                    <Receipt className="w-3.5 h-3.5" />
+                    <span>Quầy Thu Ngân / Thu tiền ca này →</span>
+                  </Link>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Medical Record Section (CRITICAL ACCEPTANCE CRITERIA) */}
@@ -652,22 +732,28 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/visits/${visit.id}/medical-record`}
-                    className="px-3 py-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg transition-colors flex items-center gap-1 border border-indigo-200 dark:border-indigo-800"
-                    title="Mở giao diện khám bệnh chuyên môn đầy đủ"
+                    className="px-3.5 py-1.5 text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all flex items-center gap-1.5 shadow-xs"
+                    title="Mở giao diện khám bệnh & kê đơn thuốc dạng bảng (table) chuyên sâu"
                   >
                     <span>🩺</span>
-                    <span>Phòng Khám EMR</span>
+                    <span>Phòng Khám EMR (Kê thuốc dạng bảng)</span>
                   </Link>
 
                   {medicalRecord ? (
                     <>
-                      {canUpdateMedical && (
-                        <button
-                          onClick={handleOpenEditMedical}
-                          className="px-3 py-1.5 text-xs font-semibold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg transition-colors"
-                        >
-                          ✏️ Sửa nhanh
-                        </button>
+                      {isRecordLocked ? (
+                        <span className="px-3 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg flex items-center gap-1 border border-slate-200 dark:border-slate-700">
+                          🔒 Đã khóa bệnh án (Đã thu viện phí)
+                        </span>
+                      ) : (
+                        canUpdateMedical && (
+                          <button
+                            onClick={handleOpenEditMedical}
+                            className="px-3 py-1.5 text-xs font-semibold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg transition-colors"
+                          >
+                            ✏️ Sửa nhanh
+                          </button>
+                        )
                       )}
                       <button
                         onClick={handleOpenHistoryModal}
@@ -942,12 +1028,23 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
       {isMedicalModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
           <div className="bg-white dark:bg-slate-900 rounded-xl max-w-2xl w-full p-6 shadow-xl border border-slate-200 dark:border-slate-800 my-8">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-              {isEditingMedical ? 'Chỉnh sửa Hồ sơ Bệnh án' : 'Lập Hồ sơ Bệnh án Mới'}
-            </h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Lượt khám: #{visit.visit_code} • Bệnh nhân: {visit.patient?.full_name}
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {isEditingMedical ? 'Chỉnh sửa Hồ sơ Bệnh án' : 'Lập Hồ sơ Bệnh án Mới'}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Lượt khám: #{visit.visit_code} • Bệnh nhân: {visit.patient?.full_name}
+                </p>
+              </div>
+              <Link
+                href={`/visits/${visit.id}/medical-record`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-colors shrink-0"
+              >
+                <span>🩺</span>
+                <span>Mở Phòng Khám EMR (Bảng Kê Thuốc & Toa Mẫu) →</span>
+              </Link>
+            </div>
 
             {medicalFormError && (
               <div className="p-3 mb-4 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs font-medium">

@@ -247,7 +247,32 @@ export default function DebtManagementPage() {
     setCollectNotes(`Thu hồi công nợ hóa đơn ${invoice.invoice_code}`);
     setCollectError(null);
     setCollectSuccessMessage(null);
+    setIsDetailOpen(false); // Close parent dialog to prevent Radix UI backdrop locking
     setIsCollectOpen(true);
+  };
+
+  // Quick Collect directly from Patient row in main table
+  const handleDirectCollectPatient = async (patient: DebtorPatient) => {
+    try {
+      setLoadingPatients(true);
+      const res = await getPatientDebts(patient.id);
+      if (res.data) {
+        setPatientDetail(res.data);
+        const debtInvoice = res.data.invoices.find(
+          (inv) => Number(inv.remaining_amount) > 0 && inv.status !== 'CANCELLED'
+        );
+        if (debtInvoice) {
+          handleOpenQuickCollect(debtInvoice, res.data.patient.full_name);
+        } else {
+          toast.info('Bệnh nhân này hiện không có hóa đơn nào còn nợ.');
+        }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Không thể tải thông tin công nợ bệnh nhân.';
+      toast.error(msg);
+    } finally {
+      setLoadingPatients(false);
+    }
   };
 
   // Quick Amount Set Helper
@@ -850,8 +875,9 @@ export default function DebtManagementPage() {
                             <Button
                               size="sm"
                               variant="default"
-                              className="h-8 gap-1 text-xs bg-rose-600 hover:bg-rose-700"
-                              onClick={() => handleOpenPatientDetail(patient.id)}
+                              className="h-8 gap-1 text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-sm"
+                              onClick={() => handleDirectCollectPatient(patient)}
+                              title="Mở form thu nợ ngay cho bệnh nhân này"
                             >
                               <DollarSign className="h-3.5 w-3.5" />
                               Thu nợ
@@ -1209,7 +1235,7 @@ export default function DebtManagementPage() {
               <p className="font-semibold text-emerald-800 text-base">{collectSuccessMessage}</p>
             </div>
           ) : (
-            <form onSubmit={handleSubmitCollect} className="space-y-4 pt-1">
+            <form onSubmit={handleSubmitCollect} noValidate className="space-y-4 pt-1">
               {/* Debt Info Card */}
               <div className="rounded-lg bg-slate-50 border p-3 dark:bg-slate-800/50 space-y-1.5 text-sm">
                 <div className="flex justify-between">
@@ -1271,11 +1297,14 @@ export default function DebtManagementPage() {
                 <Input
                   id="collect-amount"
                   type="number"
-                  min="1"
+                  min="0"
                   max={collectInvoice?.remaining_amount ?? undefined}
-                  step="1000"
+                  step="any"
                   value={collectAmount}
-                  onChange={(e) => setCollectAmount(e.target.value)}
+                  onChange={(e) => {
+                    setCollectAmount(e.target.value);
+                    setCollectError(null);
+                  }}
                   placeholder="Nhập số tiền thu..."
                   className="font-semibold text-base text-blue-600"
                   required

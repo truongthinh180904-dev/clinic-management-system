@@ -23,10 +23,12 @@ import {
   Hash,
   ShieldCheck,
   TrendingUp,
+  Stethoscope,
+  Pill,
 } from 'lucide-react';
 
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatCurrency, formatDate, formatDateTime, cn } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime, parsePrescriptionDrugCost, cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import {
@@ -311,6 +313,14 @@ export default function InvoiceDetailPage() {
   const percent = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 100;
   const paymentsList = invoice.payments || [];
 
+  const clinical = invoice.clinical_record || invoice.visit?.medical_record;
+  const doctorName = clinical?.doctor_name || invoice.visit?.employee?.full_name;
+  const doctorDept = invoice.visit?.employee?.department || invoice.visit?.employee?.position;
+  const serviceName = invoice.visit?.service?.name;
+  const rawServicePrice = Number(invoice.visit?.total_amount) || Number(invoice.visit?.unit_price) || 0;
+  const drugCost = parsePrescriptionDrugCost(clinical?.treatment);
+  const serviceCost = rawServicePrice > 0 ? rawServicePrice : (total > drugCost ? total - drugCost : (Number(invoice.subtotal_amount) - drugCost > 0 ? Number(invoice.subtotal_amount) - drugCost : Number(invoice.subtotal_amount) || 0));
+
   return (
     <div className="space-y-6">
       {/* Top Header - hidden in print */}
@@ -582,57 +592,171 @@ export default function InvoiceDetailPage() {
             </div>
           </div>
 
+          {/* Clinical Examination & Prescription Details (Phiếu khám lâm sàng & Toa thuốc) */}
+          {clinical && (
+            <div className="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/30 dark:bg-blue-950/20 p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-blue-200 dark:border-blue-800/60 gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-blue-600 text-white">
+                    <Stethoscope className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold uppercase text-blue-900 dark:text-blue-200 tracking-wide">
+                      PHIẾU KHÁM LÂM SÀNG & BỆNH ÁN ĐIỆN TỬ
+                    </h3>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      Bác sĩ phụ trách: <span className="font-semibold">{doctorName || 'Bác sĩ điều trị'}</span> {doctorDept ? `• ${doctorDept}` : ''}
+                    </p>
+                  </div>
+                </div>
+                {clinical.follow_up_date && (
+                  <Badge variant="warning" className="w-fit text-xs gap-1 font-semibold">
+                    <Calendar className="h-3.5 w-3.5" />
+                    Hẹn tái khám: {formatDate(clinical.follow_up_date)}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Diagnosis and Clinical Notes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-blue-100 dark:border-blue-900 space-y-1">
+                  <span className="font-bold text-blue-950 dark:text-blue-300 uppercase tracking-wider block">
+                    1. Chẩn đoán xác định (Diagnosis)
+                  </span>
+                  <p className="text-slate-900 dark:text-slate-100 font-semibold text-sm">
+                    {clinical.diagnosis || 'Chưa ghi nhận'}
+                  </p>
+                  {clinical.medical_history && (
+                    <div className="pt-1.5 text-slate-600 dark:text-slate-400">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">Tiền sử / Diễn tiến:</span> {clinical.medical_history}
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-blue-100 dark:border-blue-900 space-y-1">
+                  <span className="font-bold text-blue-950 dark:text-blue-300 uppercase tracking-wider block">
+                    2. Dịch vụ & Cận lâm sàng chỉ định
+                  </span>
+                  <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
+                    {serviceName || 'Khám bệnh chuyên khoa'}
+                  </div>
+                  {clinical.indication && (
+                    <div className="text-slate-600 dark:text-slate-400">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">Chỉ định:</span> {clinical.indication}
+                    </div>
+                  )}
+                  {clinical.result && (
+                    <div className="text-slate-600 dark:text-slate-400">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">Kết quả:</span> {clinical.result}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Prescription / Treatment */}
+              {clinical.treatment && (
+                <div className="p-3.5 bg-white dark:bg-slate-900 rounded-lg border border-blue-100 dark:border-blue-900 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-blue-950 dark:text-blue-300 uppercase tracking-wider text-xs flex items-center gap-1.5">
+                      <Pill className="h-4 w-4 text-emerald-600" />
+                      3. Đơn thuốc & Hướng dẫn dùng thuốc (Prescription)
+                    </span>
+                    {drugCost > 0 && (
+                      <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        Tổng tiền thuốc: {formatCurrency(drugCost)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-950/60 p-3 rounded-md font-mono text-xs text-slate-800 dark:text-slate-200 whitespace-pre-line leading-relaxed border border-slate-200/80 dark:border-slate-800">
+                    {clinical.treatment}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Financial Breakdown Table */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
               <Receipt className="h-4 w-4 text-blue-600" />
-              Chi tiết các khoản mục thanh toán
+              Chi tiết Bảng kê Thu tiền & Viện phí
             </h3>
             <div className="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50 dark:bg-slate-900/50">
-                    <TableHead className="font-semibold">Nội dung chi phí</TableHead>
+                    <TableHead className="font-semibold">Khoản mục thu / Dịch vụ y tế</TableHead>
+                    <TableHead className="text-center font-semibold w-24">Số lượng</TableHead>
+                    <TableHead className="text-right font-semibold">Đơn giá</TableHead>
                     <TableHead className="text-right font-semibold">Thành tiền (VNĐ)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {/* Service row */}
                   <TableRow>
-                    <TableCell className="font-medium text-slate-800 dark:text-slate-200">
-                      Tổng tiền dịch vụ / khám chữa bệnh / thuốc phát sinh
+                    <TableCell className="font-medium text-slate-900 dark:text-slate-100">
+                      <div>
+                        {serviceName || (invoice.visit ? 'Khám lâm sàng chuyên khoa' : 'Dịch vụ khám chữa bệnh')}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {doctorName ? `Bác sĩ thực hiện: ${doctorName}` : 'Dịch vụ phòng khám'}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center font-mono">1</TableCell>
+                    <TableCell className="text-right font-mono">
+                      {formatCurrency(serviceCost)}
                     </TableCell>
                     <TableCell className="text-right font-mono font-medium">
-                      {formatCurrency(invoice.subtotal_amount)}
+                      {formatCurrency(serviceCost)}
                     </TableCell>
                   </TableRow>
+
+                  {/* Drug row (if prescribed) */}
+                  {drugCost > 0 && (
+                    <TableRow>
+                      <TableCell className="font-medium text-slate-900 dark:text-slate-100">
+                        <div>Thuốc điều trị theo đơn của Bác sĩ</div>
+                        <div className="text-xs text-slate-500">
+                          Chi tiết các khoản mục thuốc kê theo đơn bệnh án
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center font-mono">1 đơn</TableCell>
+                      <TableCell className="text-right font-mono">{formatCurrency(drugCost)}</TableCell>
+                      <TableCell className="text-right font-mono font-medium">{formatCurrency(drugCost)}</TableCell>
+                    </TableRow>
+                  )}
+
                   {Number(invoice.discount_amount) > 0 && (
                     <TableRow>
-                      <TableCell className="text-emerald-700 dark:text-emerald-400">
-                        Chiết khấu / Giảm giá ưu đãi theo chính sách
+                      <TableCell colSpan={3} className="text-emerald-700 dark:text-emerald-400 font-medium">
+                        Chiết khấu / Giảm giá ưu đãi theo chính sách phòng khám
                       </TableCell>
                       <TableCell className="text-right font-mono text-emerald-700 dark:text-emerald-400 font-medium">
                         - {formatCurrency(invoice.discount_amount)}
                       </TableCell>
                     </TableRow>
                   )}
+
                   <TableRow className="bg-slate-50/50 dark:bg-slate-900/30 font-bold border-t border-slate-300 dark:border-slate-700">
-                    <TableCell className="text-slate-900 dark:text-slate-100 text-sm">
+                    <TableCell colSpan={3} className="text-slate-900 dark:text-slate-100 text-sm uppercase">
                       TỔNG TIỀN PHẢI THANH TOÁN
                     </TableCell>
                     <TableCell className="text-right font-mono text-base text-blue-600 dark:text-blue-400">
                       {formatCurrency(total)}
                     </TableCell>
                   </TableRow>
+
                   <TableRow>
-                    <TableCell className="text-slate-700 dark:text-slate-300">
+                    <TableCell colSpan={3} className="text-slate-700 dark:text-slate-300">
                       Đã thanh toán (Các đợt thu thực tế)
                     </TableCell>
                     <TableCell className="text-right font-mono text-emerald-600 dark:text-emerald-400 font-bold">
                       {formatCurrency(paid)}
                     </TableCell>
                   </TableRow>
+
                   <TableRow className="bg-amber-50/30 dark:bg-amber-950/20 font-bold">
-                    <TableCell className="text-amber-800 dark:text-amber-300">
+                    <TableCell colSpan={3} className="text-amber-800 dark:text-amber-300 uppercase">
                       CÒN LẠI CẦN THU (CÔNG NỢ)
                     </TableCell>
                     <TableCell className="text-right font-mono text-base text-amber-600 dark:text-amber-400">
@@ -784,14 +908,24 @@ export default function InvoiceDetailPage() {
           </div>
 
           {/* Signature / Stamp Block for Receipt */}
-          <div className="pt-8 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 text-center text-xs">
+          <div className="pt-8 border-t border-slate-200 dark:border-slate-800 grid grid-cols-3 text-center text-xs gap-4">
             <div className="space-y-12">
               <div className="font-semibold text-slate-700 dark:text-slate-300">
                 KHÁCH HÀNG / BỆNH NHÂN
                 <div className="text-[11px] font-normal text-slate-400">(Ký và ghi rõ họ tên)</div>
               </div>
-              <div className="text-slate-400 italic">
+              <div className="text-slate-600 dark:text-slate-300 font-medium italic">
                 {invoice.patient?.full_name || ''}
+              </div>
+            </div>
+
+            <div className="space-y-12">
+              <div className="font-semibold text-slate-700 dark:text-slate-300">
+                BÁC SĨ ĐIỀU TRỊ
+                <div className="text-[11px] font-normal text-slate-400">(Ký và ghi rõ họ tên)</div>
+              </div>
+              <div className="font-semibold text-slate-800 dark:text-slate-200">
+                {doctorName || 'Bác sĩ phụ trách'}
               </div>
             </div>
 
@@ -821,7 +955,7 @@ export default function InvoiceDetailPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleRecordPayment} className="space-y-4 pt-2">
+          <form onSubmit={handleRecordPayment} noValidate className="space-y-4 pt-2">
             {paymentError && (
               <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0" />
@@ -881,9 +1015,9 @@ export default function InvoiceDetailPage() {
               <Input
                 id="detailPaymentAmount"
                 type="number"
-                min="1"
+                min="0"
                 max={remaining}
-                step="1000"
+                step="any"
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value ? Number(e.target.value) : '')}
                 required

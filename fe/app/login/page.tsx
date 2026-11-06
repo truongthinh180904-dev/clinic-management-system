@@ -46,6 +46,13 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     description: 'Toàn quyền cấu hình, tài chính, nhân sự',
   },
   {
+    label: 'Quản lý',
+    role: 'Quản lý phòng khám',
+    username: 'manager',
+    badgeVariant: 'secondary',
+    description: 'Nhân sự, dịch vụ, gói khám, phê duyệt đề xuất',
+  },
+  {
     label: 'Bác sĩ',
     role: 'Bác sĩ chuyên khoa',
     username: 'doctor',
@@ -53,11 +60,39 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     description: 'Khám bệnh, chỉ định dịch vụ, kê đơn',
   },
   {
-    label: 'Tiếp đón',
+    label: 'Điều dưỡng',
+    role: 'Điều dưỡng / KTV',
+    username: 'nurse',
+    badgeVariant: 'warning',
+    description: 'Tiếp đón, hỗ trợ lâm sàng, tải tệp tài liệu',
+  },
+  {
+    label: 'Lễ tân',
     role: 'Lễ tân tiếp đón',
     username: 'receptionist',
     badgeVariant: 'success',
-    description: 'Tiếp đón bệnh nhân, tạo lịch hẹn',
+    description: 'Tiếp đón bệnh nhân, tạo lịch hẹn, mở ca khám',
+  },
+  {
+    label: 'Thu ngân',
+    role: 'Thu ngân viện phí',
+    username: 'cashier',
+    badgeVariant: 'info',
+    description: 'Lập hóa đơn, thu tiền, in biên lai, sổ nợ',
+  },
+  {
+    label: 'Kế toán',
+    role: 'Kế toán phòng khám',
+    username: 'accountant',
+    badgeVariant: 'secondary',
+    description: 'Sổ quỹ thu chi, duyệt chi, báo cáo tài chính',
+  },
+  {
+    label: 'Nhân viên',
+    role: 'Nhân sự cơ bản',
+    username: 'employee',
+    badgeVariant: 'secondary',
+    description: 'Xem lịch phân công làm việc và thông báo',
   },
 ];
 
@@ -126,7 +161,7 @@ export default function LoginPage() {
 
   const handleFillDemo = (account: DemoAccount) => {
     setUsername(account.username);
-    setPassword('Password@123');
+    setPassword('Admin@123456');
     setSelectedDemo(account.username);
     setFieldErrors({});
     setErrorMessage(null);
@@ -134,7 +169,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-slate-50 via-blue-50/30 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-lg space-y-6">
         <Card className="border-slate-200/80 dark:border-slate-800 shadow-xl dark:bg-slate-900/90 backdrop-blur-xs">
           <CardHeader className="space-y-3 pb-6 text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/25 ring-4 ring-blue-50 dark:ring-blue-950/50">
@@ -153,13 +188,16 @@ export default function LoginPage() {
           <CardContent className="space-y-5">
             {/* Quick Demo Fill Section */}
             <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3.5 dark:border-blue-900/40 dark:bg-blue-950/20">
-              <div className="flex items-center gap-1.5 mb-2.5">
-                <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                  Điền nhanh tài khoản Demo (1-Click):
-                </span>
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    Chọn nhanh vai trò để kiểm thử (1-Click):
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400">8 Vai trò RBAC</span>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {DEMO_ACCOUNTS.map((acc) => {
                   const isSelected = selectedDemo === acc.username;
                   return (
@@ -167,7 +205,8 @@ export default function LoginPage() {
                       key={acc.username}
                       type="button"
                       onClick={() => handleFillDemo(acc)}
-                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-left transition-all ${
+                      title={acc.description}
+                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
                         isSelected
                           ? 'border-blue-500 bg-white text-blue-700 shadow-xs ring-2 ring-blue-500/20 dark:bg-slate-800 dark:text-blue-300'
                           : 'border-slate-200 bg-white/80 hover:bg-white hover:border-blue-300 text-slate-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800'
@@ -175,7 +214,7 @@ export default function LoginPage() {
                     >
                       <div className="flex items-center gap-1 mb-0.5">
                         <span className="text-xs font-bold">{acc.label}</span>
-                        {isSelected && <CheckCircle2 className="h-3 w-3 text-blue-600" />}
+                        {isSelected && <CheckCircle2 className="h-3 w-3 text-blue-600 shrink-0" />}
                       </div>
                       <Badge variant={acc.badgeVariant} className="text-[10px] px-1 py-0 scale-90">
                         {acc.username}
@@ -240,7 +279,7 @@ export default function LoginPage() {
                     Mật khẩu
                   </Label>
                   <span className="text-[11px] text-slate-400">
-                    Mặc định: <code className="font-mono text-blue-600 dark:text-blue-400">Password@123</code>
+                    Mặc định: <code className="font-mono text-blue-600 dark:text-blue-400">Admin@123456</code>
                   </span>
                 </div>
                 <div className="relative">

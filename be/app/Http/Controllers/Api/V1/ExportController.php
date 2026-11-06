@@ -41,12 +41,13 @@ class ExportController extends Controller
     }
 
     /**
-     * Generate UTF-8 BOM CSV response.
+     * Generate UTF-8 BOM CSV response with Vietnamese date & number standards.
      *
      * @param  list<string>  $headers
      * @param  iterable<array<int, mixed>>  $rows
+     * @param  array<int, string>  $columnTypes
      */
-    protected function toCsvResponse(string $filename, array $headers, iterable $rows): Response
+    protected function toCsvResponse(string $filename, array $headers, iterable $rows, array $columnTypes = []): Response
     {
         $handle = fopen('php://temp', 'r+');
 
@@ -58,19 +59,43 @@ class ExportController extends Controller
 
         // Write CSV data rows
         foreach ($rows as $row) {
-            $formattedRow = array_map(function ($value) {
-                if ($value === null) {
-                    return '';
-                }
-                if ($value instanceof \DateTimeInterface) {
-                    return $value->format('Y-m-d H:i:s');
-                }
-                if (is_bool($value)) {
-                    return $value ? 'Có' : 'Không';
+            $formattedRow = [];
+            foreach ($row as $colIdx => $value) {
+                $type = $columnTypes[$colIdx] ?? 'string';
+
+                if ($value === null || $value === '') {
+                    $formattedRow[] = '';
+                    continue;
                 }
 
-                return (string) $value;
-            }, $row);
+                if ($type === 'date') {
+                    if ($value instanceof \DateTimeInterface) {
+                        $formattedRow[] = $value->format('d/m/Y');
+                    } else {
+                        $d = Carbon::tryParse((string) $value);
+                        $formattedRow[] = $d ? $d->format('d/m/Y') : (string) $value;
+                    }
+                } elseif ($type === 'datetime') {
+                    if ($value instanceof \DateTimeInterface) {
+                        $formattedRow[] = $value->format('d/m/Y H:i:s');
+                    } else {
+                        $d = Carbon::tryParse((string) $value);
+                        $formattedRow[] = $d ? $d->format('d/m/Y H:i:s') : (string) $value;
+                    }
+                } elseif ($type === 'phone') {
+                    // Force Excel to treat as string to prevent stripping leading 0
+                    $phoneStr = trim((string) $value);
+                    if ($phoneStr !== '' && str_starts_with($phoneStr, '0')) {
+                        $formattedRow[] = '="'.$phoneStr.'"';
+                    } else {
+                        $formattedRow[] = $phoneStr;
+                    }
+                } elseif (is_bool($value)) {
+                    $formattedRow[] = $value ? 'Có' : 'Không';
+                } else {
+                    $formattedRow[] = (string) $value;
+                }
+            }
 
             fputcsv($handle, $formattedRow);
         }
@@ -89,7 +114,218 @@ class ExportController extends Controller
     }
 
     /**
-     * Export patient directory to UTF-8 BOM CSV.
+     * Generate native Excel XML (SpreadsheetML) response compatible with all MS Excel versions.
+     * Guarantees strict date formatting (dd/mm/yyyy), numeric accounting, and leading-zero preservation.
+     *
+     * @param  list<string>  $headers
+     * @param  iterable<array<int, mixed>>  $rows
+     * @param  array<int, string>  $columnTypes
+     */
+    protected function toExcelResponse(string $filename, array $headers, iterable $rows, array $columnTypes = []): Response
+    {
+        $handle = fopen('php://temp', 'r+');
+
+        fwrite($handle, '<?xml version="1.0" encoding="UTF-8"?>'."\n");
+        fwrite($handle, '<?mso-application progid="Excel.Sheet"?>'."\n");
+        fwrite($handle, '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"'."\n");
+        fwrite($handle, ' xmlns:o="urn:schemas-microsoft-com:office:office"'."\n");
+        fwrite($handle, ' xmlns:x="urn:schemas-microsoft-com:office:excel"'."\n");
+        fwrite($handle, ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"'."\n");
+        fwrite($handle, ' xmlns:html="http://www.w3.org/TR/REC-html40">'."\n");
+
+        // Document Properties
+        fwrite($handle, ' <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">'."\n");
+        fwrite($handle, '  <Author>QLPK System</Author>'."\n");
+        fwrite($handle, '  <Created>'.now()->toIso8601String().'</Created>'."\n");
+        fwrite($handle, ' </DocumentProperties>'."\n");
+
+        // Styles
+        fwrite($handle, ' <Styles>'."\n");
+        fwrite($handle, '  <Style ss:ID="Default" ss:Name="Normal">'."\n");
+        fwrite($handle, '   <Alignment ss:Vertical="Center"/>'."\n");
+        fwrite($handle, '   <Font ss:FontName="Calibri" x:CharSet="163" ss:Size="11" ss:Color="#1E293B"/>'."\n");
+        fwrite($handle, '  </Style>'."\n");
+
+        // Header style (Navy Blue background, bold white text)
+        fwrite($handle, '  <Style ss:ID="Header">'."\n");
+        fwrite($handle, '   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>'."\n");
+        fwrite($handle, '   <Borders>'."\n");
+        fwrite($handle, '    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>'."\n");
+        fwrite($handle, '   </Borders>'."\n");
+        fwrite($handle, '   <Font ss:FontName="Calibri" x:CharSet="163" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1"/>'."\n");
+        fwrite($handle, '   <Interior ss:Color="#1E40AF" ss:Pattern="Solid"/>'."\n");
+        fwrite($handle, '  </Style>'."\n");
+
+        // Date style (dd/mm/yyyy)
+        fwrite($handle, '  <Style ss:ID="Date">'."\n");
+        fwrite($handle, '   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>'."\n");
+        fwrite($handle, '   <Borders>'."\n");
+        fwrite($handle, '    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '   </Borders>'."\n");
+        fwrite($handle, '   <NumberFormat ss:Format="dd/mm/yyyy"/>'."\n");
+        fwrite($handle, '  </Style>'."\n");
+
+        // DateTime style (dd/mm/yyyy hh:mm:ss)
+        fwrite($handle, '  <Style ss:ID="DateTime">'."\n");
+        fwrite($handle, '   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>'."\n");
+        fwrite($handle, '   <Borders>'."\n");
+        fwrite($handle, '    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '   </Borders>'."\n");
+        fwrite($handle, '   <NumberFormat ss:Format="dd/mm/yyyy hh:mm:ss"/>'."\n");
+        fwrite($handle, '  </Style>'."\n");
+
+        // Currency / Integer Number style
+        fwrite($handle, '  <Style ss:ID="Number">'."\n");
+        fwrite($handle, '   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>'."\n");
+        fwrite($handle, '   <Borders>'."\n");
+        fwrite($handle, '    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '   </Borders>'."\n");
+        fwrite($handle, '   <NumberFormat ss:Format="#,##0"/>'."\n");
+        fwrite($handle, '  </Style>'."\n");
+
+        // Decimal style (e.g. quantities with fractions)
+        fwrite($handle, '  <Style ss:ID="DecimalNumber">'."\n");
+        fwrite($handle, '   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>'."\n");
+        fwrite($handle, '   <Borders>'."\n");
+        fwrite($handle, '    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '   </Borders>'."\n");
+        fwrite($handle, '   <NumberFormat ss:Format="#,##0.00"/>'."\n");
+        fwrite($handle, '  </Style>'."\n");
+
+        // Left-aligned Text style
+        fwrite($handle, '  <Style ss:ID="Text">'."\n");
+        fwrite($handle, '   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>'."\n");
+        fwrite($handle, '   <Borders>'."\n");
+        fwrite($handle, '    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '   </Borders>'."\n");
+        fwrite($handle, '   <NumberFormat ss:Format="@"/>'."\n");
+        fwrite($handle, '  </Style>'."\n");
+
+        // Centered Text style (codes, phone numbers, status badges)
+        fwrite($handle, '  <Style ss:ID="CenterText">'."\n");
+        fwrite($handle, '   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>'."\n");
+        fwrite($handle, '   <Borders>'."\n");
+        fwrite($handle, '    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>'."\n");
+        fwrite($handle, '   </Borders>'."\n");
+        fwrite($handle, '   <NumberFormat ss:Format="@"/>'."\n");
+        fwrite($handle, '  </Style>'."\n");
+        fwrite($handle, ' </Styles>'."\n");
+
+        // Worksheet
+        fwrite($handle, ' <Worksheet ss:Name="DuLieu">'."\n");
+        fwrite($handle, '  <Table>'."\n");
+
+        // Header Row
+        fwrite($handle, '   <Row ss:Height="26">'."\n");
+        foreach ($headers as $h) {
+            $safeH = htmlspecialchars((string) $h, ENT_XML1, 'UTF-8');
+            fwrite($handle, '    <Cell ss:StyleID="Header"><Data ss:Type="String">'.$safeH.'</Data></Cell>'."\n");
+        }
+        fwrite($handle, '   </Row>'."\n");
+
+        // Data Rows
+        foreach ($rows as $row) {
+            fwrite($handle, '   <Row ss:Height="21">'."\n");
+            foreach ($row as $colIdx => $val) {
+                $type = $columnTypes[$colIdx] ?? 'string';
+
+                if ($val === null || $val === '') {
+                    fwrite($handle, '    <Cell ss:StyleID="Text"><Data ss:Type="String"></Data></Cell>'."\n");
+                    continue;
+                }
+
+                if ($type === 'date') {
+                    if ($val instanceof \DateTimeInterface) {
+                        $dtStr = $val->format('Y-m-d\T00:00:00.000');
+                    } else {
+                        $d = Carbon::tryParse((string) $val);
+                        $dtStr = $d ? $d->format('Y-m-d\T00:00:00.000') : (string) $val;
+                    }
+                    fwrite($handle, '    <Cell ss:StyleID="Date"><Data ss:Type="DateTime">'.$dtStr.'</Data></Cell>'."\n");
+                } elseif ($type === 'datetime') {
+                    if ($val instanceof \DateTimeInterface) {
+                        $dtStr = $val->format('Y-m-d\TH:i:s.000');
+                    } else {
+                        $d = Carbon::tryParse((string) $val);
+                        $dtStr = $d ? $d->format('Y-m-d\TH:i:s.000') : (string) $val;
+                    }
+                    fwrite($handle, '    <Cell ss:StyleID="DateTime"><Data ss:Type="DateTime">'.$dtStr.'</Data></Cell>'."\n");
+                } elseif ($type === 'number') {
+                    $numVal = is_numeric($val) ? (float) $val : 0;
+                    fwrite($handle, '    <Cell ss:StyleID="Number"><Data ss:Type="Number">'.$numVal.'</Data></Cell>'."\n");
+                } elseif ($type === 'decimal') {
+                    $numVal = is_numeric($val) ? (float) $val : 0;
+                    fwrite($handle, '    <Cell ss:StyleID="DecimalNumber"><Data ss:Type="Number">'.$numVal.'</Data></Cell>'."\n");
+                } elseif ($type === 'phone' || $type === 'center') {
+                    $safeStr = htmlspecialchars((string) $val, ENT_XML1, 'UTF-8');
+                    fwrite($handle, '    <Cell ss:StyleID="CenterText"><Data ss:Type="String">'.$safeStr.'</Data></Cell>'."\n");
+                } else {
+                    $safeStr = htmlspecialchars((string) $val, ENT_XML1, 'UTF-8');
+                    fwrite($handle, '    <Cell ss:StyleID="Text"><Data ss:Type="String">'.$safeStr.'</Data></Cell>'."\n");
+                }
+            }
+            fwrite($handle, '   </Row>'."\n");
+        }
+
+        fwrite($handle, '  </Table>'."\n");
+        fwrite($handle, ' </Worksheet>'."\n");
+        fwrite($handle, '</Workbook>'."\n");
+
+        rewind($handle);
+        $content = (string) stream_get_contents($handle);
+        fclose($handle);
+
+        return response($content, 200, [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+    }
+
+    /**
+     * Dispatch export to either Excel (.xls) or CSV based on request format.
+     */
+    protected function exportResponse(
+        Request $request,
+        string $baseFilename,
+        array $headers,
+        iterable $rows,
+        array $columnTypes = []
+    ): Response {
+        $format = strtolower((string) ($request->input('format') ?? 'excel'));
+
+        if ($format === 'csv') {
+            return $this->toCsvResponse($baseFilename.'.csv', $headers, $rows, $columnTypes);
+        }
+
+        return $this->toExcelResponse($baseFilename.'.xls', $headers, $rows, $columnTypes);
+    }
+
+    /**
+     * Export patient directory.
      * GET /api/v1/exports/patients
      */
     public function patients(Request $request): Response
@@ -148,6 +384,23 @@ class ExportController extends Controller
             'Ngày tạo',
         ];
 
+        $columnTypes = [
+            'center',   // Mã bệnh nhân
+            'string',   // Họ và tên
+            'date',     // Ngày sinh
+            'center',   // Giới tính
+            'phone',    // SĐT
+            'string',   // Email
+            'string',   // Địa chỉ
+            'string',   // Người liên hệ khẩn cấp
+            'phone',    // SĐT khẩn cấp
+            'date',     // Ngày khám đầu
+            'date',     // Ngày khám cuối
+            'center',   // Trạng thái
+            'string',   // Ghi chú
+            'datetime', // Ngày tạo
+        ];
+
         $genderMap = [
             'MALE' => 'Nam',
             'FEMALE' => 'Nữ',
@@ -164,33 +417,35 @@ class ExportController extends Controller
             $rows[] = [
                 $p->patient_code,
                 $p->full_name,
-                $p->date_of_birth?->format('Y-m-d') ?? '',
+                $p->date_of_birth,
                 $genderMap[strtoupper((string) $p->gender)] ?? $p->gender,
                 $p->phone ?? '',
                 $p->email ?? '',
                 $p->address ?? '',
                 $p->emergency_contact_name ?? '',
                 $p->emergency_contact_phone ?? '',
-                $p->first_visit_date?->format('Y-m-d') ?? '',
-                $p->last_visit_date?->format('Y-m-d') ?? '',
+                $p->first_visit_date,
+                $p->last_visit_date,
                 $statusMap[strtoupper((string) $p->status)] ?? $p->status,
                 $p->notes ?? '',
-                $p->created_at?->format('Y-m-d H:i:s') ?? '',
+                $p->created_at,
             ];
         }
 
-        $filename = 'danh_sach_benh_nhan_'.now()->format('Ymd_His').'.csv';
+        $baseFilename = 'danh_sach_benh_nhan_'.now()->format('Ymd_His');
+        $format = strtolower((string) ($request->input('format') ?? 'excel'));
 
         AuditLog::create([
             'user_id' => $request->user()?->id,
             'module' => 'patients',
-            'action' => 'export_csv',
+            'action' => $format === 'csv' ? 'export_csv' : 'export_excel',
             'table_name' => 'patients',
             'record_id' => null,
             'old_values' => null,
             'new_values' => [
                 'type' => 'patients',
-                'filename' => $filename,
+                'format' => $format,
+                'filename' => $baseFilename.($format === 'csv' ? '.csv' : '.xls'),
                 'row_count' => count($rows),
                 'filters' => $request->all(),
             ],
@@ -199,11 +454,11 @@ class ExportController extends Controller
             'created_at' => now(),
         ]);
 
-        return $this->toCsvResponse($filename, $headers, $rows);
+        return $this->exportResponse($request, $baseFilename, $headers, $rows, $columnTypes);
     }
 
     /**
-     * Export invoices and receivables to UTF-8 BOM CSV.
+     * Export invoices and receivables.
      * GET /api/v1/exports/invoices
      */
     public function invoices(Request $request): Response
@@ -273,6 +528,22 @@ class ExportController extends Controller
             'Ngày tạo',
         ];
 
+        $columnTypes = [
+            'center',   // Mã hóa đơn
+            'center',   // Mã bệnh nhân
+            'string',   // Tên bệnh nhân
+            'phone',    // SĐT
+            'datetime', // Ngày phát hành
+            'number',   // Tiền dịch vụ
+            'number',   // Giảm giá
+            'number',   // Tổng cộng
+            'number',   // Đã thanh toán
+            'number',   // Còn nợ
+            'center',   // Trạng thái
+            'string',   // Người tạo
+            'datetime', // Ngày tạo
+        ];
+
         $statusMap = [
             'UNPAID' => 'Chưa thanh toán',
             'PARTIAL' => 'Thanh toán 1 phần',
@@ -289,30 +560,32 @@ class ExportController extends Controller
                 $inv->patient?->patient_code ?? '',
                 $inv->patient?->full_name ?? '',
                 $inv->patient?->phone ?? '',
-                $inv->issued_at?->format('Y-m-d H:i:s') ?? '',
-                number_format((float) $inv->subtotal_amount, 2, '.', ''),
-                number_format((float) $inv->discount_amount, 2, '.', ''),
-                number_format((float) $inv->total_amount, 2, '.', ''),
-                number_format((float) $inv->paid_amount, 2, '.', ''),
-                number_format((float) $inv->remaining_amount, 2, '.', ''),
+                $inv->issued_at,
+                (float) $inv->subtotal_amount,
+                (float) $inv->discount_amount,
+                (float) $inv->total_amount,
+                (float) $inv->paid_amount,
+                (float) $inv->remaining_amount,
                 $statusMap[strtoupper((string) $inv->status)] ?? $inv->status,
                 $creatorName,
-                $inv->created_at?->format('Y-m-d H:i:s') ?? '',
+                $inv->created_at,
             ];
         }
 
-        $filename = 'hoa_don_cong_no_'.now()->format('Ymd_His').'.csv';
+        $baseFilename = 'hoa_don_cong_no_'.now()->format('Ymd_His');
+        $format = strtolower((string) ($request->input('format') ?? 'excel'));
 
         AuditLog::create([
             'user_id' => $request->user()?->id,
             'module' => 'invoices',
-            'action' => 'export_csv',
+            'action' => $format === 'csv' ? 'export_csv' : 'export_excel',
             'table_name' => 'invoices',
             'record_id' => null,
             'old_values' => null,
             'new_values' => [
                 'type' => 'invoices',
-                'filename' => $filename,
+                'format' => $format,
+                'filename' => $baseFilename.($format === 'csv' ? '.csv' : '.xls'),
                 'row_count' => count($rows),
                 'filters' => $request->all(),
             ],
@@ -321,11 +594,11 @@ class ExportController extends Controller
             'created_at' => now(),
         ]);
 
-        return $this->toCsvResponse($filename, $headers, $rows);
+        return $this->exportResponse($request, $baseFilename, $headers, $rows, $columnTypes);
     }
 
     /**
-     * Export cashbook transactions to UTF-8 BOM CSV.
+     * Export cashbook transactions.
      * GET /api/v1/exports/cashbook
      */
     public function cashbook(Request $request): Response
@@ -384,6 +657,19 @@ class ExportController extends Controller
             'Ngày ghi sổ',
         ];
 
+        $columnTypes = [
+            'center',   // Mã phiếu
+            'center',   // Loại giao dịch
+            'number',   // Số tiền
+            'center',   // Phương thức thanh toán
+            'datetime', // Ngày giao dịch
+            'center',   // Loại tham chiếu
+            'string',   // Mã tham chiếu
+            'string',   // Người lập
+            'string',   // Nội dung
+            'datetime', // Ngày ghi sổ
+        ];
+
         $typeMap = [
             'IN' => 'Phiếu thu',
             'OUT' => 'Phiếu chi',
@@ -402,29 +688,31 @@ class ExportController extends Controller
             $rows[] = [
                 $t->transaction_code,
                 $typeMap[strtoupper((string) $t->transaction_type)] ?? $t->transaction_type,
-                number_format((float) $t->amount, 2, '.', ''),
+                (float) $t->amount,
                 $methodMap[strtoupper((string) $t->payment_method)] ?? $t->payment_method,
-                $t->transaction_date?->format('Y-m-d H:i:s') ?? '',
+                $t->transaction_date,
                 $t->reference_type ?? '',
                 $t->reference_id ?? '',
                 $creatorName,
                 $t->description ?? '',
-                $t->created_at?->format('Y-m-d H:i:s') ?? '',
+                $t->created_at,
             ];
         }
 
-        $filename = 'so_quy_thu_chi_'.now()->format('Ymd_His').'.csv';
+        $baseFilename = 'so_quy_thu_chi_'.now()->format('Ymd_His');
+        $format = strtolower((string) ($request->input('format') ?? 'excel'));
 
         AuditLog::create([
             'user_id' => $request->user()?->id,
             'module' => 'cashbook',
-            'action' => 'export_csv',
+            'action' => $format === 'csv' ? 'export_csv' : 'export_excel',
             'table_name' => 'cash_transactions',
             'record_id' => null,
             'old_values' => null,
             'new_values' => [
                 'type' => 'cashbook',
-                'filename' => $filename,
+                'format' => $format,
+                'filename' => $baseFilename.($format === 'csv' ? '.csv' : '.xls'),
                 'row_count' => count($rows),
                 'filters' => $request->all(),
             ],
@@ -433,11 +721,11 @@ class ExportController extends Controller
             'created_at' => now(),
         ]);
 
-        return $this->toCsvResponse($filename, $headers, $rows);
+        return $this->exportResponse($request, $baseFilename, $headers, $rows, $columnTypes);
     }
 
     /**
-     * Export inventory stock and movements to UTF-8 BOM CSV.
+     * Export inventory stock and movements.
      * GET /api/v1/exports/inventory
      */
     public function inventory(Request $request): Response
@@ -494,6 +782,19 @@ class ExportController extends Controller
             'Trạng thái tồn',
         ];
 
+        $columnTypes = [
+            'center',   // Mã sản phẩm
+            'string',   // Tên sản phẩm
+            'center',   // Đơn vị tính
+            'decimal',  // Tồn tối thiểu
+            'decimal',  // Tồn đầu kỳ
+            'decimal',  // Tổng nhập
+            'decimal',  // Tổng xuất
+            'decimal',  // Điều chỉnh
+            'decimal',  // Tồn cuối kỳ
+            'center',   // Trạng thái tồn
+        ];
+
         $rows = [];
         foreach ($products as $product) {
             $openingStock = round((float) ($openingBalances[$product->id] ?? 0), 3);
@@ -530,18 +831,20 @@ class ExportController extends Controller
             ];
         }
 
-        $filename = 'bao_cao_ton_kho_'.now()->format('Ymd_His').'.csv';
+        $baseFilename = 'bao_cao_ton_kho_'.now()->format('Ymd_His');
+        $format = strtolower((string) ($request->input('format') ?? 'excel'));
 
         AuditLog::create([
             'user_id' => $request->user()?->id,
             'module' => 'inventory',
-            'action' => 'export_csv',
+            'action' => $format === 'csv' ? 'export_csv' : 'export_excel',
             'table_name' => 'inventory_transactions',
             'record_id' => null,
             'old_values' => null,
             'new_values' => [
                 'type' => 'inventory',
-                'filename' => $filename,
+                'format' => $format,
+                'filename' => $baseFilename.($format === 'csv' ? '.csv' : '.xls'),
                 'row_count' => count($rows),
                 'filters' => $request->all(),
             ],
@@ -550,6 +853,6 @@ class ExportController extends Controller
             'created_at' => now(),
         ]);
 
-        return $this->toCsvResponse($filename, $headers, $rows);
+        return $this->exportResponse($request, $baseFilename, $headers, $rows, $columnTypes);
     }
 }

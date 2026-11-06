@@ -474,23 +474,23 @@ export default function KpiManagementPage() {
     switch (status) {
       case 'EXCEEDED':
         return (
-          <Badge variant="success" className="flex items-center gap-1 font-medium">
-            <TrendingUp className="h-3.5 w-3.5" />
+          <Badge variant="success" className="inline-flex items-center gap-1 font-medium whitespace-nowrap text-[11px] py-0.5 px-2">
+            <TrendingUp className="h-3 w-3" />
             Vượt chỉ tiêu {rate !== undefined ? `(${rate}%)` : ''}
           </Badge>
         );
       case 'ON_TRACK':
         return (
-          <Badge variant="info" className="flex items-center gap-1 font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-            <CheckCircle2 className="h-3.5 w-3.5" />
+          <Badge variant="info" className="inline-flex items-center gap-1 font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 whitespace-nowrap text-[11px] py-0.5 px-2">
+            <CheckCircle2 className="h-3 w-3" />
             Đang đạt {rate !== undefined ? `(${rate}%)` : ''}
           </Badge>
         );
       case 'BEHIND':
       default:
         return (
-          <Badge variant="destructive" className="flex items-center gap-1 font-medium">
-            <AlertTriangle className="h-3.5 w-3.5" />
+          <Badge variant="destructive" className="inline-flex items-center gap-1 font-medium whitespace-nowrap text-[11px] py-0.5 px-2">
+            <AlertTriangle className="h-3 w-3" />
             Chậm tiến độ {rate !== undefined ? `(${rate}%)` : ''}
           </Badge>
         );
@@ -683,91 +683,89 @@ export default function KpiManagementPage() {
         </CardHeader>
 
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent bg-slate-50/80 dark:bg-slate-900/80">
-                <TableHead className="w-[240px]">Nhân viên</TableHead>
-                <TableHead className="w-[150px]">Kỳ hạn</TableHead>
-                <TableHead className="min-w-[200px]">Doanh thu (Thực / Mục tiêu)</TableHead>
-                <TableHead className="min-w-[180px]">Lượt khám (Thực / Mục tiêu)</TableHead>
-                <TableHead className="w-[120px] text-center">Tỷ lệ TB</TableHead>
-                <TableHead className="w-[150px]">Đánh giá</TableHead>
-                {canManage && <TableHead className="w-[100px] text-right">Thao tác</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={canManage ? 7 : 6} className="h-32 text-center text-slate-500">
-                    <div className="flex items-center justify-center gap-2">
-                      <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
-                      <span>Đang tải danh sách chỉ tiêu KPI...</span>
-                    </div>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent bg-slate-50/80 dark:bg-slate-900/80 whitespace-nowrap text-xs">
+                  <TableHead className="py-3 px-4 font-bold">Nhân viên</TableHead>
+                  <TableHead className="py-3 px-3 font-bold">Kỳ hạn</TableHead>
+                  <TableHead className="py-3 px-3 font-bold">Doanh thu (Thực / Mục tiêu)</TableHead>
+                  <TableHead className="py-3 px-3 font-bold">Lượt khám (Thực / Mục tiêu)</TableHead>
+                  <TableHead className="py-3 px-3 font-bold text-center">Tỷ lệ TB</TableHead>
+                  <TableHead className="py-3 px-3 font-bold text-center">Đánh giá</TableHead>
+                  {canManage && <TableHead className="py-3 px-4 font-bold text-right">Thao tác</TableHead>}
                 </TableRow>
-              ) : targets.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={canManage ? 7 : 6} className="h-32 text-center text-slate-500">
-                    <div className="flex flex-col items-center justify-center gap-1.5">
-                      <Target className="h-8 w-8 text-slate-300" />
-                      <p className="text-sm font-medium">Không tìm thấy chỉ tiêu KPI phù hợp</p>
-                      <p className="text-xs text-slate-400">Hãy thử xóa bộ lọc hoặc giao chỉ tiêu mới</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                targets.map((target) => {
-                  const emp = target.employee;
-                  const revRate = target.revenue_completion_rate ?? 0;
-                  const visRate = target.visits_completion_rate ?? 0;
-                  const avgRate = target.completion_rate ?? 0;
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={canManage ? 7 : 6} className="h-32 text-center text-slate-500">
+                      <div className="flex items-center justify-center gap-2">
+                        <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
+                        <span>Đang tải danh sách chỉ tiêu KPI...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : targets.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={canManage ? 7 : 6} className="h-32 text-center text-slate-500">
+                      <div className="flex flex-col items-center justify-center gap-1.5">
+                        <Target className="h-8 w-8 text-slate-300" />
+                        <p className="text-sm font-medium">Không tìm thấy chỉ tiêu KPI phù hợp</p>
+                        <p className="text-xs text-slate-400">Hãy thử xóa bộ lọc hoặc giao chỉ tiêu mới</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  targets.map((target) => {
+                    const emp = target.employee;
+                    const revRate = target.revenue_completion_rate ?? 0;
+                    const visRate = target.visits_completion_rate ?? 0;
+                    const avgRate = target.completion_rate ?? 0;
 
-                  return (
-                    <TableRow key={target.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-900/60 transition-colors">
-                      {/* Employee Info */}
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 flex items-center justify-center font-semibold text-xs shrink-0">
-                            {emp?.full_name ? emp.full_name.charAt(0) : 'U'}
+                    return (
+                      <TableRow key={target.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-900/60 transition-colors">
+                        {/* 1. Employee Info (Single Line) */}
+                        <TableCell className="py-2.5 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-7 w-7 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 flex items-center justify-center font-bold text-xs shrink-0">
+                              {emp?.full_name ? emp.full_name.charAt(0) : 'U'}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs">
+                              <span className="font-semibold text-slate-900 dark:text-slate-100">
+                                {emp?.full_name || `Nhân viên #${target.employee_id}`}
+                              </span>
+                              <span className="text-[11px] text-slate-400 font-mono">
+                                ({emp?.employee_code || `NV-${target.employee_id}`})
+                              </span>
+                              {(emp?.position || emp?.department) && (
+                                <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                                  {emp?.position || emp?.department}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium text-slate-900 dark:text-slate-100 text-sm">
-                              {emp?.full_name || `Nhân viên #${target.employee_id}`}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {emp?.employee_code} • {emp?.position || emp?.department || 'Chuyên môn'}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
+                        </TableCell>
 
-                      {/* Period */}
-                      <TableCell>
-                        <div className="text-xs space-y-0.5">
-                          <div className="font-medium text-slate-700 dark:text-slate-300">
-                            {formatDate(target.period_start)}
-                          </div>
-                          <div className="text-slate-400">
-                            đến {formatDate(target.period_end)}
-                          </div>
-                        </div>
-                      </TableCell>
+                        {/* 2. Period (Single Line) */}
+                        <TableCell className="py-2.5 px-3 whitespace-nowrap">
+                          <span className="text-xs font-mono font-medium text-slate-700 dark:text-slate-300">
+                            {formatDate(target.period_start)} → {formatDate(target.period_end)}
+                          </span>
+                        </TableCell>
 
-                      {/* Revenue with Progress */}
-                      <TableCell>
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-slate-900 dark:text-slate-100">
+                        {/* 3. Revenue with Progress (Single Line) */}
+                        <TableCell className="py-2.5 px-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
                               {formatCurrency(target.actual_revenue)}
                             </span>
-                            <span className="text-slate-500">
-                              / {formatCurrency(target.target_revenue)}
+                            <span className="text-slate-400 font-mono text-[11px]">
+                              / {formatShortCurrency(Number(target.target_revenue))}
                             </span>
-                          </div>
-                          <div className="flex items-center gap-2">
                             <Progress
                               value={Math.min(revRate, 100)}
-                              className="h-2 flex-1"
+                              className="h-1.5 w-16 shrink-0 ml-1"
                               indicatorClassName={
                                 revRate >= 100
                                   ? 'bg-emerald-500'
@@ -778,7 +776,7 @@ export default function KpiManagementPage() {
                             />
                             <span
                               className={cn(
-                                'text-xs font-semibold w-12 text-right',
+                                'text-xs font-bold font-mono w-10 text-right',
                                 revRate >= 100
                                   ? 'text-emerald-600'
                                   : revRate >= 80
@@ -786,27 +784,23 @@ export default function KpiManagementPage() {
                                   : 'text-amber-600'
                               )}
                             >
-                              {revRate.toFixed(1)}%
+                              {revRate.toFixed(0)}%
                             </span>
                           </div>
-                        </div>
-                      </TableCell>
+                        </TableCell>
 
-                      {/* Visits with Progress */}
-                      <TableCell>
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-slate-900 dark:text-slate-100">
-                              {target.actual_visits} lượt
+                        {/* 4. Visits with Progress (Single Line) */}
+                        <TableCell className="py-2.5 px-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
+                              {target.actual_visits}
                             </span>
-                            <span className="text-slate-500">
+                            <span className="text-slate-400 font-mono text-[11px]">
                               / {target.target_visits} lượt
                             </span>
-                          </div>
-                          <div className="flex items-center gap-2">
                             <Progress
                               value={Math.min(visRate, 100)}
-                              className="h-2 flex-1"
+                              className="h-1.5 w-14 shrink-0 ml-1"
                               indicatorClassName={
                                 visRate >= 100
                                   ? 'bg-violet-500'
@@ -817,7 +811,7 @@ export default function KpiManagementPage() {
                             />
                             <span
                               className={cn(
-                                'text-xs font-semibold w-12 text-right',
+                                'text-xs font-bold font-mono w-10 text-right',
                                 visRate >= 100
                                   ? 'text-violet-600'
                                   : visRate >= 80
@@ -825,55 +819,55 @@ export default function KpiManagementPage() {
                                   : 'text-amber-600'
                               )}
                             >
-                              {visRate.toFixed(1)}%
+                              {visRate.toFixed(0)}%
                             </span>
                           </div>
-                        </div>
-                      </TableCell>
-
-                      {/* Average completion rate */}
-                      <TableCell className="text-center">
-                        <div className="inline-block px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-200">
-                          {avgRate.toFixed(1)}%
-                        </div>
-                      </TableCell>
-
-                      {/* Evaluation Status */}
-                      <TableCell>
-                        {renderEvaluationBadge(target.evaluation_status)}
-                      </TableCell>
-
-                      {/* Actions */}
-                      {canManage && (
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-slate-600 hover:text-blue-600"
-                              onClick={() => handleOpenEdit(target)}
-                              title="Chỉnh sửa chỉ tiêu"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-slate-600 hover:text-rose-600"
-                              onClick={() => setDeleteTargetId(target.id)}
-                              title="Xóa chỉ tiêu"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
                         </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+
+                        {/* 5. Average Completion Rate (Single Line) */}
+                        <TableCell className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <span className="inline-block px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-bold font-mono text-slate-800 dark:text-slate-200">
+                            {avgRate.toFixed(1)}%
+                          </span>
+                        </TableCell>
+
+                        {/* 6. Evaluation Status (Single Line) */}
+                        <TableCell className="py-2.5 px-3 text-center whitespace-nowrap">
+                          {renderEvaluationBadge(target.evaluation_status)}
+                        </TableCell>
+
+                        {/* 7. Actions (Single Line) */}
+                        {canManage && (
+                          <TableCell className="py-2.5 px-4 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-slate-600 hover:text-blue-600"
+                                onClick={() => handleOpenEdit(target)}
+                                title="Chỉnh sửa chỉ tiêu"
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-slate-600 hover:text-rose-600"
+                                onClick={() => setDeleteTargetId(target.id)}
+                                title="Xóa chỉ tiêu"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

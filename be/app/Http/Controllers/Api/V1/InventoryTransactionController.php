@@ -213,10 +213,14 @@ class InventoryTransactionController extends Controller
 
         // Granular permission check
         if ($user) {
+            $isPrescriptionDispense = $type === 'OUT'
+                && in_array($request->input('reference_type'), ['PRESCRIPTION', 'Visit', 'MEDICAL_RECORD'])
+                && ($user->hasPermission('medical_records.create') || $user->hasPermission('medical_records.update') || $user->hasRole('DOCTOR'));
+
             if ($type === 'IN' && ! $user->hasPermission('inventory.in')) {
                 abort(403, 'Bạn không có quyền thực hiện nhập kho.');
             }
-            if ($type === 'OUT' && ! $user->hasPermission('inventory.out')) {
+            if ($type === 'OUT' && ! $user->hasPermission('inventory.out') && ! $isPrescriptionDispense) {
                 abort(403, 'Bạn không có quyền thực hiện xuất kho.');
             }
             if ($type === 'ADJUST' && ! $user->hasPermission('inventory.adjust')) {

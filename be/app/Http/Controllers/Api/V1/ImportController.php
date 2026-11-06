@@ -107,8 +107,8 @@ class ImportController extends Controller
         switch ($normalizedModule) {
             case 'patients':
                 $csvContent = $bom."patient_code,full_name,date_of_birth,gender,phone,email,address,emergency_contact_name,emergency_contact_phone,notes\n"
-                    ."BN000001,Nguyễn Văn An,1990-05-15,MALE,0901234567,an.nguyen@example.com,123 Lê Lợi TP.HCM,Trần Thị Mai,0909999888,Tiền sử dị ứng penicillin\n"
-                    ."BN000002,Trần Thị Bình,1985-11-20,FEMALE,0912345678,binh.tran@example.com,456 Nguyễn Huệ TP.HCM,Trần Văn Cường,0919888777,Khám sức khỏe tổng quát\n";
+                    ."BN000001,Nguyễn Văn An,15/05/1990,MALE,0901234567,an.nguyen@example.com,123 Lê Lợi TP.HCM,Trần Thị Mai,0909999888,Tiền sử dị ứng penicillin\n"
+                    ."BN000002,Trần Thị Bình,20/11/1985,FEMALE,0912345678,binh.tran@example.com,456 Nguyễn Huệ TP.HCM,Trần Văn Cường,0919888777,Khám sức khỏe tổng quát\n";
                 break;
 
             case 'services':
@@ -495,19 +495,21 @@ class ImportController extends Controller
             }
         }
 
-        // Validate date_of_birth
+        // Validate date_of_birth (Hỗ trợ chuẩn Việt Nam dd/mm/yyyy và chuẩn quốc tế yyyy-mm-dd)
         $dob = trim((string) ($data['date_of_birth'] ?? ''));
         $parsedDob = null;
         if ($dob !== '') {
             try {
-                $dateObj = Carbon::parse($dob);
+                // Thay thế dấu / thành - để Carbon tự động hiểu đúng định dạng dd-mm-yyyy của Việt Nam
+                $cleanDob = str_replace('/', '-', $dob);
+                $dateObj = Carbon::parse($cleanDob);
                 if ($dateObj->isFuture()) {
                     $errors[] = ['column_name' => 'date_of_birth', 'error_message' => 'Ngày sinh không thể lớn hơn ngày hiện tại.'];
                 } else {
                     $parsedDob = $dateObj->toDateString();
                 }
             } catch (\Throwable $e) {
-                $errors[] = ['column_name' => 'date_of_birth', 'error_message' => 'Ngày sinh không đúng định dạng.'];
+                $errors[] = ['column_name' => 'date_of_birth', 'error_message' => 'Ngày sinh không đúng định dạng (dd/mm/yyyy hoặc yyyy-mm-dd).'];
             }
         }
 

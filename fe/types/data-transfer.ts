@@ -62,6 +62,7 @@ export interface ImportBatchesResponse {
 export type ExportType = 'patients' | 'invoices' | 'cashbook' | 'inventory';
 
 export interface ExportParams {
+  format?: 'excel' | 'csv';
   start_date?: string;
   end_date?: string;
   status?: string;

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   Receipt,
   Plus,
@@ -27,7 +28,7 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '@/lib/auth/auth-context';
-import { formatCurrency, formatDate, formatDateTime, cn } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime, parsePrescriptionDrugCost, cn } from '@/lib/utils';
 import { toast } from '@/components/ui/toast';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -77,6 +78,7 @@ import {
   CreatePaymentInput,
 } from '@/types/invoice';
 import { Patient } from '@/types/patient';
+import { Visit } from '@/types/visit';
 import {
   getInvoices,
   createInvoice,
@@ -84,9 +86,12 @@ import {
   cancelInvoice,
 } from '@/lib/api/invoices';
 import { getPatients } from '@/lib/api/patients';
+import { getVisit, getVisits } from '@/lib/api/visits';
+import { getVisitMedicalRecord } from '@/lib/api/medical-records';
 
 export default function InvoicesPage() {
   const { hasPermission } = useAuth();
+  const searchParams = useSearchParams();
 
   // Data states
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -117,6 +122,7 @@ export default function InvoicesPage() {
   const [loadingPatients, setLoadingPatients] = useState<boolean>(false);
   const [patientSearch, setPatientSearch] = useState<string>('');
   const [selectedPatientId, setSelectedPatientId] = useState<number | ''>('');
+  const [selectedVisitId, setSelectedVisitId] = useState<number | null>(null);
   const [subtotalAmount, setSubtotalAmount] = useState<number | ''>('');
   const [discountAmount, setDiscountAmount] = useState<number | ''>(0);
   const [issuedAt, setIssuedAt] = useState<string>(
@@ -140,6 +146,10 @@ export default function InvoicesPage() {
   const [cancelReason, setCancelReason] = useState<string>('');
   const [cancelSubmitting, setCancelSubmitting] = useState<boolean>(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+
+  // Cashier Queue: Completed visits waiting for invoice/payment
+  const [pendingVisits, setPendingVisits] = useState<Visit[]>([]);
+  const [loadingPendingVisits, setLoadingPendingVisits] = useState<boolean>(false);
 
   // Fetch invoices
   const fetchInvoices = useCallback(async () => {
@@ -189,6 +199,65 @@ export default function InvoicesPage() {
     fetchInvoices();
   }, [fetchInvoices]);
 
+  // Fetch completed visits waiting for billing
+  const fetchPendingVisits = useCallback(async () => {
+    try {
+      setLoadingPendingVisits(true);
+      const res = await getVisits({ status: 'COMPLETED', payment_status: 'UNPAID', per_page: 10 });
+      if (res && res.data) {
+        setPendingVisits(res.data);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingPendingVisits(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPendingVisits();
+  }, [fetchPendingVisits]);
+
+  const handleQuickBillVisit = async (v: Visit) => {
+    try {
+      toast.info(`Đang tự động chuẩn bị phiếu thu cho ca khám #${v.id}...`);
+      let serviceCost = Boolean(v.patient_package_id)
+        ? 0
+        : Number(v.total_amount) || Number(v.unit_price) || 0;
+      let disc = Number(v.discount_amount) || 0;
+      let drugCost = 0;
+
+      try {
+        const medRes = await getVisitMedicalRecord(v.id);
+        if (medRes.data?.treatment) {
+          drugCost = parsePrescriptionDrugCost(medRes.data.treatment);
+        }
+      } catch {
+        // No medical record
+      }
+
+      const finalSubtotal = serviceCost + drugCost;
+      const created = await createInvoice({
+        patient_id: v.patient_id,
+        visit_id: Number(v.id),
+        subtotal_amount: finalSubtotal,
+        discount_amount: disc,
+        issued_at: new Date().toISOString().slice(0, 10),
+      });
+
+      if (created && created.data) {
+        fetchInvoices();
+        fetchPendingVisits();
+        setSearchTerm(created.data.invoice_code);
+        openPaymentDialog(created.data);
+        toast.success(`Đã tự động tạo hóa đơn ${created.data.invoice_code} cho ca khám #${v.id}!`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi tạo hóa đơn cho ca khám.';
+      toast.error(msg);
+    }
+  };
+
   // Load patients for create dialog
   const loadPatients = useCallback(async (query: string = '') => {
     try {
@@ -204,8 +273,93 @@ export default function InvoicesPage() {
     }
   }, []);
 
+  // Listen for query params (e.g. from /visits/[id] or /medical-record)
+  useEffect(() => {
+    if (!searchParams) return;
+    const action = searchParams.get('action');
+    const ptId = searchParams.get('patient_id');
+    const visId = searchParams.get('visit_id');
+    const subtotal = searchParams.get('subtotal') || searchParams.get('amount');
+    const discount = searchParams.get('discount');
+
+    if (visId) {
+      (async () => {
+        try {
+          // 1. Check if an invoice for this visit already exists
+          const res = await getInvoices({ visit_id: Number(visId) });
+          const existing = res.data?.find((i) => i.status !== 'CANCELLED');
+
+          if (existing) {
+            setSearchTerm(existing.invoice_code);
+            if (existing.status !== 'PAID') {
+              openPaymentDialog(existing);
+              toast.info(
+                `Đã tự động mở phiếu thu viện phí cho ca khám #${visId} (${existing.invoice_code})`
+              );
+            } else {
+              toast.success(
+                `Hóa đơn ${existing.invoice_code} của ca khám #${visId} đã hoàn tất thanh toán.`
+              );
+            }
+            return;
+          }
+
+          // 2. No invoice exists yet: Automatically create it in background! NEVER open manual modal!
+          toast.info(`Đang tự động khởi tạo Hóa đơn viện phí cho ca khám #${visId}...`);
+          const visitRes = await getVisit(visId);
+          const v = visitRes.data;
+
+          let serviceCost = Boolean(v.patient_package_id)
+            ? 0
+            : Number(v.total_amount) || Number(v.unit_price) || 0;
+          let disc = Number(v.discount_amount) || 0;
+          let drugCost = 0;
+
+          try {
+            const medRes = await getVisitMedicalRecord(visId);
+            if (medRes.data?.treatment) {
+              drugCost = parsePrescriptionDrugCost(medRes.data.treatment);
+            }
+          } catch {
+            // No medical record
+          }
+
+          const finalSubtotal = serviceCost + drugCost;
+          const created = await createInvoice({
+            patient_id: v.patient_id,
+            visit_id: Number(visId),
+            subtotal_amount: finalSubtotal,
+            discount_amount: disc,
+            issued_at: new Date().toISOString().slice(0, 10),
+          });
+
+          if (created && created.data) {
+            fetchInvoices();
+            setSearchTerm(created.data.invoice_code);
+            openPaymentDialog(created.data);
+            toast.success(
+              `Đã tự động lập Hóa đơn ${created.data.invoice_code} (${formatCurrency(created.data.total_amount)}) sẵn sàng thu tiền!`
+            );
+          }
+        } catch (err) {
+          console.error('Error auto-creating invoice for visit:', err);
+          toast.error('Không thể tự động tải hóa đơn cho ca khám này.');
+        }
+      })();
+    } else if (action === 'create') {
+      if (ptId) {
+        setSelectedPatientId(Number(ptId));
+        loadPatients('');
+      }
+      if (subtotal && !isNaN(Number(subtotal))) setSubtotalAmount(Number(subtotal));
+      if (discount && !isNaN(Number(discount))) setDiscountAmount(Number(discount));
+      setIsCreateOpen(true);
+    }
+  }, [searchParams, loadPatients]);
+
   const openCreateDialog = () => {
     setSelectedPatientId('');
+    setSelectedVisitId(null);
     setSubtotalAmount('');
     setDiscountAmount(0);
     setIssuedAt(new Date().toISOString().slice(0, 10));
@@ -272,6 +426,7 @@ export default function InvoicesPage() {
 
       const payload: CreateInvoiceInput = {
         patient_id: Number(selectedPatientId),
+        visit_id: selectedVisitId || undefined,
         subtotal_amount: subtotal,
         discount_amount: discount,
         issued_at: issuedAt,
@@ -532,6 +687,52 @@ export default function InvoicesPage() {
           description="Chưa thanh toán hoặc thu dở dang"
         />
       </div>
+
+      {/* Cashier Queue Alert: Completed visits waiting for payment */}
+      {pendingVisits.length > 0 && (
+        <Card className="border-amber-300 bg-amber-50/70 dark:bg-amber-950/30 dark:border-amber-800 shadow-sm">
+          <CardContent className="p-4 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-bold text-sm">
+                <Clock className="h-4 w-4 text-amber-600 animate-pulse" />
+                Hàng đợi Quầy Thu Ngân: Có {pendingVisits.length} ca khám vừa hoàn tất đang chờ thu tiền viện phí
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={fetchPendingVisits}
+                className="h-6 text-xs text-amber-700 hover:text-amber-900"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Làm mới
+              </Button>
+            </div>
+            <div className="divide-y divide-amber-200/60 dark:divide-amber-900/60 text-xs">
+              {pendingVisits.map((pv) => (
+                <div key={pv.id} className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
+                      {pv.patient?.full_name || 'Bệnh nhân'} <span className="font-mono text-xs font-normal text-slate-500">({pv.visit_code || `#${pv.id}`})</span>
+                    </div>
+                    <div className="text-slate-600 dark:text-slate-400">
+                      Bác sĩ khám: <span className="font-medium text-slate-800 dark:text-slate-200">{pv.employee?.full_name || 'Bác sĩ phụ trách'}</span> • Dịch vụ: {pv.service?.name || 'Khám bệnh chuyên khoa'} • Tiền khám dự kiến: <span className="font-mono font-semibold text-blue-600">{formatCurrency(pv.total_amount || pv.unit_price)}</span>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="success"
+                    onClick={() => handleQuickBillVisit(pv)}
+                    className="h-7 px-3 text-xs gap-1 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 shadow-sm"
+                  >
+                    <Wallet className="h-3.5 w-3.5" />
+                    Thu tiền ca này ngay
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search & Filters Card */}
       <Card className="shadow-sm border-slate-200 dark:border-slate-800">
@@ -882,6 +1083,22 @@ export default function InvoicesPage() {
             </DialogDescription>
           </DialogHeader>
 
+          {selectedVisitId && (
+            <div className="mx-6 p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg text-xs text-blue-700 dark:text-blue-300 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 font-medium">
+                <span>📌</span>
+                <span>Hóa đơn này đang được liên kết tự động với lượt khám #{selectedVisitId}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedVisitId(null)}
+                className="text-[11px] underline text-blue-600 hover:text-blue-800 dark:text-blue-400 font-semibold"
+              >
+                Hủy liên kết
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleCreateInvoice} className="space-y-4 pt-2">
             {createError && (
               <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg flex items-center gap-2">
@@ -944,7 +1161,7 @@ export default function InvoicesPage() {
                   id="subtotalAmount"
                   type="number"
                   min="0"
-                  step="1000"
+                  step="any"
                   placeholder="Ví dụ: 500000"
                   value={subtotalAmount}
                   onChange={(e) => setSubtotalAmount(e.target.value ? Number(e.target.value) : '')}
@@ -960,7 +1177,7 @@ export default function InvoicesPage() {
                   id="discountAmount"
                   type="number"
                   min="0"
-                  step="1000"
+                  step="any"
                   placeholder="0"
                   value={discountAmount}
                   onChange={(e) => setDiscountAmount(e.target.value ? Number(e.target.value) : 0)}
@@ -1030,7 +1247,7 @@ export default function InvoicesPage() {
           </DialogHeader>
 
           {selectedInvoice && (
-            <form onSubmit={handleRecordPayment} className="space-y-4 pt-2">
+            <form onSubmit={handleRecordPayment} noValidate className="space-y-4 pt-2">
               {paymentError && (
                 <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0" />
@@ -1104,9 +1321,9 @@ export default function InvoicesPage() {
                 <Input
                   id="paymentAmount"
                   type="number"
-                  min="1"
+                  min="0"
                   max={selectedInvoice.remaining_amount}
-                  step="1000"
+                  step="any"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value ? Number(e.target.value) : '')}
                   required

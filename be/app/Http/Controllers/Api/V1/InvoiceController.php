@@ -238,7 +238,15 @@ class InvoiceController extends Controller
      */
     public function show(Invoice $invoice): JsonResponse
     {
-        $invoice->load(['patient', 'visit.employee', 'visit.service', 'patientPackage.package', 'creator', 'payments.receiver']);
+        $invoice->load([
+            'patient',
+            'visit.employee',
+            'visit.service',
+            'visit.medicalRecord.doctor',
+            'patientPackage.package',
+            'creator',
+            'payments.receiver',
+        ]);
 
         return response()->json([
             'success' => true,
@@ -444,7 +452,7 @@ class InvoiceController extends Controller
      * Generate unique concurrency-safe invoice code.
      * Format: INV-XXXXXX (e.g. INV-000001)
      */
-    protected function generateInvoiceCode(): string
+    public static function generateInvoiceCode(): string
     {
         $allCodes = DB::table('invoices')->pluck('invoice_code');
 

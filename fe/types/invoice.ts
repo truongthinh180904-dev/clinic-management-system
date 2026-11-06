@@ -58,15 +58,50 @@ export interface InvoiceCreator {
   } | null;
 }
 
+export interface ClinicalRecordSummary {
+  id?: number;
+  doctor_id?: number;
+  doctor_name?: string;
+  diagnosis?: string;
+  medical_history?: string | null;
+  indication?: string | null;
+  result?: string | null;
+  treatment?: string | null;
+  follow_up_date?: string | null;
+  created_at?: string;
+}
+
 export interface InvoiceVisit {
   id: number;
   visit_code?: string;
   patient_id?: number;
   doctor_id?: number;
+  employee_id?: number;
+  employee?: {
+    id: number;
+    full_name: string;
+    employee_code?: string;
+    department?: string;
+    position?: string;
+    phone?: string;
+  } | null;
+  service?: {
+    id: number;
+    name: string;
+    service_code?: string;
+    price?: number;
+    description?: string;
+  } | null;
+  quantity?: number;
+  unit_price?: number;
+  discount_amount?: number;
+  total_amount?: number;
   status?: string;
   payment_status?: string;
   check_in_time?: string;
   check_out_time?: string | null;
+  visit_date?: string;
+  medical_record?: ClinicalRecordSummary | null;
 }
 
 export interface InvoicePatientPackage {
@@ -101,6 +136,7 @@ export interface Invoice {
   visit?: InvoiceVisit | null;
   patient_package?: InvoicePatientPackage | null;
   creator?: InvoiceCreator | null;
+  clinical_record?: ClinicalRecordSummary | null;
   payments?: Payment[];
   created_at?: string;
   updated_at?: string;

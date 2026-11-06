@@ -67,7 +67,7 @@ import {
   TopPerformersData,
 } from '@/types/dashboard';
 
-type DatePreset = '7d' | '30d' | 'month' | 'quarter' | 'year' | 'custom';
+type DatePreset = 'today' | '7d' | '30d' | 'month' | 'last_month' | 'quarter' | 'year' | 'custom';
 
 function formatDateForApi(d: Date): string {
   const year = d.getFullYear();
@@ -132,7 +132,10 @@ export default function AdminDashboardPage() {
     const now = new Date();
     let start = new Date();
 
-    if (newPreset === '7d') {
+    if (newPreset === 'today') {
+      setStartDate(formatDateForApi(now));
+      setEndDate(formatDateForApi(now));
+    } else if (newPreset === '7d') {
       start.setDate(now.getDate() - 6);
       setStartDate(formatDateForApi(start));
       setEndDate(formatDateForApi(now));
@@ -144,6 +147,11 @@ export default function AdminDashboardPage() {
       start = new Date(now.getFullYear(), now.getMonth(), 1);
       setStartDate(formatDateForApi(start));
       setEndDate(formatDateForApi(now));
+    } else if (newPreset === 'last_month') {
+      const startLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const endLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      setStartDate(formatDateForApi(startLastMonth));
+      setEndDate(formatDateForApi(endLastMonth));
     } else if (newPreset === 'quarter') {
       const currentQuarter = Math.floor(now.getMonth() / 3);
       start = new Date(now.getFullYear(), currentQuarter * 3, 1);
@@ -203,6 +211,30 @@ export default function AdminDashboardPage() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  // Active Preset Human Readable Label
+  const activePresetLabel = useMemo(() => {
+    switch (preset) {
+      case 'today':
+        return 'Hôm nay';
+      case '7d':
+        return '7 ngày qua';
+      case '30d':
+        return '30 ngày qua';
+      case 'month':
+        return 'Tháng này';
+      case 'last_month':
+        return 'Tháng trước';
+      case 'quarter':
+        return 'Quý này';
+      case 'year':
+        return 'Năm nay';
+      case 'custom':
+        return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+      default:
+        return 'Kỳ này';
+    }
+  }, [preset, startDate, endDate]);
+
   // Pie chart data for visit status distribution
   const visitStatusPieData = useMemo(() => {
     if (!visitTrends?.by_status) return [];
@@ -258,97 +290,136 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Date Filter Bar */}
-        <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white/10 p-2 backdrop-blur-md">
-          <div className="flex flex-wrap items-center rounded-lg bg-black/20 p-1">
-            <button
-              type="button"
-              onClick={() => handleApplyPreset('7d')}
-              className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
-                preset === '7d'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-blue-100 hover:text-white'
-              }`}
+        <div className="flex flex-col gap-2 rounded-xl bg-white/10 p-2.5 backdrop-blur-md">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center rounded-lg bg-black/20 p-1">
+              <button
+                type="button"
+                onClick={() => handleApplyPreset('today')}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
+                  preset === 'today'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-blue-100 hover:text-white'
+                }`}
+              >
+                Hôm nay
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPreset('7d')}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
+                  preset === '7d'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-blue-100 hover:text-white'
+                }`}
+              >
+                7 ngày
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPreset('30d')}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
+                  preset === '30d'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-blue-100 hover:text-white'
+                }`}
+              >
+                30 ngày
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPreset('month')}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
+                  preset === 'month'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-blue-100 hover:text-white'
+                }`}
+              >
+                Tháng này
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPreset('last_month')}
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                  preset === 'last_month'
+                    ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-300'
+                    : 'text-emerald-300 hover:bg-emerald-950/40 hover:text-white'
+                }`}
+              >
+                Tháng trước
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPreset('quarter')}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
+                  preset === 'quarter'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-blue-100 hover:text-white'
+                }`}
+              >
+                Quý này
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPreset('year')}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
+                  preset === 'year'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-blue-100 hover:text-white'
+                }`}
+              >
+                Năm nay
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setPreset('custom');
+                }}
+                className="h-8 rounded-md border border-white/20 bg-white/20 px-2 text-xs text-white placeholder-blue-200 outline-none focus:border-white focus:bg-white/30"
+              />
+              <span className="text-blue-200">→</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setPreset('custom');
+                }}
+                className="h-8 rounded-md border border-white/20 bg-white/20 px-2 text-xs text-white placeholder-blue-200 outline-none focus:border-white focus:bg-white/30"
+              />
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => fetchDashboardData(true)}
+              disabled={refreshing || loading}
+              className="border-white/30 bg-white/20 text-white hover:bg-white/30 ml-auto"
             >
-              7 ngày
-            </button>
-            <button
-              type="button"
-              onClick={() => handleApplyPreset('30d')}
-              className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
-                preset === '30d'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-blue-100 hover:text-white'
-              }`}
-            >
-              30 ngày
-            </button>
-            <button
-              type="button"
-              onClick={() => handleApplyPreset('month')}
-              className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
-                preset === 'month'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-blue-100 hover:text-white'
-              }`}
-            >
-              Tháng này
-            </button>
-            <button
-              type="button"
-              onClick={() => handleApplyPreset('quarter')}
-              className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
-                preset === 'quarter'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-blue-100 hover:text-white'
-              }`}
-            >
-              Quý này
-            </button>
-            <button
-              type="button"
-              onClick={() => handleApplyPreset('year')}
-              className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
-                preset === 'year'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-blue-100 hover:text-white'
-              }`}
-            >
-              Năm nay
-            </button>
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Làm mới</span>
+            </Button>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setPreset('custom');
-              }}
-              className="h-8 rounded-md border border-white/20 bg-white/20 px-2 text-xs text-white placeholder-blue-200 outline-none focus:border-white focus:bg-white/30"
-            />
-            <span className="text-blue-200">→</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setPreset('custom');
-              }}
-              className="h-8 rounded-md border border-white/20 bg-white/20 px-2 text-xs text-white placeholder-blue-200 outline-none focus:border-white focus:bg-white/30"
-            />
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2 text-xs">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-amber-300" />
+              <span className="text-blue-100">Khoảng thời gian:</span>
+              <span className="font-semibold text-white bg-white/20 px-2 py-0.5 rounded border border-white/20">
+                {activePresetLabel} ({formatDate(startDate)} → {formatDate(endDate)})
+              </span>
+            </div>
+            {preset === 'last_month' && (
+              <span className="text-[11px] font-medium text-emerald-300">
+                ✓ Đã lọc trọn vẹn tháng trước (không gộp tháng này)
+              </span>
+            )}
           </div>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => fetchDashboardData(true)}
-            disabled={refreshing || loading}
-            className="border-white/30 bg-white/20 text-white hover:bg-white/30"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Làm mới</span>
-          </Button>
         </div>
       </div>
 
@@ -370,7 +441,7 @@ export default function AdminDashboardPage() {
                 )}% đã thu)`
               : undefined
           }
-          badge={<Badge variant="default">Kỳ này</Badge>}
+          badge={<Badge variant="default">{activePresetLabel}</Badge>}
         />
 
         {/* Card 2: Công nợ phải thu */}
@@ -411,14 +482,14 @@ export default function AdminDashboardPage() {
 
         {/* Card 4: Lượt khám & Lịch hẹn */}
         <StatCard
-          title="Lượt khám hôm nay"
-          value={`${summary?.visits_today ?? 0} lượt`}
+          title={preset === 'today' ? 'Lượt khám hôm nay' : 'Lượt khám trong kỳ'}
+          value={preset === 'today' ? `${summary?.visits_today ?? 0} lượt` : `${summary?.total_visits ?? 0} lượt`}
           icon={Activity}
           variant="default"
           trend="up"
-          trendValue={`${summary?.appointments_today ?? 0} lịch hẹn`}
+          trendValue={`${summary?.appointments_today ?? 0} lịch hẹn hôm nay`}
           trendLabel={`• ${summary?.new_patients ?? 0} BN mới`}
-          badge={<Badge variant="info">Hôm nay</Badge>}
+          badge={<Badge variant={preset === 'today' ? 'info' : 'secondary'}>{activePresetLabel}</Badge>}
         />
       </div>
 

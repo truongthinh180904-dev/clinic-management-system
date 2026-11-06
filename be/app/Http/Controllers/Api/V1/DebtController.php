@@ -276,7 +276,8 @@ class DebtController extends Controller
         $invoices = Invoice::where('patient_id', $patient->id)
             ->with([
                 'patient',
-                'visit:id,visit_code,status,check_in_time',
+                'visit:id,visit_code,status,visit_date,employee_id',
+                'visit.employee:id,full_name,employee_code',
                 'patientPackage:id,patient_id,package_id',
                 'patientPackage.package:id,name,package_code',
                 'payments' => function ($q) {

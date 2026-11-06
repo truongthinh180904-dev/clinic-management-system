@@ -26,6 +26,8 @@ class ProductController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->ensureClinicalProductsSeeded();
+
         $query = Product::query()->withCurrentStock();
 
         // Search by product_code or name
@@ -307,5 +309,61 @@ class ProductController extends Controller
             'success' => true,
             'message' => 'Xóa sản phẩm thành công.',
         ], 200);
+    }
+
+    /**
+     * Ensure clinic pharmacy products and initial stock exist in database.
+     */
+    protected function ensureClinicalProductsSeeded(): void
+    {
+        if (Product::where('product_code', 'PRD-000001')->exists()) {
+            return;
+        }
+
+        $items = [
+            ['product_code' => 'PRD-000001', 'name' => 'Paracetamol 500mg (Hạ sốt, giảm đau)', 'unit' => 'Viên', 'minimum_stock' => 50, 'initial_stock' => 450],
+            ['product_code' => 'PRD-000002', 'name' => 'Augmentin 1g (Amoxicillin + Clavulanate)', 'unit' => 'Viên', 'minimum_stock' => 20, 'initial_stock' => 120],
+            ['product_code' => 'PRD-000003', 'name' => 'Amoxicillin 500mg', 'unit' => 'Viên', 'minimum_stock' => 30, 'initial_stock' => 320],
+            ['product_code' => 'PRD-000004', 'name' => 'Alpha Choay (Chymotrypsin kháng viêm phù nề)', 'unit' => 'Viên', 'minimum_stock' => 30, 'initial_stock' => 260],
+            ['product_code' => 'PRD-000005', 'name' => 'Ibuprofen 400mg (Giảm đau, kháng viêm NSAID)', 'unit' => 'Viên', 'minimum_stock' => 25, 'initial_stock' => 190],
+            ['product_code' => 'PRD-000006', 'name' => 'Omeprazole 20mg (Ức chế acid dạ dày)', 'unit' => 'Viên', 'minimum_stock' => 30, 'initial_stock' => 215],
+            ['product_code' => 'PRD-000007', 'name' => 'Phosphalugel (Gel nhôm phosphat chữ P)', 'unit' => 'Gói', 'minimum_stock' => 20, 'initial_stock' => 95],
+            ['product_code' => 'PRD-000008', 'name' => 'Cetirizine 10mg (Chống dị ứng, kháng Histamin)', 'unit' => 'Viên', 'minimum_stock' => 20, 'initial_stock' => 180],
+            ['product_code' => 'PRD-000009', 'name' => 'Dextromethorphan 15mg (Giảm ho khan)', 'unit' => 'Viên', 'minimum_stock' => 20, 'initial_stock' => 140],
+            ['product_code' => 'PRD-000010', 'name' => 'Men vi sinh Enterogermina (2 tỷ bào tử)', 'unit' => 'Ống', 'minimum_stock' => 15, 'initial_stock' => 85],
+            ['product_code' => 'PRD-000011', 'name' => 'Bột pha bù nước Oresol 245mg', 'unit' => 'Gói', 'minimum_stock' => 30, 'initial_stock' => 350],
+            ['product_code' => 'PRD-000012', 'name' => 'Nước súc miệng Chlorhexidine 0.12%', 'unit' => 'Chai', 'minimum_stock' => 10, 'initial_stock' => 45],
+            ['product_code' => 'PRD-000013', 'name' => 'Vitamin C 500mg (Tăng sức đề kháng)', 'unit' => 'Viên', 'minimum_stock' => 40, 'initial_stock' => 500],
+            ['product_code' => 'PRD-000014', 'name' => 'Spiramycin + Metronidazole (Rodogyl)', 'unit' => 'Viên', 'minimum_stock' => 20, 'initial_stock' => 110],
+            ['product_code' => 'PRD-000015', 'name' => 'Bơm tiêm vô trùng 5ml', 'unit' => 'Cái', 'minimum_stock' => 50, 'initial_stock' => 200],
+            ['product_code' => 'PRD-000016', 'name' => 'Cồn y tế 70 độ 500ml', 'unit' => 'Chai', 'minimum_stock' => 10, 'initial_stock' => 50],
+            ['product_code' => 'PRD-000017', 'name' => 'Găng tay y tế Nitrile (Hộp 100 chiếc)', 'unit' => 'Hộp', 'minimum_stock' => 10, 'initial_stock' => 40],
+        ];
+
+        DB::transaction(function () use ($items) {
+            foreach ($items as $item) {
+                $initialStock = $item['initial_stock'];
+                unset($item['initial_stock']);
+                $item['status'] = 'ACTIVE';
+
+                $prod = Product::firstOrCreate(
+                    ['product_code' => $item['product_code']],
+                    $item
+                );
+
+                if (! $prod->inventoryTransactions()->exists()) {
+                    InventoryTransaction::create([
+                        'product_id' => $prod->id,
+                        'transaction_type' => 'IN',
+                        'quantity' => $initialStock,
+                        'reference_type' => 'INITIAL_STOCK',
+                        'reference_id' => null,
+                        'transaction_date' => now()->subDays(5),
+                        'created_by' => null,
+                        'created_at' => now()->subDays(5),
+                    ]);
+                }
+            }
+        });
     }
 }

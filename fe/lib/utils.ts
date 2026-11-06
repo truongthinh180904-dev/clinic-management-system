@@ -39,3 +39,27 @@ export function formatDateTime(date: string | Date | null | undefined): string {
     minute: '2-digit',
   }).format(d);
 }
+
+/**
+ * Parse the total drug cost from a medical record's treatment text.
+ * Example treatment text contains: "=> TỔNG CỘNG TIỀN THUỐC: 30.000 ₫"
+ * or lines with "= X.XXX ₫"
+ */
+export function parsePrescriptionDrugCost(treatmentText?: string | null): number {
+  if (!treatmentText) return 0;
+
+  const summaryMatch = treatmentText.match(/TỔNG CỘNG TIỀN THUỐC:\s*([\d.,]+)\s*₫/i);
+  if (summaryMatch) {
+    return Number(summaryMatch[1].replace(/\D/g, '')) || 0;
+  }
+
+  let total = 0;
+  const lines = treatmentText.split('\n');
+  for (const line of lines) {
+    const match = line.match(/=\s*([\d.,]+)\s*₫/);
+    if (match) {
+      total += Number(match[1].replace(/\D/g, '')) || 0;
+    }
+  }
+  return total;
+}

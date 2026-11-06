@@ -14,7 +14,7 @@ import {
   updateAppointmentStatus,
 } from '@/lib/api/appointments';
 import { getEmployees } from '@/lib/api/employees';
-import { getPatients } from '@/lib/api/patients';
+import { getPatients, createPatient } from '@/lib/api/patients';
 import { getServices } from '@/lib/api/services';
 import {
   APPOINTMENT_STATUS_MAP,
@@ -44,10 +44,13 @@ import {
   FormSubmitButton,
   FormAlert,
 } from '@/components/ui/form-field';
-import { User, Calendar, Clock, Stethoscope, AlertTriangle } from 'lucide-react';
+import { User, Calendar, Clock, Stethoscope, AlertTriangle, UserPlus, Search } from 'lucide-react';
 
 function AppointmentsContent() {
-  const { hasPermission, hasRole } = useAuth();
+  const { user, hasPermission, hasRole } = useAuth();
+
+  const isDoctorOnly = hasRole('DOCTOR') && !hasRole('ADMIN') && !hasRole('MANAGER');
+  const loggedInDoctorId = user?.employee?.id || user?.employee_id;
 
   const canCreate =
     hasPermission('appointments.create') ||
@@ -96,6 +99,15 @@ function AppointmentsContent() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
   const [isSearchingPatients, setIsSearchingPatients] = useState(false);
+  const [isLoadingPatients, setIsLoadingPatients] = useState(false);
+
+  // New patient registration mode in appointment modal
+  const [patientMode, setPatientMode] = useState<'existing' | 'new'>('existing');
+  const [newPatientName, setNewPatientName] = useState('');
+  const [newPatientPhone, setNewPatientPhone] = useState('');
+  const [newPatientDob, setNewPatientDob] = useState('');
+  const [newPatientGender, setNewPatientGender] = useState<'MALE' | 'FEMALE' | 'OTHER'>('MALE');
+  const [newPatientAddress, setNewPatientAddress] = useState('');
 
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -151,6 +163,13 @@ function AppointmentsContent() {
     loadReferenceData();
   }, []);
 
+  // Lock employeeFilter to current doctor if doctor-only
+  useEffect(() => {
+    if (isDoctorOnly && loggedInDoctorId) {
+      setEmployeeFilter(Number(loggedInDoctorId));
+    }
+  }, [isDoctorOnly, loggedInDoctorId]);
+
   // Fetch appointments list
   const fetchAppointments = async () => {
     setIsLoading(true);
@@ -161,7 +180,7 @@ function AppointmentsContent() {
         appointment_date: dateFilter || undefined,
         from_date: fromDate || undefined,
         to_date: toDate || undefined,
-        employee_id: employeeFilter !== '' ? employeeFilter : undefined,
+        employee_id: (isDoctorOnly && loggedInDoctorId) ? Number(loggedInDoctorId) : (employeeFilter !== '' ? employeeFilter : undefined),
         service_id: serviceFilter !== '' ? serviceFilter : undefined,
         patient_id: patientFilter !== '' ? patientFilter : undefined,
         status: statusFilter !== '' ? statusFilter : undefined,
@@ -203,10 +222,18 @@ function AppointmentsContent() {
   // Search patients for booking modal
   const handleSearchPatients = async (query: string) => {
     setPatientSearchQuery(query);
-    if (!query || query.trim().length < 2) return;
+    if (!query || query.trim().length < 2) {
+      try {
+        const res = await getPatients({ per_page: 100 });
+        setPatients(res.data || []);
+      } catch {
+        // ignore
+      }
+      return;
+    }
     setIsSearchingPatients(true);
     try {
-      const res = await getPatients({ search: query, per_page: 10 });
+      const res = await getPatients({ search: query.trim(), per_page: 30 });
       setPatients(res.data || []);
     } catch (err) {
       console.error('Lỗi tìm kiếm bệnh nhân:', err);
@@ -239,13 +266,32 @@ function AppointmentsContent() {
     }
   };
 
+  // Clear specific inline field error on input change
+  const clearFieldError = (fieldName: string) => {
+    if (formErrors && formErrors[fieldName]) {
+      setFormErrors((prev) => {
+        if (!prev) return null;
+        const next = { ...prev };
+        delete next[fieldName];
+        return Object.keys(next).length > 0 ? next : null;
+      });
+    }
+  };
+
   // Open Create Modal
   const handleOpenCreateModal = async () => {
     setConflictError(null);
     setFormErrors(null);
+    setPatientMode('existing');
+    setNewPatientName('');
+    setNewPatientPhone('');
+    setNewPatientDob('');
+    setNewPatientGender('MALE');
+    setNewPatientAddress('');
+    setPatientSearchQuery('');
     setCreateForm({
       patient_id: 0,
-      employee_id: employees.length > 0 ? employees[0].id : 0,
+      employee_id: isDoctorOnly && loggedInDoctorId ? Number(loggedInDoctorId) : (employees.length > 0 ? employees[0].id : 0),
       service_id: services.length > 0 ? services[0].id : 0,
       appointment_date: dateFilter || todayStr,
       start_time: '08:30',
@@ -253,16 +299,25 @@ function AppointmentsContent() {
       status: 'CONFIRMED',
       notes: '',
     });
-    // Load initial 10 patients
-    if (patients.length === 0) {
-      try {
-        const res = await getPatients({ per_page: 15 });
-        setPatients(res.data || []);
-      } catch {
-        // ignore
-      }
-    }
     setIsCreateModalOpen(true);
+
+    // Load initial patients with 100 limit
+    setIsLoadingPatients(true);
+    try {
+      const res = await getPatients({ per_page: 100 });
+      const patList = res.data || [];
+      setPatients(patList);
+      if (patList.length > 0) {
+        setCreateForm((prev) => ({ ...prev, patient_id: patList[0].id }));
+      } else {
+        // If DB has no patients, auto switch to new patient mode
+        setPatientMode('new');
+      }
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách bệnh nhân:', err);
+    } finally {
+      setIsLoadingPatients(false);
+    }
   };
 
   // Submit Create Appointment
@@ -271,31 +326,80 @@ function AppointmentsContent() {
     setConflictError(null);
     setFormErrors(null);
 
-    // Basic frontend checks
-    if (!createForm.patient_id) {
-      setFormErrors({ patient_id: ['Vui lòng chọn bệnh nhân đặt lịch.'] });
-      return;
+    let targetPatientId = createForm.patient_id;
+    const errors: Record<string, string[]> = {};
+
+    // Validate patient selection or new patient inputs
+    if (patientMode === 'new') {
+      if (!newPatientName.trim()) {
+        errors.new_patient_name = ['Vui lòng nhập họ và tên bệnh nhân mới.'];
+      }
+      if (!newPatientPhone.trim()) {
+        errors.new_patient_phone = ['Vui lòng nhập số điện thoại bệnh nhân.'];
+      } else if (!/(84|0[3|5|7|8|9])+([0-9]{8})\b/.test(newPatientPhone.trim().replace(/\D/g, ''))) {
+        errors.new_patient_phone = ['Số điện thoại không đúng định dạng (yêu cầu 10 chữ số).'];
+      }
+    } else {
+      if (!targetPatientId || targetPatientId === 0) {
+        errors.patient_id = ['Vui lòng chọn một bệnh nhân từ danh sách hoặc chuyển sang tab Bệnh nhân mới.'];
+      }
     }
-    if (!createForm.employee_id) {
-      setFormErrors({ employee_id: ['Vui lòng chọn bác sĩ/nhân viên tiếp nhận.'] });
-      return;
+
+    if (!createForm.employee_id || Number(createForm.employee_id) === 0) {
+      errors.employee_id = ['Vui lòng chọn bác sĩ phụ trách khám.'];
     }
-    if (!createForm.service_id) {
-      setFormErrors({ service_id: ['Vui lòng chọn dịch vụ khám.'] });
-      return;
+
+    if (!createForm.service_id || Number(createForm.service_id) === 0) {
+      errors.service_id = ['Vui lòng chọn dịch vụ khám bệnh.'];
     }
-    if (createForm.start_time >= createForm.end_time) {
-      setFormErrors({
-        end_time: ['Thời gian kết thúc phải lớn hơn thời gian bắt đầu.'],
-      });
+
+    if (!createForm.appointment_date) {
+      errors.appointment_date = ['Vui lòng chọn ngày hẹn khám.'];
+    }
+
+    if (!createForm.start_time) {
+      errors.start_time = ['Vui lòng chọn giờ bắt đầu khám.'];
+    }
+
+    if (!createForm.end_time) {
+      errors.end_time = ['Vui lòng chọn giờ kết thúc khám.'];
+    } else if (createForm.start_time && createForm.start_time >= createForm.end_time) {
+      errors.end_time = ['Thời gian kết thúc phải lớn hơn thời gian bắt đầu khám.'];
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error('Vui lòng kiểm tra và điền đầy đủ các thông tin bắt buộc được đánh dấu đỏ bên dưới.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await createAppointment(createForm);
+      if (patientMode === 'new') {
+        // 1. Tạo bệnh nhân mới trong DB
+        const patientRes = await createPatient({
+          full_name: newPatientName.trim(),
+          phone: newPatientPhone.trim(),
+          date_of_birth: newPatientDob || undefined,
+          gender: newPatientGender,
+          address: newPatientAddress.trim() || undefined,
+          status: 'ACTIVE',
+        });
+        const createdPatient = patientRes.data;
+        targetPatientId = createdPatient.id;
+        // Thêm vào danh sách bệnh nhân hiện hành
+        setPatients((prev) => [createdPatient, ...prev]);
+      }
+
+      await createAppointment({
+        ...createForm,
+        patient_id: targetPatientId,
+      });
+
       setIsCreateModalOpen(false);
-      const msg = 'Đặt lịch hẹn khám thành công!';
+      const msg = patientMode === 'new'
+        ? `Đã tạo hồ sơ bệnh nhân "${newPatientName.trim()}" và đặt lịch hẹn khám thành công!`
+        : 'Đặt lịch hẹn khám thành công!';
       setActionSuccess(msg);
       toast.success(msg, 'Thành công');
       setTimeout(() => setActionSuccess(null), 4000);
@@ -681,23 +785,34 @@ function AppointmentsContent() {
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Bác sĩ / Nhân viên
             </label>
-            <select
-              value={employeeFilter}
-              onChange={(e) => {
-                setEmployeeFilter(
-                  e.target.value ? Number(e.target.value) : ''
-                );
-                setCurrentPage(1);
-              }}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-            >
-              <option value="">Tất cả bác sĩ</option>
-              {employees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.full_name} ({emp.position || emp.employee_code})
-                </option>
-              ))}
-            </select>
+            {isDoctorOnly ? (
+              <div className="w-full px-3 py-2 text-sm bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg text-blue-700 dark:text-blue-300 font-medium flex items-center justify-between">
+                <span className="truncate">
+                  🔒 {user?.employee?.full_name || 'Bác sĩ'} ({user?.employee?.employee_code || 'BS'})
+                </span>
+                <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-1.5 py-0.5 rounded">
+                  Của bạn
+                </span>
+              </div>
+            ) : (
+              <select
+                value={employeeFilter}
+                onChange={(e) => {
+                  setEmployeeFilter(
+                    e.target.value ? Number(e.target.value) : ''
+                  );
+                  setCurrentPage(1);
+                }}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              >
+                <option value="">Tất cả bác sĩ</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.full_name} ({emp.position || emp.employee_code})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Service Filter */}
@@ -761,7 +876,7 @@ function AppointmentsContent() {
                 setDateFilter('');
                 setFromDate('');
                 setToDate('');
-                setEmployeeFilter('');
+                setEmployeeFilter(isDoctorOnly && loggedInDoctorId ? Number(loggedInDoctorId) : '');
                 setServiceFilter('');
                 setPatientFilter('');
                 setStatusFilter('');
@@ -1121,9 +1236,10 @@ function AppointmentsContent() {
 
       {/* CREATE APPOINTMENT MODAL */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-slate-900/60 p-2 sm:p-4 md:p-6 backdrop-blur-xs overflow-y-auto">
+          <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto animate-in fade-in-0 zoom-in-95 duration-200">
+            {/* STICKY HEADER */}
+            <div className="sticky top-0 z-20 shrink-0 flex items-center justify-between border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                   Đặt Lịch Hẹn Khám Mới
@@ -1133,107 +1249,300 @@ function AppointmentsContent() {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg font-bold"
+                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800"
               >
                 ✕
               </button>
             </div>
 
-            {/* CONFLICT ERROR ALERT BANNER */}
-            {conflictError && (
-              <FormAlert
-                type="warning"
-                title="Phát hiện xung đột lịch hẹn bác sĩ!"
-                message={
-                  <div>
-                    <p>{conflictError}</p>
-                    <p className="mt-1 text-[11px] opacity-80">
-                      Gợi ý: Hãy chọn một bác sĩ khác hoặc điều chỉnh khung giờ khám (từ giờ - đến giờ) để tránh bị chồng lấn.
-                    </p>
-                  </div>
-                }
-                className="mt-4"
-                onDismiss={() => setConflictError(null)}
-              />
-            )}
+            <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                {/* CONFLICT ERROR ALERT BANNER */}
+                {conflictError && (
+                  <FormAlert
+                    type="warning"
+                    title="Phát hiện xung đột lịch hẹn bác sĩ!"
+                    message={
+                      <div>
+                        <p>{conflictError}</p>
+                        <p className="mt-1 text-[11px] opacity-80">
+                          Gợi ý: Hãy chọn một bác sĩ khác hoặc điều chỉnh khung giờ khám (từ giờ - đến giờ) để tránh bị chồng lấn.
+                        </p>
+                      </div>
+                    }
+                    className="mb-4"
+                    onDismiss={() => setConflictError(null)}
+                  />
+                )}
+              {/* Tab chuyển đổi chế độ bệnh nhân: Cũ / Mới */}
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setPatientMode('existing')}
+                  className={`flex items-center justify-center gap-2 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+                    patientMode === 'existing'
+                      ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  }`}
+                >
+                  <Search className="h-4 w-4" />
+                  <span>Bệnh nhân đã có hồ sơ</span>
+                </button>
 
-            <form onSubmit={handleCreateSubmit} className="mt-4 space-y-5">
+                <button
+                  type="button"
+                  onClick={() => setPatientMode('new')}
+                  className={`flex items-center justify-center gap-2 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+                    patientMode === 'new'
+                      ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  }`}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Bệnh nhân mới (Đăng ký nhanh)</span>
+                </button>
+              </div>
+
               {/* Nhóm 1: Người khám & Bác sĩ */}
               <FormSection
-                title="Bệnh nhân & Bác sĩ tiếp nhận"
-                description="Chọn hồ sơ bệnh nhân và bác sĩ phụ trách khám"
-                icon={User}
+                title={patientMode === 'existing' ? 'Bệnh nhân & Bác sĩ tiếp nhận' : 'Đăng ký Bệnh nhân mới & Bác sĩ tiếp nhận'}
+                description={
+                  patientMode === 'existing'
+                    ? 'Chọn hồ sơ bệnh nhân từ danh mục và bác sĩ phụ trách khám'
+                    : 'Nhập thông tin bệnh nhân mới (hệ thống sẽ tự động tạo hồ sơ)'
+                }
+                icon={patientMode === 'existing' ? User : UserPlus}
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    label="Bệnh nhân đặt lịch"
-                    required
-                    error={formErrors?.patient_id}
-                  >
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        value={patientSearchQuery}
-                        onChange={(e) => handleSearchPatients(e.target.value)}
-                        placeholder="Gõ tên hoặc SĐT để lọc nhanh..."
-                        className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
-                      />
-                      {isSearchingPatients && (
-                        <p className="text-[11px] text-slate-400">Đang tìm bệnh nhân...</p>
-                      )}
-                      <select
-                        value={createForm.patient_id}
-                        onChange={(e) =>
-                          setCreateForm((prev) => ({
-                            ...prev,
-                            patient_id: Number(e.target.value),
-                          }))
-                        }
-                        className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                          formErrors?.patient_id
-                            ? 'border-rose-500 bg-rose-50/20'
-                            : 'border-slate-300 dark:border-slate-700'
-                        }`}
-                      >
-                        <option value={0}>-- Chọn bệnh nhân từ danh sách --</option>
-                        {patients.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.full_name} ({p.patient_code} - {p.phone || 'Không có SĐT'})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </FormField>
-
-                  <FormField
-                    label="Bác sĩ / Nhân viên tiếp nhận"
-                    required
-                    error={formErrors?.employee_id}
-                  >
-                    <select
-                      value={createForm.employee_id}
-                      onChange={(e) =>
-                        setCreateForm((prev) => ({
-                          ...prev,
-                          employee_id: Number(e.target.value),
-                        }))
-                      }
-                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                        formErrors?.employee_id || conflictError
-                          ? 'border-amber-500 bg-amber-50/20 ring-1 ring-amber-400'
-                          : 'border-slate-300 dark:border-slate-700'
-                      }`}
+                {patientMode === 'existing' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      label="Bệnh nhân đặt lịch"
+                      required
+                      error={formErrors?.patient_id}
                     >
-                      <option value={0}>-- Chọn bác sĩ tiếp nhận --</option>
-                      {employees.map((emp) => (
-                        <option key={emp.id} value={emp.id}>
-                          {emp.full_name} ({emp.position || emp.employee_code})
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
-                </div>
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={patientSearchQuery}
+                            onChange={(e) => handleSearchPatients(e.target.value)}
+                            placeholder="Gõ tên hoặc SĐT để lọc nhanh..."
+                            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
+                          />
+                          {isSearchingPatients && (
+                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-blue-600 dark:text-blue-400">
+                              Đang tìm...
+                            </span>
+                          )}
+                        </div>
+
+                        <select
+                          value={createForm.patient_id}
+                          onChange={(e) => {
+                            setCreateForm((prev) => ({
+                              ...prev,
+                              patient_id: Number(e.target.value),
+                            }));
+                            clearFieldError('patient_id');
+                          }}
+                          disabled={isLoadingPatients}
+                          className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white disabled:opacity-50 ${
+                            formErrors?.patient_id
+                              ? 'border-rose-500 bg-rose-50/20 ring-1 ring-rose-400'
+                              : 'border-slate-300 dark:border-slate-700'
+                          }`}
+                        >
+                          <option value={0}>
+                            {isLoadingPatients
+                              ? '⏳ Đang tải danh sách bệnh nhân...'
+                              : patients.length === 0
+                              ? '-- Chưa có bệnh nhân nào trong hệ thống --'
+                              : `-- Chọn bệnh nhân (${patients.length}) --`}
+                          </option>
+                          {patients.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.full_name} ({p.patient_code} - {p.phone || 'Không có SĐT'})
+                            </option>
+                          ))}
+                        </select>
+
+                        {patients.length === 0 && !isLoadingPatients && (
+                          <div className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center justify-between pt-1">
+                            <span>Chưa có bệnh nhân nào trong hệ thống.</span>
+                            <button
+                              type="button"
+                              onClick={() => setPatientMode('new')}
+                              className="font-semibold text-blue-600 dark:text-blue-400 underline"
+                            >
+                              + Đăng ký bệnh nhân mới ngay
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </FormField>
+
+                    <FormField
+                      label="Bác sĩ / Nhân viên tiếp nhận"
+                      required
+                      error={formErrors?.employee_id}
+                    >
+                      {isDoctorOnly ? (
+                        <div className="w-full px-3 py-2 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                          <span className="font-medium">
+                            👨‍⚕️ {user?.employee?.full_name || 'Bác sĩ'} ({user?.employee?.employee_code || 'BS'})
+                          </span>
+                          <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-2 py-0.5 rounded font-mono">
+                            Cố định
+                          </span>
+                        </div>
+                      ) : (
+                        <select
+                          value={createForm.employee_id}
+                          onChange={(e) => {
+                            setCreateForm((prev) => ({
+                              ...prev,
+                              employee_id: Number(e.target.value),
+                            }));
+                            clearFieldError('employee_id');
+                          }}
+                          className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
+                            formErrors?.employee_id
+                              ? 'border-rose-500 bg-rose-50/20 ring-1 ring-rose-400'
+                              : conflictError
+                                ? 'border-amber-500 bg-amber-50/20 ring-1 ring-amber-400'
+                                : 'border-slate-300 dark:border-slate-700'
+                          }`}
+                        >
+                          <option value={0}>-- Chọn bác sĩ tiếp nhận --</option>
+                          {employees.map((emp) => (
+                            <option key={emp.id} value={emp.id}>
+                              {emp.full_name} ({emp.position || emp.employee_code})
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </FormField>
+                  </div>
+                ) : (
+                  <div className="space-y-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <FormField label="Họ và tên bệnh nhân mới" required error={formErrors?.new_patient_name}>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ví dụ: Nguyễn Văn A..."
+                          value={newPatientName}
+                          onChange={(e) => {
+                            setNewPatientName(e.target.value);
+                            clearFieldError('new_patient_name');
+                          }}
+                          className={`w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                            formErrors?.new_patient_name
+                              ? 'border-rose-500 bg-rose-50/20 ring-1 ring-rose-400'
+                              : 'border-slate-300 dark:border-slate-700'
+                          }`}
+                        />
+                      </FormField>
+
+                      <FormField label="Số điện thoại liên hệ" required error={formErrors?.new_patient_phone}>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="Ví dụ: 0912345678"
+                          value={newPatientPhone}
+                          onChange={(e) => {
+                            setNewPatientPhone(e.target.value);
+                            clearFieldError('new_patient_phone');
+                          }}
+                          className={`w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                            formErrors?.new_patient_phone
+                              ? 'border-rose-500 bg-rose-50/20 ring-1 ring-rose-400'
+                              : 'border-slate-300 dark:border-slate-700'
+                          }`}
+                        />
+                      </FormField>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <FormField label="Ngày sinh">
+                        <input
+                          type="date"
+                          value={newPatientDob}
+                          onChange={(e) => setNewPatientDob(e.target.value)}
+                          className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </FormField>
+
+                      <FormField label="Giới tính" required>
+                        <select
+                          value={newPatientGender}
+                          onChange={(e) => setNewPatientGender(e.target.value as 'MALE' | 'FEMALE' | 'OTHER')}
+                          className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        >
+                          <option value="MALE">Nam</option>
+                          <option value="FEMALE">Nữ</option>
+                          <option value="OTHER">Khác</option>
+                        </select>
+                      </FormField>
+
+                      <FormField label="Địa chỉ cư trú (tùy chọn)">
+                        <input
+                          type="text"
+                          placeholder="Quận/Huyện, Tỉnh..."
+                          value={newPatientAddress}
+                          onChange={(e) => setNewPatientAddress(e.target.value)}
+                          className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </FormField>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                      <FormField
+                        label="Bác sĩ / Nhân viên tiếp nhận"
+                        required
+                        error={formErrors?.employee_id}
+                      >
+                        {isDoctorOnly ? (
+                          <div className="w-full px-3 py-2 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                            <span className="font-medium">
+                              👨‍⚕️ {user?.employee?.full_name || 'Bác sĩ'} ({user?.employee?.employee_code || 'BS'})
+                            </span>
+                            <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-2 py-0.5 rounded font-mono">
+                              Cố định
+                            </span>
+                          </div>
+                        ) : (
+                          <select
+                            value={createForm.employee_id}
+                            onChange={(e) => {
+                              setCreateForm((prev) => ({
+                                ...prev,
+                                employee_id: Number(e.target.value),
+                              }));
+                              clearFieldError('employee_id');
+                            }}
+                            className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
+                              formErrors?.employee_id
+                                ? 'border-rose-500 bg-rose-50/20 ring-1 ring-rose-400'
+                                : conflictError
+                                  ? 'border-amber-500 bg-amber-50/20 ring-1 ring-amber-400'
+                                  : 'border-slate-300 dark:border-slate-700'
+                            }`}
+                          >
+                            <option value={0}>-- Chọn bác sĩ tiếp nhận --</option>
+                            {employees.map((emp) => (
+                              <option key={emp.id} value={emp.id}>
+                                {emp.full_name} ({emp.position || emp.employee_code})
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </FormField>
+                    </div>
+                  </div>
+                )}
               </FormSection>
 
               {/* Nhóm 2: Dịch vụ & Khung giờ */}
@@ -1254,10 +1563,11 @@ function AppointmentsContent() {
                         const sid = Number(e.target.value);
                         setCreateForm((prev) => ({ ...prev, service_id: sid }));
                         updateEndTimeFromService(sid, createForm.start_time, false);
+                        clearFieldError('service_id');
                       }}
                       className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
                         formErrors?.service_id
-                          ? 'border-rose-500 bg-rose-50/20'
+                          ? 'border-rose-500 bg-rose-50/20 ring-1 ring-rose-400'
                           : 'border-slate-300 dark:border-slate-700'
                       }`}
                     >
@@ -1284,20 +1594,25 @@ function AppointmentsContent() {
                       <input
                         type="date"
                         value={createForm.appointment_date}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setCreateForm((prev) => ({
                             ...prev,
                             appointment_date: e.target.value,
-                          }))
-                        }
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          }));
+                          clearFieldError('appointment_date');
+                        }}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
+                          formErrors?.appointment_date
+                            ? 'border-rose-500 bg-rose-50/20 ring-1 ring-rose-400'
+                            : 'border-slate-300 dark:border-slate-700'
+                        }`}
                       />
                     </FormField>
 
                     <FormField
                       label="Từ giờ"
                       required
-                      error={formErrors?.start_time}
+                      error={formErrors?.start_time || formErrors?.time_slot}
                     >
                       <input
                         type="time"
@@ -1306,11 +1621,15 @@ function AppointmentsContent() {
                           const st = e.target.value;
                           setCreateForm((prev) => ({ ...prev, start_time: st }));
                           updateEndTimeFromService(createForm.service_id, st, false);
+                          clearFieldError('start_time');
+                          clearFieldError('time_slot');
                         }}
                         className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                          conflictError || formErrors?.time_slot
-                            ? 'border-amber-500 bg-amber-50/20'
-                            : 'border-slate-300 dark:border-slate-700'
+                          formErrors?.start_time || formErrors?.time_slot
+                            ? 'border-rose-500 bg-rose-50/20 ring-1 ring-rose-400'
+                            : conflictError
+                              ? 'border-amber-500 bg-amber-50/20'
+                              : 'border-slate-300 dark:border-slate-700'
                         }`}
                       />
                     </FormField>
@@ -1323,16 +1642,20 @@ function AppointmentsContent() {
                       <input
                         type="time"
                         value={createForm.end_time}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setCreateForm((prev) => ({
                             ...prev,
                             end_time: e.target.value,
-                          }))
-                        }
+                          }));
+                          clearFieldError('end_time');
+                          clearFieldError('time_slot');
+                        }}
                         className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                          conflictError || formErrors?.end_time || formErrors?.time_slot
-                            ? 'border-amber-500 bg-amber-50/20'
-                            : 'border-slate-300 dark:border-slate-700'
+                          formErrors?.end_time || formErrors?.time_slot
+                            ? 'border-rose-500 bg-rose-50/20 ring-1 ring-rose-400'
+                            : conflictError
+                              ? 'border-amber-500 bg-amber-50/20'
+                              : 'border-slate-300 dark:border-slate-700'
                         }`}
                       />
                     </FormField>
@@ -1384,9 +1707,10 @@ function AppointmentsContent() {
                   </FormField>
                 </div>
               </FormSection>
+              </div>
 
-              {/* Modal Buttons */}
-              <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+              {/* STICKY FOOTER */}
+              <div className="sticky bottom-0 z-20 shrink-0 flex items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-6 py-3.5 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
@@ -1408,9 +1732,10 @@ function AppointmentsContent() {
 
       {/* EDIT / RESCHEDULE MODAL */}
       {isEditModalOpen && selectedAppointment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-slate-900/60 p-2 sm:p-4 md:p-6 backdrop-blur-xs overflow-y-auto">
+          <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto animate-in fade-in-0 zoom-in-95 duration-200">
+            {/* STICKY HEADER */}
+            <div className="sticky top-0 z-20 shrink-0 flex items-center justify-between border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                   Cập Nhật Lịch Hẹn {selectedAppointment.appointment_code}
@@ -1420,32 +1745,33 @@ function AppointmentsContent() {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg font-bold"
+                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800"
               >
                 ✕
               </button>
             </div>
 
-            {/* CONFLICT ERROR ALERT BANNER */}
-            {conflictError && (
-              <FormAlert
-                type="warning"
-                title="Phát hiện xung đột lịch hẹn!"
-                message={
-                  <div>
-                    <p>{conflictError}</p>
-                    <p className="mt-1 text-[11px] opacity-80">
-                      Gợi ý: Khung giờ đã chọn bị trùng với lịch hẹn khác của bác sĩ. Hãy chọn giờ khác hoặc chọn bác sĩ khác.
-                    </p>
-                  </div>
-                }
-                className="mt-4"
-                onDismiss={() => setConflictError(null)}
-              />
-            )}
-
-            <form onSubmit={handleEditSubmit} className="mt-4 space-y-5">
+            <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                {/* CONFLICT ERROR ALERT BANNER */}
+                {conflictError && (
+                  <FormAlert
+                    type="warning"
+                    title="Phát hiện xung đột lịch hẹn!"
+                    message={
+                      <div>
+                        <p>{conflictError}</p>
+                        <p className="mt-1 text-[11px] opacity-80">
+                          Gợi ý: Khung giờ đã chọn bị trùng với lịch hẹn khác của bác sĩ. Hãy chọn giờ khác hoặc chọn bác sĩ khác.
+                        </p>
+                      </div>
+                    }
+                    className="mb-4"
+                    onDismiss={() => setConflictError(null)}
+                  />
+                )}
               <FormSection
                 title="Phụ trách & Dịch vụ"
                 description="Điều chỉnh bác sĩ khám hoặc gói dịch vụ điều trị"
@@ -1457,26 +1783,37 @@ function AppointmentsContent() {
                     required
                     error={conflictError ? 'Khung giờ này bị trùng lịch' : undefined}
                   >
-                    <select
-                      value={editForm.employee_id}
-                      onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          employee_id: Number(e.target.value),
-                        }))
-                      }
-                      className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
-                        conflictError
-                          ? 'border-amber-500 bg-amber-50/20'
-                          : 'border-slate-300 dark:border-slate-700'
-                      }`}
-                    >
-                      {employees.map((emp) => (
-                        <option key={emp.id} value={emp.id}>
-                          {emp.full_name} ({emp.position || emp.employee_code})
-                        </option>
-                      ))}
-                    </select>
+                    {isDoctorOnly ? (
+                      <div className="w-full px-3 py-2 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                        <span className="font-medium">
+                          👨‍⚕️ {user?.employee?.full_name || 'Bác sĩ'} ({user?.employee?.employee_code || 'BS'})
+                        </span>
+                        <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-2 py-0.5 rounded font-mono">
+                          Cố định
+                        </span>
+                      </div>
+                    ) : (
+                      <select
+                        value={editForm.employee_id}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            employee_id: Number(e.target.value),
+                          }))
+                        }
+                        className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none dark:bg-slate-800 dark:text-white ${
+                          conflictError
+                            ? 'border-amber-500 bg-amber-50/20'
+                            : 'border-slate-300 dark:border-slate-700'
+                        }`}
+                      >
+                        {employees.map((emp) => (
+                          <option key={emp.id} value={emp.id}>
+                            {emp.full_name} ({emp.position || emp.employee_code})
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </FormField>
 
                   <FormField
@@ -1654,9 +1991,10 @@ function AppointmentsContent() {
                   </FormField>
                 </div>
               </FormSection>
+              </div>
 
-              {/* Modal Buttons */}
-              <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+              {/* STICKY FOOTER */}
+              <div className="sticky bottom-0 z-20 shrink-0 flex items-center justify-end gap-3 border-t border-slate-200 bg-white/95 px-6 py-3.5 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}

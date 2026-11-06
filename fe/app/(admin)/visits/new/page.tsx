@@ -91,6 +91,7 @@ function CreateVisitContent() {
         setServices(servList);
         if (servList.length > 0 && !serviceId) {
           setServiceId(servList[0].id);
+          setUnitPrice(servList[0].price);
         }
       } else {
         console.error('Failed to load services', servRes.reason);
@@ -779,9 +780,13 @@ function CreateVisitContent() {
                 onChange={(e) => setUnitPrice(Math.max(0, Number(e.target.value)))}
                 className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
               />
-              {usageMode === 'PACKAGE' && (
+              {usageMode === 'PACKAGE' ? (
                 <span className="text-[11px] text-purple-600 font-medium">
                   Đã bao gồm trong gói dịch vụ (0 ₫)
+                </span>
+              ) : (
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                  ✓ Tự động lấy theo bảng giá niêm yết của dịch vụ
                 </span>
               )}
             </div>

@@ -20,6 +20,23 @@ class EmployeeController extends Controller
     ) {}
 
     /**
+     * Get next suggested auto-increment employee code.
+     * GET /api/v1/employees/next-code
+     */
+    public function nextCode(): JsonResponse
+    {
+        $code = $this->codeGenerator->generate();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lấy gợi ý mã nhân viên thành công.',
+            'data' => [
+                'suggested_code' => $code,
+            ],
+        ], 200);
+    }
+
+    /**
      * Display a listing of employees with search, filter, and pagination.
      */
     public function index(Request $request): JsonResponse

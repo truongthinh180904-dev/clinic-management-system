@@ -41,6 +41,27 @@ class InvoiceResource extends JsonResource
             'patient_package' => new PatientPackageResource($this->whenLoaded('patientPackage')),
             'creator' => new UserResource($this->whenLoaded('creator')),
             'payments' => $this->whenLoaded('payments'),
+            'clinical_record' => $this->whenLoaded('visit', function () {
+                $mr = $this->visit?->medicalRecord;
+                if (! $mr) {
+                    return null;
+                }
+
+                return [
+                    'id' => $mr->id,
+                    'doctor_id' => $mr->doctor_id,
+                    'doctor_name' => $mr->doctor?->full_name ?? $this->visit?->employee?->full_name,
+                    'diagnosis' => $mr->diagnosis,
+                    'medical_history' => $mr->medical_history,
+                    'indication' => $mr->indication,
+                    'result' => $mr->result,
+                    'treatment' => $mr->treatment,
+                    'follow_up_date' => $mr->follow_up_date instanceof \DateTimeInterface
+                        ? $mr->follow_up_date->format('Y-m-d')
+                        : (string) $mr->follow_up_date,
+                    'created_at' => $mr->created_at?->toIso8601String(),
+                ];
+            }),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

@@ -64,8 +64,13 @@ class AppointmentController extends Controller
             $query->whereDate('appointment_date', '<=', (string) $request->input('to_date'));
         }
 
-        // Filter by employee
-        if ($request->filled('employee_id')) {
+        // Filter by employee (Doctor Isolation: Doctor role only sees their own assigned appointments)
+        $currentUser = $request->user();
+        if ($currentUser && $currentUser->hasRole('DOCTOR') && ! $currentUser->hasRole(['ADMIN', 'MANAGER']) && ! ($currentUser->is_super_admin ?? false)) {
+            if ($currentUser->employee_id) {
+                $query->where('employee_id', (int) $currentUser->employee_id);
+            }
+        } elseif ($request->filled('employee_id')) {
             $query->where('employee_id', (int) $request->input('employee_id'));
         }
 

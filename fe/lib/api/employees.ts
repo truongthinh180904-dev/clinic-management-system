@@ -80,3 +80,10 @@ export async function deleteEmployee(
 ): Promise<ApiResponse<null>> {
   return apiClient.delete<null>(`/employees/${id}`);
 }
+
+/**
+ * Get next auto-increment employee code suggestion.
+ */
+export async function getNextEmployeeCode(): Promise<ApiResponse<{ suggested_code: string }>> {
+  return apiClient.get<{ suggested_code: string }>('/employees/next-code');
+}

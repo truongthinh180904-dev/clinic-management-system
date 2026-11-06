@@ -83,6 +83,7 @@ import {
   getImportBatchDetail,
   uploadImportFile,
   downloadModuleTemplate,
+  downloadExport,
   downloadExportCsv,
 } from '@/lib/api/data-transfer';
 
@@ -95,7 +96,7 @@ const MODULE_TEMPLATES: ModuleTemplateInfo[] = [
     sampleColumns: [
       'patient_code',
       'full_name*',
-      'date_of_birth*',
+      'date_of_birth* (dd/mm/yyyy)',
       'gender*',
       'phone*',
       'email',
@@ -380,33 +381,53 @@ export default function DataTransferPage() {
     );
   }, [inspectingBatch, errorSearch]);
 
-  // Export CSV Handler
-  const handleExport = async (type: ExportType) => {
+  // Export Handler (Hỗ trợ định dạng Excel .xls chuẩn Việt Nam và CSV)
+  const handleExport = async (type: ExportType, format: 'excel' | 'csv' = 'excel') => {
     try {
-      setDownloadingExport(type);
+      setDownloadingExport(`${type}_${format}`);
       if (type === 'patients') {
-        await downloadExportCsv('patients', {
-          status: patientExportStatus !== 'all' ? patientExportStatus : undefined,
-          gender: patientExportGender !== 'all' ? patientExportGender : undefined,
-        });
+        await downloadExport(
+          'patients',
+          {
+            format,
+            status: patientExportStatus !== 'all' ? patientExportStatus : undefined,
+            gender: patientExportGender !== 'all' ? patientExportGender : undefined,
+          },
+          format
+        );
       } else if (type === 'invoices') {
-        await downloadExportCsv('invoices', {
-          status: invoiceExportStatus !== 'all' ? invoiceExportStatus : undefined,
-          start_date: invoiceDateRange.start_date,
-          end_date: invoiceDateRange.end_date,
-        });
+        await downloadExport(
+          'invoices',
+          {
+            format,
+            status: invoiceExportStatus !== 'all' ? invoiceExportStatus : undefined,
+            start_date: invoiceDateRange.start_date,
+            end_date: invoiceDateRange.end_date,
+          },
+          format
+        );
       } else if (type === 'cashbook') {
-        await downloadExportCsv('cashbook', {
-          transaction_type: cashbookExportType !== 'all' ? cashbookExportType : undefined,
-          payment_method: cashbookMethod !== 'all' ? cashbookMethod : undefined,
-          start_date: cashbookDateRange.start_date,
-          end_date: cashbookDateRange.end_date,
-        });
+        await downloadExport(
+          'cashbook',
+          {
+            format,
+            transaction_type: cashbookExportType !== 'all' ? cashbookExportType : undefined,
+            payment_method: cashbookMethod !== 'all' ? cashbookMethod : undefined,
+            start_date: cashbookDateRange.start_date,
+            end_date: cashbookDateRange.end_date,
+          },
+          format
+        );
       } else if (type === 'inventory') {
-        await downloadExportCsv('inventory', {
-          start_date: inventoryDateRange.start_date,
-          end_date: inventoryDateRange.end_date,
-        });
+        await downloadExport(
+          'inventory',
+          {
+            format,
+            start_date: inventoryDateRange.start_date,
+            end_date: inventoryDateRange.end_date,
+          },
+          format
+        );
       }
     } catch (error) {
       alert(`Xuất dữ liệu thất bại: ${error instanceof Error ? error.message : 'Lỗi không xác định'}`);
@@ -1065,6 +1086,13 @@ export default function DataTransferPage() {
         {/* TAB 3: EXPORT CENTER */}
         {/* ========================================================================= */}
         <TabsContent value="export" className="mt-6 space-y-6">
+          <div className="rounded-lg bg-blue-50/70 p-3.5 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-900/60 flex items-start gap-3">
+            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+            <div className="text-xs text-blue-900 dark:text-blue-200 leading-relaxed">
+              <span className="font-semibold">Khuyến nghị khi mở file bằng Microsoft Excel:</span> Bấm chọn <span className="font-semibold text-emerald-700 dark:text-emerald-400">Xuất Excel (.xls)</span> để tệp tự động hiển thị ngày tháng chuẩn Việt Nam (<code className="font-mono bg-blue-100 dark:bg-blue-900 px-1 py-0.5 rounded">dd/mm/yyyy</code>), giữ nguyên số 0 đầu số điện thoại và cho phép tính toán, lọc ngày theo tháng/năm mà không bị lỗi <code className="font-mono bg-red-100 dark:bg-red-950 text-rose-600 px-1 py-0.5 rounded">#VALUE!</code>.
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* 1. Export Bệnh nhân */}
             <Card className="border-slate-200 dark:border-slate-800 flex flex-col justify-between">
@@ -1081,8 +1109,8 @@ export default function DataTransferPage() {
                       </CardDescription>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="text-[10px] font-mono">
-                    UTF-8 BOM (.CSV)
+                  <Badge variant="outline" className="text-[10px] font-medium border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950">
+                    Excel (.xls) & CSV
                   </Badge>
                 </div>
               </CardHeader>
@@ -1114,17 +1142,30 @@ export default function DataTransferPage() {
                     </select>
                   </div>
                 </div>
+                <div className="text-[11px] text-slate-500 bg-slate-50 dark:bg-slate-900 p-2 rounded border border-slate-100 dark:border-slate-800">
+                  💡 Giữ nguyên số 0 đầu số điện thoại, ngày sinh và ngày tạo định dạng chuẩn <span className="font-mono font-medium text-slate-700 dark:text-slate-300">dd/mm/yyyy</span>.
+                </div>
               </CardContent>
-              <CardFooter className="border-t border-slate-100 pt-3 dark:border-slate-800">
+              <CardFooter className="border-t border-slate-100 pt-3 dark:border-slate-800 gap-2">
                 <Button
                   variant="default"
                   size="sm"
-                  disabled={downloadingExport === 'patients'}
-                  onClick={() => handleExport('patients')}
-                  className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('patients', 'excel')}
+                  className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-sm"
                 >
-                  <Download className={cn('h-4 w-4', downloadingExport === 'patients' && 'animate-bounce')} />
-                  {downloadingExport === 'patients' ? 'Đang tạo file...' : 'Xuất CSV Danh Sách Bệnh Nhân'}
+                  <FileSpreadsheet className={cn('h-3.5 w-3.5', downloadingExport === 'patients_excel' && 'animate-spin')} />
+                  {downloadingExport === 'patients_excel' ? 'Đang tạo Excel...' : 'Xuất Excel (.xls)'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('patients', 'csv')}
+                  className="gap-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <Download className={cn('h-3.5 w-3.5', downloadingExport === 'patients_csv' && 'animate-bounce')} />
+                  {downloadingExport === 'patients_csv' ? '...' : 'CSV'}
                 </Button>
               </CardFooter>
             </Card>
@@ -1144,8 +1185,8 @@ export default function DataTransferPage() {
                       </CardDescription>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="text-[10px] font-mono">
-                    UTF-8 BOM (.CSV)
+                  <Badge variant="outline" className="text-[10px] font-medium border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950">
+                    Excel (.xls) & CSV
                   </Badge>
                 </div>
               </CardHeader>
@@ -1188,17 +1229,30 @@ export default function DataTransferPage() {
                     <option value="CANCELLED">Đã hủy (CANCELLED)</option>
                   </select>
                 </div>
+                <div className="text-[11px] text-slate-500 bg-slate-50 dark:bg-slate-900 p-2 rounded border border-slate-100 dark:border-slate-800">
+                  💡 Ngày phát hành định dạng <span className="font-mono font-medium text-slate-700 dark:text-slate-300">dd/mm/yyyy hh:mm:ss</span>, các cột số tiền tự động tính tổng được trong Excel.
+                </div>
               </CardContent>
-              <CardFooter className="border-t border-slate-100 pt-3 dark:border-slate-800">
+              <CardFooter className="border-t border-slate-100 pt-3 dark:border-slate-800 gap-2">
                 <Button
                   variant="default"
                   size="sm"
-                  disabled={downloadingExport === 'invoices'}
-                  onClick={() => handleExport('invoices')}
-                  className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('invoices', 'excel')}
+                  className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-sm"
                 >
-                  <Download className={cn('h-4 w-4', downloadingExport === 'invoices' && 'animate-bounce')} />
-                  {downloadingExport === 'invoices' ? 'Đang xuất hóa đơn...' : 'Xuất CSV Báo Cáo Hóa Đơn'}
+                  <FileSpreadsheet className={cn('h-3.5 w-3.5', downloadingExport === 'invoices_excel' && 'animate-spin')} />
+                  {downloadingExport === 'invoices_excel' ? 'Đang tạo Excel...' : 'Xuất Excel (.xls)'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('invoices', 'csv')}
+                  className="gap-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <Download className={cn('h-3.5 w-3.5', downloadingExport === 'invoices_csv' && 'animate-bounce')} />
+                  {downloadingExport === 'invoices_csv' ? '...' : 'CSV'}
                 </Button>
               </CardFooter>
             </Card>
@@ -1218,8 +1272,8 @@ export default function DataTransferPage() {
                       </CardDescription>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="text-[10px] font-mono">
-                    UTF-8 BOM (.CSV)
+                  <Badge variant="outline" className="text-[10px] font-medium border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950">
+                    Excel (.xls) & CSV
                   </Badge>
                 </div>
               </CardHeader>
@@ -1275,17 +1329,30 @@ export default function DataTransferPage() {
                     </select>
                   </div>
                 </div>
+                <div className="text-[11px] text-slate-500 bg-slate-50 dark:bg-slate-900 p-2 rounded border border-slate-100 dark:border-slate-800">
+                  💡 Thời gian ghi sổ hiển thị <span className="font-mono font-medium text-slate-700 dark:text-slate-300">dd/mm/yyyy hh:mm:ss</span>, hỗ trợ đối chiếu với sao kê ngân hàng.
+                </div>
               </CardContent>
-              <CardFooter className="border-t border-slate-100 pt-3 dark:border-slate-800">
+              <CardFooter className="border-t border-slate-100 pt-3 dark:border-slate-800 gap-2">
                 <Button
                   variant="default"
                   size="sm"
-                  disabled={downloadingExport === 'cashbook'}
-                  onClick={() => handleExport('cashbook')}
-                  className="w-full gap-2 bg-sky-600 hover:bg-sky-700 text-white font-medium"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('cashbook', 'excel')}
+                  className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-sm"
                 >
-                  <Download className={cn('h-4 w-4', downloadingExport === 'cashbook' && 'animate-bounce')} />
-                  {downloadingExport === 'cashbook' ? 'Đang trích xuất...' : 'Xuất CSV Báo Cáo Sổ Quỹ'}
+                  <FileSpreadsheet className={cn('h-3.5 w-3.5', downloadingExport === 'cashbook_excel' && 'animate-spin')} />
+                  {downloadingExport === 'cashbook_excel' ? 'Đang tạo Excel...' : 'Xuất Excel (.xls)'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('cashbook', 'csv')}
+                  className="gap-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <Download className={cn('h-3.5 w-3.5', downloadingExport === 'cashbook_csv' && 'animate-bounce')} />
+                  {downloadingExport === 'cashbook_csv' ? '...' : 'CSV'}
                 </Button>
               </CardFooter>
             </Card>
@@ -1305,8 +1372,8 @@ export default function DataTransferPage() {
                       </CardDescription>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="text-[10px] font-mono">
-                    UTF-8 BOM (.CSV)
+                  <Badge variant="outline" className="text-[10px] font-medium border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950">
+                    Excel (.xls) & CSV
                   </Badge>
                 </div>
               </CardHeader>
@@ -1335,20 +1402,30 @@ export default function DataTransferPage() {
                     />
                   </div>
                 </div>
-                <div className="rounded-lg bg-slate-50 p-2.5 text-[11px] text-slate-500 dark:bg-slate-900">
-                  File CSV xuất ra chứa đầy đủ: Mã SP, Tên sản phẩm, Đơn vị, Tồn đầu, Tổng nhập, Tổng xuất, Tồn cuối, Định mức tối thiểu và Trạng thái cảnh báo.
+                <div className="text-[11px] text-slate-500 bg-slate-50 dark:bg-slate-900 p-2 rounded border border-slate-100 dark:border-slate-800">
+                  💡 Các chỉ số Tồn đầu, Nhập, Xuất, Điều chỉnh, Tồn cuối định dạng số thập phân tự động căn phải và tính toán trực tiếp.
                 </div>
               </CardContent>
-              <CardFooter className="border-t border-slate-100 pt-3 dark:border-slate-800">
+              <CardFooter className="border-t border-slate-100 pt-3 dark:border-slate-800 gap-2">
                 <Button
                   variant="default"
                   size="sm"
-                  disabled={downloadingExport === 'inventory'}
-                  onClick={() => handleExport('inventory')}
-                  className="w-full gap-2 bg-amber-600 hover:bg-amber-700 text-white font-medium"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('inventory', 'excel')}
+                  className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-sm"
                 >
-                  <Download className={cn('h-4 w-4', downloadingExport === 'inventory' && 'animate-bounce')} />
-                  {downloadingExport === 'inventory' ? 'Đang trích xuất...' : 'Xuất CSV Báo Cáo Tồn Kho'}
+                  <FileSpreadsheet className={cn('h-3.5 w-3.5', downloadingExport === 'inventory_excel' && 'animate-spin')} />
+                  {downloadingExport === 'inventory_excel' ? 'Đang tạo Excel...' : 'Xuất Excel (.xls)'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('inventory', 'csv')}
+                  className="gap-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <Download className={cn('h-3.5 w-3.5', downloadingExport === 'inventory_csv' && 'animate-bounce')} />
+                  {downloadingExport === 'inventory_csv' ? '...' : 'CSV'}
                 </Button>
               </CardFooter>
             </Card>

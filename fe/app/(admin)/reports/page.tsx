@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Search,
   Download,
+  FileSpreadsheet,
   PackagePlus,
   PackageMinus,
   PieChart as PieChartIcon,
@@ -86,6 +87,7 @@ import {
   getClinicalReport,
   getInventoryReport,
 } from '@/lib/api/reports';
+import { downloadExport } from '@/lib/api/data-transfer';
 import { getBaseUrl, getStoredToken } from '@/lib/api/client';
 
 // Helper to format ISO date string (YYYY-MM-DD)
@@ -262,14 +264,34 @@ export default function ReportsPage() {
     else if (activeTab === 'inventory') fetchInventory();
   };
 
-  // Export report to CSV
+  // State for tracking export downloading
+  const [downloadingExport, setDownloadingExport] = useState<string | null>(null);
+
+  // Export report to native Excel (.xls) or CSV
+  const handleExport = async (
+    module: 'cashbook' | 'invoices' | 'inventory',
+    format: 'excel' | 'csv' = 'excel'
+  ) => {
+    try {
+      setDownloadingExport(`${module}_${format}`);
+      await downloadExport(
+        module,
+        {
+          start_date: startDate,
+          end_date: endDate,
+        },
+        format
+      );
+    } catch (error) {
+      alert(`Xuất báo cáo thất bại: ${error instanceof Error ? error.message : 'Lỗi không xác định'}`);
+    } finally {
+      setDownloadingExport(null);
+    }
+  };
+
+  // Backward compatible export report to CSV
   const handleExportCsv = (module: 'cashbook' | 'invoices' | 'inventory') => {
-    const baseUrl = getBaseUrl();
-    const token = getStoredToken();
-    const url = `${baseUrl}/exports/${module}?start_date=${startDate}&end_date=${endDate}${
-      token ? `&token=${token}` : ''
-    }`;
-    window.open(url, '_blank');
+    handleExport(module, 'csv');
   };
 
   // Filtered Inventory items
@@ -537,40 +559,79 @@ export default function ReportsPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Export Action */}
-          <div>
+          {/* Export Action Buttons (Excel .xls & CSV) */}
+          <div className="flex items-center gap-2">
             {activeTab === 'financial' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExportCsv('cashbook')}
-                className="flex items-center space-x-1.5 text-xs h-9"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Xuất CSV Sổ quỹ</span>
-              </Button>
+              <>
+                <Button
+                  variant="default"
+                  size="sm"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('cashbook', 'excel')}
+                  className="flex items-center space-x-1.5 text-xs h-9 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                >
+                  <FileSpreadsheet className={cn('h-3.5 w-3.5', downloadingExport === 'cashbook_excel' && 'animate-spin')} />
+                  <span>{downloadingExport === 'cashbook_excel' ? 'Đang tạo Excel...' : 'Xuất Excel Sổ quỹ (.xls)'}</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('cashbook', 'csv')}
+                  className="flex items-center space-x-1 text-xs h-9 text-slate-600 hover:bg-slate-100"
+                >
+                  <Download className={cn('h-3.5 w-3.5', downloadingExport === 'cashbook_csv' && 'animate-bounce')} />
+                  <span>CSV</span>
+                </Button>
+              </>
             )}
             {activeTab === 'clinical' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExportCsv('invoices')}
-                className="flex items-center space-x-1.5 text-xs h-9"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Xuất CSV Doanh thu</span>
-              </Button>
+              <>
+                <Button
+                  variant="default"
+                  size="sm"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('invoices', 'excel')}
+                  className="flex items-center space-x-1.5 text-xs h-9 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                >
+                  <FileSpreadsheet className={cn('h-3.5 w-3.5', downloadingExport === 'invoices_excel' && 'animate-spin')} />
+                  <span>{downloadingExport === 'invoices_excel' ? 'Đang tạo Excel...' : 'Xuất Excel Doanh thu (.xls)'}</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('invoices', 'csv')}
+                  className="flex items-center space-x-1 text-xs h-9 text-slate-600 hover:bg-slate-100"
+                >
+                  <Download className={cn('h-3.5 w-3.5', downloadingExport === 'invoices_csv' && 'animate-bounce')} />
+                  <span>CSV</span>
+                </Button>
+              </>
             )}
             {activeTab === 'inventory' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExportCsv('inventory')}
-                className="flex items-center space-x-1.5 text-xs h-9"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Xuất CSV Tồn kho</span>
-              </Button>
+              <>
+                <Button
+                  variant="default"
+                  size="sm"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('inventory', 'excel')}
+                  className="flex items-center space-x-1.5 text-xs h-9 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                >
+                  <FileSpreadsheet className={cn('h-3.5 w-3.5', downloadingExport === 'inventory_excel' && 'animate-spin')} />
+                  <span>{downloadingExport === 'inventory_excel' ? 'Đang tạo Excel...' : 'Xuất Excel Tồn kho (.xls)'}</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!!downloadingExport}
+                  onClick={() => handleExport('inventory', 'csv')}
+                  className="flex items-center space-x-1 text-xs h-9 text-slate-600 hover:bg-slate-100"
+                >
+                  <Download className={cn('h-3.5 w-3.5', downloadingExport === 'inventory_csv' && 'animate-bounce')} />
+                  <span>CSV</span>
+                </Button>
+              </>
             )}
           </div>
         </div>

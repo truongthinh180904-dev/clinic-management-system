@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Models\AuditLog;
+use App\Models\Invoice;
 use App\Models\Patient;
 use App\Models\PatientPackage;
 use App\Models\Service;
@@ -595,6 +597,42 @@ class VisitService
                 $visit->notes = $notes;
             }
             $visit->save();
+
+            // Auto-create Invoice when visit is completed if not already exists
+            if ($newStatus === Visit::STATUS_COMPLETED) {
+                $existingInvoice = Invoice::where('visit_id', $visit->id)
+                    ->where('status', '!=', 'CANCELLED')
+                    ->first();
+
+                if (! $existingInvoice) {
+                    $serviceCost = $visit->patient_package_id
+                        ? 0.0
+                        : (float) ($visit->total_amount ?? $visit->unit_price ?? 0.0);
+                    $discount = (float) ($visit->discount_amount ?? 0.0);
+                    $subtotal = round($serviceCost, 2);
+                    $total = max(0.0, round($subtotal - $discount, 2));
+
+                    $code = InvoiceController::generateInvoiceCode();
+
+                    Invoice::create([
+                        'invoice_code' => $code,
+                        'patient_id' => $visit->patient_id,
+                        'visit_id' => $visit->id,
+                        'patient_package_id' => $visit->patient_package_id,
+                        'subtotal_amount' => $subtotal,
+                        'discount_amount' => $discount,
+                        'total_amount' => $total,
+                        'paid_amount' => 0.00,
+                        'remaining_amount' => $total,
+                        'status' => ($total == 0.0) ? 'PAID' : 'UNPAID',
+                        'issued_at' => now(),
+                        'created_by' => $actor?->id,
+                    ]);
+
+                    $visit->payment_status = ($total == 0.0) ? Visit::PAYMENT_STATUS_PAID : Visit::PAYMENT_STATUS_UNPAID;
+                    $visit->save();
+                }
+            }
 
             $this->updatePatientVisitDates((int) $visit->patient_id);
 
