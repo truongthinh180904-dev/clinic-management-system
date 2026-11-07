@@ -32,6 +32,7 @@ import { StatCard } from '@/components/ui/stat-card';
 import { Pagination } from '@/components/ui/pagination';
 import { EmptySearchState, EmptyDataState, ErrorState } from '@/components/ui/empty-state';
 import { User, Phone, FileHeart, Users, UserCheck, UserX, UserMinus, Search, X } from 'lucide-react';
+import { DatabaseDemoSection } from '@/components/database-demo/DatabaseDemoSection';
 
 const STATUS_MAP: Record<PatientStatus, { label: string; badgeClass: string }> = {
   ACTIVE: {
@@ -944,6 +945,13 @@ export default function PatientsPage() {
         isLoading={isDeleting}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletePatientItem(null)}
+      />
+
+      {/* Database Information Management Demo Section */}
+      <DatabaseDemoSection
+        module="patients"
+        title="QUẢN LÝ THÔNG TIN – DEMO DATABASE BỆNH NHÂN & HỒ SƠ"
+        description="Demo các Trigger cập nhật lần khám gần nhất, kiểm soát sửa bệnh án sau thanh toán, lưu vết xóa và Function tính công nợ"
       />
     </div>
   );

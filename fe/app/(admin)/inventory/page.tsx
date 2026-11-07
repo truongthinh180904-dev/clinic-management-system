@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '@/lib/auth/auth-context';
+import { DatabaseDemoSection } from '@/components/database-demo/DatabaseDemoSection';
 import { formatDate, formatDateTime, cn } from '@/lib/utils';
 import { toast } from '@/components/ui/toast';
 import { PageHeader } from '@/components/ui/page-header';
@@ -1529,6 +1530,13 @@ export default function InventoryPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Database Information Management Demo Section */}
+      <DatabaseDemoSection
+        module="inventory"
+        title="QUẢN LÝ THÔNG TIN – DEMO DATABASE KHO DƯỢC & VẬT TƯ"
+        description="Demo các Trigger ngăn chặn âm kho, Function kiểm tra trạng thái tồn kho và Stored Procedure tạo hóa đơn xuất thuốc"
+      />
     </div>
   );
 }

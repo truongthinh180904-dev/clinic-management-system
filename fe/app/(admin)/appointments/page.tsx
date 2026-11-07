@@ -45,6 +45,7 @@ import {
   FormAlert,
 } from '@/components/ui/form-field';
 import { User, Calendar, Clock, Stethoscope, AlertTriangle, UserPlus, Search } from 'lucide-react';
+import { DatabaseDemoSection } from '@/components/database-demo/DatabaseDemoSection';
 
 function AppointmentsContent() {
   const { user, hasPermission, hasRole } = useAuth();
@@ -2154,6 +2155,13 @@ function AppointmentsContent() {
         isLoading={isDeletingAppt}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteApptItem(null)}
+      />
+
+      {/* Database Information Management Demo Section */}
+      <DatabaseDemoSection
+        module="appointments"
+        title="QUẢN LÝ THÔNG TIN – DEMO DATABASE LỊCH HẸN"
+        description="Demo các câu lệnh Stored Procedure và Trigger quản lý thông tin đặt lịch, tiếp đón nguyên tử và hủy lịch"
       />
     </div>
   );

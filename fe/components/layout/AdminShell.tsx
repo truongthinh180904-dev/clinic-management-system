@@ -35,7 +35,9 @@ import {
   ChevronLeft,
   Hospital,
   Activity,
+  Database,
 } from 'lucide-react';
+import { MasterDatabaseDemoCenter } from '@/components/database-demo/MasterDatabaseDemoCenter';
 
 interface AdminShellProps {
   children: React.ReactNode;
@@ -251,6 +253,7 @@ function AdminShellInner({ children }: AdminShellProps) {
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState<number>(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDemoCenterOpen, setIsDemoCenterOpen] = useState(false);
 
   // Initialize collapse preference from localStorage and auto-collapse for tablet/laptop viewports
   useEffect(() => {
@@ -653,6 +656,21 @@ function AdminShellInner({ children }: AdminShellProps) {
               </kbd>
             </button>
 
+            {/* Quick Database Demo Launcher */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDemoCenterOpen(true)}
+              className="hidden md:flex items-center gap-1.5 h-8 px-2.5 text-xs font-bold border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 bg-indigo-50/80 hover:bg-indigo-100 dark:bg-indigo-950/60 shadow-xs cursor-pointer"
+              title="Mở Trung tâm Quản lý Thông tin & Demo CSDL (15 Câu lệnh SQL)"
+            >
+              <Database className="h-3.5 w-3.5 text-indigo-600" />
+              <span>Demo CSDL</span>
+              <span className="rounded bg-indigo-200/80 dark:bg-indigo-900 px-1 py-0 text-[10px] font-mono text-indigo-800 dark:text-indigo-200">
+                15 SQL
+              </span>
+            </Button>
+
             {/* Notifications Shortcut with Real Unread Badge */}
             <Link
               href="/notifications"
@@ -812,6 +830,12 @@ function AdminShellInner({ children }: AdminShellProps) {
           </div>
         </div>
       )}
+
+      {/* Master Database Information Management Demo Modal */}
+      <MasterDatabaseDemoCenter
+        isOpen={isDemoCenterOpen}
+        onClose={() => setIsDemoCenterOpen(false)}
+      />
     </div>
   );
 }

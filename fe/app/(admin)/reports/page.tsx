@@ -89,6 +89,8 @@ import {
 } from '@/lib/api/reports';
 import { downloadExport } from '@/lib/api/data-transfer';
 import { getBaseUrl, getStoredToken } from '@/lib/api/client';
+import { AiReportAssistant } from '@/components/reports/AiReportAssistant';
+import { DatabaseDemoSection } from '@/components/database-demo/DatabaseDemoSection';
 
 // Helper to format ISO date string (YYYY-MM-DD)
 function toISODate(d: Date): string {
@@ -151,7 +153,7 @@ export default function ReportsPage() {
   }, []);
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState<'financial' | 'clinical' | 'inventory'>('financial');
+  const [activeTab, setActiveTab] = useState<'financial' | 'clinical' | 'inventory' | 'ai-assistant'>('financial');
 
   // Date range filter state
   const [activePreset, setActivePreset] = useState<PresetKey | ''>('thisMonth');
@@ -531,31 +533,41 @@ export default function ReportsPage() {
       <Tabs
         defaultValue="financial"
         value={activeTab}
-        onValueChange={(val) => setActiveTab(val as 'financial' | 'clinical' | 'inventory')}
+        onValueChange={(val) => setActiveTab(val as 'financial' | 'clinical' | 'inventory' | 'ai-assistant')}
         className="w-full space-y-6"
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <TabsList className="grid grid-cols-3 w-full max-w-xl bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-2xl bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
             <TabsTrigger
               value="financial"
-              className="flex items-center justify-center space-x-2 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
+              className="flex items-center justify-center space-x-2 py-2 text-xs sm:text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
             >
               <DollarSign className="h-4 w-4" />
               <span>Báo cáo Tài chính</span>
             </TabsTrigger>
             <TabsTrigger
               value="clinical"
-              className="flex items-center justify-center space-x-2 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
+              className="flex items-center justify-center space-x-2 py-2 text-xs sm:text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
             >
               <Stethoscope className="h-4 w-4" />
               <span>Báo cáo Khám bệnh</span>
             </TabsTrigger>
             <TabsTrigger
               value="inventory"
-              className="flex items-center justify-center space-x-2 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
+              className="flex items-center justify-center space-x-2 py-2 text-xs sm:text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
             >
               <Boxes className="h-4 w-4" />
               <span>Báo cáo Kho Dược</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="ai-assistant"
+              className="flex items-center justify-center space-x-1.5 py-2 text-xs sm:text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm rounded-lg"
+            >
+              <Sparkles className="h-4 w-4 text-indigo-500 animate-pulse" />
+              <span>Trợ lý AI</span>
+              <span className="hidden md:inline-flex px-1.5 py-0 text-[10px] font-semibold bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded">
+                Flash
+              </span>
             </TabsTrigger>
           </TabsList>
 
@@ -632,6 +644,12 @@ export default function ReportsPage() {
                   <span>CSV</span>
                 </Button>
               </>
+            )}
+            {activeTab === 'ai-assistant' && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs font-medium shadow-xs">
+                <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+                <span>AI Sẵn sàng hỗ trợ Lãnh đạo</span>
+              </div>
             )}
           </div>
         </div>
@@ -1462,7 +1480,19 @@ export default function ReportsPage() {
             </>
           ) : null}
         </TabsContent>
+
+        {/* AI Executive Assistant Tab */}
+        <TabsContent value="ai-assistant" className="space-y-6">
+          <AiReportAssistant />
+        </TabsContent>
       </Tabs>
+
+      {/* Database Information Management Demo Section */}
+      <DatabaseDemoSection
+        module="reports"
+        title="QUẢN LÝ THÔNG TIN – DEMO DATABASE BÁO CÁO & PHÂN TÍCH"
+        description="Demo các Stored Procedure báo cáo doanh thu, Function tính KPI và các Cursor duyệt dữ liệu tuần tự"
+      />
     </div>
   );
 }

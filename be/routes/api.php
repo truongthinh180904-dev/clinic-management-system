@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AiAssistantController;
 use App\Http\Controllers\Api\V1\AlertRuleController;
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\ApprovalRequestController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CashTransactionController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DatabaseDemoController;
 use App\Http\Controllers\Api\V1\DebtController;
 use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\ExpenseCategoryController;
@@ -702,6 +704,37 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/inventory', [ReportController::class, 'inventory'])
                 ->middleware('permission:reports.view')
                 ->name('api.v1.reports.inventory');
+        });
+
+        // AI Executive Assistant Management (Gemini 2.5 Flash)
+        Route::prefix('ai/reports')->middleware(['permission:reports.view'])->group(function (): void {
+            Route::get('/status', [AiAssistantController::class, 'status'])
+                ->name('api.v1.ai.reports.status');
+
+            Route::get('/quick-insights', [AiAssistantController::class, 'quickInsights'])
+                ->name('api.v1.ai.reports.quick-insights');
+
+            Route::post('/chat', [AiAssistantController::class, 'chat'])
+                ->middleware('throttle:30,1')
+                ->name('api.v1.ai.reports.chat');
+        });
+
+        // Database Information Management Demo (5 SP, 5 Trigger, 3 Function, 2 Cursor)
+        Route::prefix('database-demo')->group(function (): void {
+            Route::get('/objects', [DatabaseDemoController::class, 'index'])
+                ->name('api.v1.database-demo.objects');
+
+            Route::get('/objects/{name}', [DatabaseDemoController::class, 'show'])
+                ->name('api.v1.database-demo.show');
+
+            Route::post('/execute', [DatabaseDemoController::class, 'execute'])
+                ->name('api.v1.database-demo.execute');
+
+            Route::get('/history', [DatabaseDemoController::class, 'history'])
+                ->name('api.v1.database-demo.history');
+
+            Route::get('/stats', [DatabaseDemoController::class, 'stats'])
+                ->name('api.v1.database-demo.stats');
         });
 
         // Data Import & Batch Tracking

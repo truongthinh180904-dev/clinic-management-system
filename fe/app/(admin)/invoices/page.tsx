@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '@/lib/auth/auth-context';
+import { DatabaseDemoSection } from '@/components/database-demo/DatabaseDemoSection';
 import { formatCurrency, formatDate, formatDateTime, parsePrescriptionDrugCost, cn } from '@/lib/utils';
 import { toast } from '@/components/ui/toast';
 import { PageHeader } from '@/components/ui/page-header';
@@ -1509,6 +1510,13 @@ export default function InvoicesPage() {
           )}
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Database Information Management Demo Section */}
+      <DatabaseDemoSection
+        module="invoices"
+        title="QUẢN LÝ THÔNG TIN – DEMO DATABASE HÓA ĐƠN & VIỆN PHÍ"
+        description="Demo các Stored Procedure tạo hóa đơn & xuất kho, xử lý thanh toán nhiều đợt và Function tính công nợ"
+      />
     </div>
   );
 }

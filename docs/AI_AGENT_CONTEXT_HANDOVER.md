@@ -122,22 +122,23 @@ Toàn bộ tài khoản có mật khẩu mặc định: `Admin@123456`
    - **Giải pháp Frontend:**
      - Tại [`/data-transfer`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/fe/app/(admin)/data-transfer/page.tsx): Bổ sung 2 nút tải riêng biệt trên cả 4 thẻ Báo cáo (Bệnh nhân, Hóa đơn & Công nợ, Sổ quỹ Thu Chi, Báo cáo Tồn kho): Nút chính nổi bật `[📊 Xuất Excel (.xls)]` và nút phụ `[📄 CSV]`.
      - Tại [`/reports`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/fe/app/(admin)/reports/page.tsx): Nâng cấp đồng bộ cả 3 tab (Báo cáo Tài chính, Báo cáo Khám bệnh, Báo cáo Kho dược) với 2 nút `[📊 Xuất Excel ... (.xls)]` và `[📄 CSV]`, sử dụng fetch blob chuẩn Token xác thực thay cho `window.open` URL thô cũ.
-
-8. **Gợi ý mã nhân viên tự động & Khắc phục Modal form dài bị che Header / Cắt phần đầu:**
-   - **Gợi ý mã nhân viên tự động:**
-     - Backend: Cung cấp endpoint `GET /api/v1/employees/next-code` (gọi [`EmployeeCodeGenerator::generate()`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/be/app/Services/EmployeeCodeGenerator.php)) trả về mã tăng kế tiếp (ví dụ `NV000008`).
-     - Frontend ([`/employees`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/fe/app/(admin)/employees/page.tsx)): Tích hợp nút badge tương tác 1-Click: `Mã đề xuất kế tiếp: NV00000X [← Nhấn để chọn]`. Nhấn vào sẽ tự động điền vào ô input và chuyển sang trạng thái `✓ Đã chọn`.
-   - **Chuẩn hóa kiến trúc Modal Form dài chống che Header / Cắt nhóm thông tin cá nhân:**
-     - *Nguyên nhân cũ:* Flexbox `items-center` kết hợp `overflow-y-auto` trên container khi form dài hơn chiều cao màn hình khiến nửa trên modal bị đẩy lên tọa độ âm (`top < 0`), trình duyệt không cuộn ngược lên được và làm biến mất thanh tiêu đề / nút X.
-     - *Kiến trúc chuẩn đã áp dụng đồng bộ trên [`/employees`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/fe/app/(admin)/employees/page.tsx), [`/patients`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/fe/app/(admin)/patients/page.tsx), [`/appointments`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/fe/app/(admin)/appointments/page.tsx):*
-       - Outer container: `items-start sm:items-center` + `overflow-y-auto`.
-       - Modal card: `max-h-[90vh] flex flex-col overflow-hidden my-auto`.
-       - Header: `sticky top-0 z-20 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b` (luôn hiển thị trên cùng, không bao giờ bị che).
-       - Body form: `<form className="flex flex-col flex-1 min-h-0 overflow-hidden"><div className="flex-1 overflow-y-auto p-6 space-y-5">...</div>...`.
-       - Footer: `sticky bottom-0 z-20 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-t` (luôn hiển thị dưới cùng).
-
-9. **Cơ chế Tự Động Khởi Tạo Tài Khoản Demo (Self-Healing Auto-Provisioning RBAC):**
-   - Tại [`AuthController.php`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/be/app/Http/Controllers/Api/V1/AuthController.php): Tích hợp hàm `ensureDemoAccount($username)`. Khi người dùng đăng nhập bằng bất kỳ vai trò nào trong 8 vai trò (`admin`, `manager`, `doctor`, `nurse`, `receptionist`, `cashier`, `accountant`, `employee`), backend sẽ tự động kiểm tra cơ sở dữ liệu. Nếu tài khoản hoặc vai trò chưa được seed trước đó, hệ thống sẽ tự động tạo Role, tạo User với mật khẩu `Admin@123456`, kích hoạt `ACTIVE` và gán quyền RBAC ngay trong quá trình xử lý đăng nhập mà không cần chạy lệnh `db:seed` thủ công từ terminal.
+16. **Trợ lý Điều hành AI Cấp cao & Chatbot Báo cáo Tổng hợp (Google Gemini 2.5 Flash):**
+   - **Vị trí tích hợp:** Tab riêng biệt "Trợ lý AI (Flash)" trong Trung tâm Báo cáo Quản trị ([`/reports`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/fe/app/(admin)/reports/page.tsx)).
+   - **Cơ chế Data Grounding (Độ chính xác 100%):** Backend ([`GeminiReportService.php`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/be/app/Services/GeminiReportService.php)) tự động trích xuất bản Snapshot số liệu thực tế thời gian thực từ CSDL MySQL (Doanh thu thực thu, ca khám chờ/hoàn tất, cảnh báo tồn kho hết hàng/dưới định mức, công nợ, hiệu suất KPI bác sĩ) làm Chân lý dữ liệu (Ground Truth) nạp vào System Instruction của Gemini. Chặn tuyệt đối hiện tượng bịa đặt số liệu (Hallucination).
+   - **Tối ưu Tốc độ & Chi phí:** Mặc định sử dụng model siêu tốc `gemini-2.5-flash` (độ trễ phản hồi < 1s), tự động fallback linh hoạt sang `gemini-2.0-flash` hoặc `gemini-1.5-flash`.
+   - **Cấu hình môi trường:** Quản trị qua tệp `be/.env`: `GEMINI_API_KEY` và `GEMINI_MODEL`. Khi chưa cấu hình key, giao diện hiển thị hướng dẫn thân thiện, hoàn toàn không làm gián đoạn hay ảnh hưởng tới các chức năng khác của hệ thống.
+   - **Giao diện chuẩn ChatGPT:** Thiết kế chuyên nghiệp gồm thanh KPI tóm tắt, 5 câu hỏi nhanh 1-Click (Quick Prompts), bong bóng chat Markdown (hỗ trợ bảng số liệu, in đậm chỉ số, bullet points), sao chép câu trả lời và làm mới phiên chat.
+17. **Phân hệ Demo Quản lý Thông tin Database (5 Stored Procedures, 5 Triggers, 3 Functions, 2 Cursors & Audit Trail):**
+   - **Mục đích:** Phục vụ trực tiếp việc báo cáo và chấm điểm đồ án môn học Quản lý thông tin / Cơ sở dữ liệu với giảng viên UIT.
+   - **Bố trí giao diện:**
+     - Tích hợp khối **`QUẢN LÝ THÔNG TIN – DATABASE DEMO`** có thể thu gọn/mở rộng tại chân trang của 5 phân hệ: Lịch hẹn ([`/appointments`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/fe/app/(admin)/appointments/page.tsx)), Bệnh nhân ([`/patients`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/fe/app/(admin)/patients/page.tsx)), Hóa đơn ([`/invoices`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/fe/app/(admin)/invoices/page.tsx)), Kho Dược ([`/inventory`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/fe/app/(admin)/inventory/page.tsx)), Báo cáo ([`/reports`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/fe/app/(admin)/reports/page.tsx)).
+     - Tích hợp nút kích hoạt nhanh `Demo CSDL [15 SQL]` trên thanh Topbar toàn hệ thống mở cửa sổ điều khiển tổng hợp `MasterDatabaseDemoCenter`.
+   - **Tính năng chuyên sâu:**
+     - Hiển thị mã nguồn SQL thực tế (`CREATE PROCEDURE/TRIGGER/FUNCTION`) kèm nút sao chép 1-Click.
+     - Chạy thử nghiệm DEMO trực tiếp trên CSDL, đo đạc thời gian mili-giây (`duration_ms`).
+     - So sánh trực quan dữ liệu Trước (Before) và Sau (After) khi câu lệnh thực thi.
+     - Bảng theo dõi lịch sử thay đổi dữ liệu minh bạch (`db_demo_audit_logs`).
+   - **Cam kết bảo toàn:** Chạy trên cơ chế sandbox an toàn, tuyệt đối không làm sai lệch hay xóa mất dữ liệu nghiệp vụ thật của phòng khám.
 
 ---
 
@@ -159,7 +160,7 @@ Toàn bộ tài khoản có mật khẩu mặc định: `Admin@123456`
 | `/finance/cashbook` | Tài chính & Sổ quỹ | Quản lý phiếu thu, phiếu chi, dòng tiền mặt và ngân hàng |
 | `/inventory` | Kho dược | Danh mục thuốc, tồn kho, nhập kho, cảnh báo hết thuốc |
 | `/kpi` | Quản trị & Báo cáo | Theo dõi chỉ tiêu và kết quả thực tế của từng bác sĩ |
-| `/reports` | Quản trị & Báo cáo | Báo cáo doanh thu đa chiều, cơ cấu thu tiền, biểu đồ tăng trưởng |
+| `/reports` | Quản trị & Báo cáo | Báo cáo doanh thu đa chiều, biểu đồ tăng trưởng và Trợ lý Điều hành AI (Gemini 2.5 Flash) |
 | `/data-transfer` | Quản trị | Import/Export danh mục và dữ liệu Excel/CSV |
 | `/employees` | Quản trị | Quản lý hồ sơ nhân viên, bác sĩ, lịch công tác |
 | `/users` | Phân quyền | Cấp tài khoản người dùng, gán vai trò RBAC |
