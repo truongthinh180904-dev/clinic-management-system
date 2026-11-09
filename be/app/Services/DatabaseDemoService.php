@@ -16,9 +16,9 @@ use Illuminate\Support\Facades\Schema;
 class DatabaseDemoService
 {
     /**
-     * Tự động khởi tạo cấu trúc bảng db_demo_audit_logs nếu chưa chạy migrate thủ công (Self-healing).
+     * Tự động khởi tạo cấu trúc bảng db_demo_audit_logs và biên dịch 15 đối tượng SQL nếu chưa sẵn sàng (Self-healing).
      */
-    public function ensureSchemaReady(): void
+    public function ensureSchemaReady(bool $forceRebuild = false): array
     {
         try {
             if (!Schema::hasTable('db_demo_audit_logs')) {
@@ -38,9 +38,723 @@ class DatabaseDemoService
                     $table->timestamps();
                 });
             }
+
+            // Kiểm tra xem đối tượng SQL đầu tiên (sp_demo_tiep_nhan_benh_nhan) đã được biên dịch trong MySQL chưa
+            if ($forceRebuild || !$this->isSchemaCompiled()) {
+                return $this->deployAllSqlObjects();
+            }
+
+            return ['success' => true, 'message' => 'Schema và 15 đối tượng CSDL đã sẵn sàng.'];
         } catch (\Throwable $e) {
             Log::info("Audit log table check note: " . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage()];
         }
+    }
+
+    /**
+     * Kiểm tra xem các thủ tục SQL demo đã thực sự tồn tại trong MySQL chưa.
+     */
+    public function isSchemaCompiled(): bool
+    {
+        try {
+            $dbName = DB::connection()->getDatabaseName();
+            $res = DB::select("
+                SELECT COUNT(*) AS cnt 
+                FROM information_schema.ROUTINES 
+                WHERE ROUTINE_SCHEMA = ? 
+                  AND ROUTINE_NAME = 'sp_demo_tiep_nhan_benh_nhan'
+            ", [$dbName]);
+
+            return !empty($res) && ($res[0]->cnt ?? 0) > 0;
+        } catch (\Throwable $e) {
+            Log::warning("isSchemaCompiled check failed: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Tự động biên dịch toàn bộ 15 đối tượng Quản lý thông tin (5 SP, 5 Trigger, 3 Function, 2 Cursor) vào MySQL.
+     *
+     * @return array<string, mixed>
+     */
+    public function deployAllSqlObjects(): array
+    {
+        $compiled = [];
+        $errors = [];
+
+        // 1. Dọn dẹp an toàn các đối tượng cũ nếu có
+        $dropStatements = [
+            // Triggers
+            "DROP TRIGGER IF EXISTS trg_demo_chong_trung_lich_bs",
+            "DROP TRIGGER IF EXISTS trg_demo_kiem_soat_sua_benh_an_paid",
+            "DROP TRIGGER IF EXISTS trg_demo_ngan_so_luong_thuoc_am",
+            "DROP TRIGGER IF EXISTS trg_demo_cap_nhat_lan_kham_gan_nhat",
+            "DROP TRIGGER IF EXISTS trg_demo_ghi_nhat_ky_xoa_benh_nhan",
+            // Procedures & Cursors
+            "DROP PROCEDURE IF EXISTS sp_demo_tiep_nhan_benh_nhan",
+            "DROP PROCEDURE IF EXISTS sp_demo_tao_hoa_don_xuat_thuoc",
+            "DROP PROCEDURE IF EXISTS sp_demo_thanh_toan_hoa_don",
+            "DROP PROCEDURE IF EXISTS sp_demo_bao_cao_doanh_thu_bac_si",
+            "DROP PROCEDURE IF EXISTS sp_demo_huy_lich_hen_giai_phong_bs",
+            "DROP PROCEDURE IF EXISTS sp_demo_cursor_phan_loai_tuoi_no",
+            "DROP PROCEDURE IF EXISTS sp_demo_cursor_xep_hang_kpi_bac_si",
+            // Functions
+            "DROP FUNCTION IF EXISTS fn_demo_tinh_cong_no_benh_nhan",
+            "DROP FUNCTION IF EXISTS fn_demo_tinh_kpi_bac_si",
+            "DROP FUNCTION IF EXISTS fn_demo_kiem_tra_ton_kho_thuoc",
+        ];
+
+        foreach ($dropStatements as $dropSql) {
+            try {
+                DB::unprepared($dropSql);
+            } catch (\Throwable $e) {
+                // Ignore drop failure if not exists
+            }
+        }
+
+        // 2. Danh mục DDL của 15 đối tượng theo thứ tự phụ thuộc (Functions -> Procedures/Cursors -> Triggers)
+        $definitions = [
+            // --- C. 3 FUNCTIONS ---
+            'fn_demo_tinh_cong_no_benh_nhan' => "CREATE FUNCTION fn_demo_tinh_cong_no_benh_nhan(p_patient_id BIGINT)
+RETURNS DECIMAL(15,2)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE v_total_debt DECIMAL(15,2) DEFAULT 0;
+
+    SELECT COALESCE(SUM(remaining_amount), 0)
+    INTO v_total_debt
+    FROM invoices
+    WHERE patient_id = p_patient_id
+      AND status != 'CANCELLED';
+
+    RETURN v_total_debt;
+END",
+
+            'fn_demo_tinh_kpi_bac_si' => "CREATE FUNCTION fn_demo_tinh_kpi_bac_si(
+    p_employee_id BIGINT,
+    p_start_date DATE,
+    p_end_date DATE
+)
+RETURNS DECIMAL(5,2)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE v_target_revenue DECIMAL(15,2) DEFAULT 0;
+    DECLARE v_target_visits INT DEFAULT 0;
+    DECLARE v_actual_revenue DECIMAL(15,2) DEFAULT 0;
+    DECLARE v_actual_visits INT DEFAULT 0;
+    DECLARE v_rev_rate DECIMAL(7,4) DEFAULT 0;
+    DECLARE v_vis_rate DECIMAL(7,4) DEFAULT 0;
+    DECLARE v_final_score DECIMAL(5,2) DEFAULT 0;
+
+    SELECT COALESCE(target_revenue, 0), COALESCE(target_visits, 0)
+    INTO v_target_revenue, v_target_visits
+    FROM kpi_targets
+    WHERE employee_id = p_employee_id
+      AND period_start <= p_end_date 
+      AND period_end >= p_start_date
+    ORDER BY id DESC LIMIT 1;
+
+    SELECT 
+        COALESCE(COUNT(DISTINCT v.id), 0),
+        COALESCE(SUM(inv.paid_amount), 0)
+    INTO v_actual_visits, v_actual_revenue
+    FROM visits v
+    LEFT JOIN invoices inv ON inv.visit_id = v.id AND inv.status != 'CANCELLED'
+    WHERE v.employee_id = p_employee_id
+      AND v.visit_date BETWEEN p_start_date AND p_end_date;
+
+    IF v_target_revenue > 0 THEN
+        SET v_rev_rate = (v_actual_revenue / v_target_revenue);
+    ELSE
+        SET v_rev_rate = 1.0;
+    END IF;
+
+    IF v_target_visits > 0 THEN
+        SET v_vis_rate = (v_actual_visits / v_target_visits);
+    ELSE
+        SET v_vis_rate = 1.0;
+    END IF;
+
+    SET v_final_score = ((v_rev_rate * 0.6) + (v_vis_rate * 0.4)) * 100;
+    
+    IF v_final_score > 999.99 THEN
+        SET v_final_score = 999.99;
+    END IF;
+
+    RETURN v_final_score;
+END",
+
+            'fn_demo_kiem_tra_ton_kho_thuoc' => "CREATE FUNCTION fn_demo_kiem_tra_ton_kho_thuoc(p_product_id BIGINT)
+RETURNS VARCHAR(30)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE v_min_stock DECIMAL(15,3) DEFAULT 0;
+    DECLARE v_current_stock DECIMAL(15,3) DEFAULT 0;
+
+    SELECT COALESCE(minimum_stock, 0) INTO v_min_stock
+    FROM products
+    WHERE id = p_product_id;
+
+    SELECT COALESCE(SUM(
+        CASE 
+            WHEN transaction_type = 'IN' THEN quantity
+            WHEN transaction_type = 'OUT' THEN -quantity
+            WHEN transaction_type = 'ADJUST' THEN quantity
+            ELSE 0 
+        END
+    ), 0) INTO v_current_stock
+    FROM inventory_transactions
+    WHERE product_id = p_product_id;
+
+    IF v_current_stock <= 0 THEN
+        RETURN 'OUT_OF_STOCK';
+    ELSEIF v_current_stock <= v_min_stock THEN
+        RETURN 'LOW_STOCK';
+    ELSE
+        RETURN 'NORMAL';
+    END IF;
+END",
+
+            // --- A. 5 STORED PROCEDURES ---
+            'sp_demo_tiep_nhan_benh_nhan' => "CREATE PROCEDURE sp_demo_tiep_nhan_benh_nhan(
+    IN p_appointment_id BIGINT,
+    IN p_user_id BIGINT,
+    OUT p_visit_id BIGINT,
+    OUT p_status_code VARCHAR(30),
+    OUT p_message TEXT
+)
+BEGIN
+    DECLARE v_patient_id BIGINT;
+    DECLARE v_doctor_id BIGINT;
+    DECLARE v_service_id BIGINT;
+    DECLARE v_app_status VARCHAR(30);
+    DECLARE v_visit_code VARCHAR(50);
+    DECLARE v_new_visit_id BIGINT;
+    
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_visit_id = NULL;
+        SET p_status_code = 'ERROR';
+        SET p_message = 'Lỗi hệ thống khi tiếp đón bệnh nhân. Giao dịch đã được hủy bỏ an toàn (Rollback).';
+    END;
+
+    START TRANSACTION;
+
+    SELECT patient_id, employee_id, service_id, status 
+    INTO v_patient_id, v_doctor_id, v_service_id, v_app_status
+    FROM appointments 
+    WHERE id = p_appointment_id 
+    FOR UPDATE;
+
+    IF v_patient_id IS NULL THEN
+        SET p_visit_id = NULL;
+        SET p_status_code = 'NOT_FOUND';
+        SET p_message = 'Lịch hẹn không tồn tại trong hệ thống.';
+        ROLLBACK;
+    ELSEIF v_app_status != 'CONFIRMED' AND v_app_status != 'PENDING' THEN
+        SET p_visit_id = NULL;
+        SET p_status_code = 'INVALID_STATUS';
+        SET p_message = CONCAT('Không thể tiếp nhận. Trạng thái lịch hẹn hiện tại là: ', v_app_status);
+        ROLLBACK;
+    ELSE
+        UPDATE appointments 
+        SET status = 'COMPLETED', updated_at = NOW() 
+        WHERE id = p_appointment_id;
+
+        SET v_visit_code = CONCAT('VK', DATE_FORMAT(NOW(), '%y%m%d'), LPAD(FLOOR(RAND() * 9999), 4, '0'));
+
+        INSERT INTO visits (
+            visit_code, patient_id, employee_id, service_id, appointment_id,
+            visit_date, quantity, unit_price, discount_amount, total_amount,
+            payment_status, status, notes, created_by, created_at, updated_at
+        ) VALUES (
+            v_visit_code, v_patient_id, v_doctor_id, v_service_id, p_appointment_id,
+            CURRENT_DATE(), 1, 150000.00, 0, 150000.00,
+            'UNPAID', 'WAITING', 'Tiếp đón nguyên tử từ Lịch hẹn (Demo Procedure)', p_user_id, NOW(), NOW()
+        );
+
+        SET v_new_visit_id = LAST_INSERT_ID();
+        SET p_visit_id = v_new_visit_id;
+        SET p_status_code = 'SUCCESS';
+        SET p_message = CONCAT('Tiếp nhận thành công! Đã tạo lượt khám mới mã ', v_visit_code, ' cho bệnh nhân.');
+        
+        COMMIT;
+    END IF;
+END",
+
+            'sp_demo_tao_hoa_don_xuat_thuoc' => "CREATE PROCEDURE sp_demo_tao_hoa_don_xuat_thuoc(
+    IN p_visit_id BIGINT,
+    IN p_user_id BIGINT,
+    OUT p_invoice_id BIGINT,
+    OUT p_total_amount DECIMAL(15,2),
+    OUT p_status_code VARCHAR(30),
+    OUT p_message TEXT
+)
+BEGIN
+    DECLARE v_patient_id BIGINT;
+    DECLARE v_existing_inv_id BIGINT;
+    DECLARE v_invoice_code VARCHAR(50);
+    DECLARE v_subtotal DECIMAL(15,2) DEFAULT 0;
+    
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_invoice_id = NULL;
+        SET p_status_code = 'ERROR';
+        SET p_message = 'Lỗi tạo hóa đơn và xuất kho. Giao dịch đã được hoàn tác an toàn.';
+    END;
+
+    START TRANSACTION;
+
+    SELECT patient_id, total_amount INTO v_patient_id, v_subtotal
+    FROM visits 
+    WHERE id = p_visit_id 
+    FOR UPDATE;
+
+    IF v_patient_id IS NULL THEN
+        SET p_invoice_id = NULL;
+        SET p_status_code = 'NOT_FOUND';
+        SET p_message = 'Không tìm thấy lượt khám tương ứng.';
+        ROLLBACK;
+    ELSE
+        SELECT id INTO v_existing_inv_id FROM invoices WHERE visit_id = p_visit_id LIMIT 1;
+        
+        IF v_existing_inv_id IS NOT NULL THEN
+            SET p_invoice_id = v_existing_inv_id;
+            SET p_total_amount = v_subtotal;
+            SET p_status_code = 'ALREADY_EXISTS';
+            SET p_message = 'Lượt khám này đã được lập hóa đơn trước đó.';
+            COMMIT;
+        ELSE
+            SET v_invoice_code = CONCAT('HD', DATE_FORMAT(NOW(), '%y%m%d'), LPAD(FLOOR(RAND() * 9999), 4, '0'));
+            
+            INSERT INTO invoices (
+                invoice_code, patient_id, visit_id, subtotal_amount, discount_amount,
+                total_amount, paid_amount, remaining_amount, status, issued_at,
+                created_by, created_at, updated_at
+            ) VALUES (
+                v_invoice_code, v_patient_id, p_visit_id, v_subtotal, 0,
+                v_subtotal, 0, v_subtotal, 'UNPAID', NOW(),
+                p_user_id, NOW(), NOW()
+            );
+
+            SET p_invoice_id = LAST_INSERT_ID();
+            SET p_total_amount = v_subtotal;
+            SET p_status_code = 'SUCCESS';
+            SET p_message = CONCAT('Đã lập hóa đơn thành công mã ', v_invoice_code, ' tổng tiền: ', v_subtotal, ' VNĐ');
+            
+            COMMIT;
+        END IF;
+    END IF;
+END",
+
+            'sp_demo_thanh_toan_hoa_don' => "CREATE PROCEDURE sp_demo_thanh_toan_hoa_don(
+    IN p_invoice_id BIGINT,
+    IN p_amount DECIMAL(15,2),
+    IN p_payment_method VARCHAR(30),
+    IN p_user_id BIGINT,
+    OUT p_payment_id BIGINT,
+    OUT p_remaining_amount DECIMAL(15,2),
+    OUT p_status_code VARCHAR(30),
+    OUT p_message TEXT
+)
+BEGIN
+    DECLARE v_current_paid DECIMAL(15,2);
+    DECLARE v_current_remaining DECIMAL(15,2);
+    DECLARE v_total DECIMAL(15,2);
+    DECLARE v_new_paid DECIMAL(15,2);
+    DECLARE v_new_remaining DECIMAL(15,2);
+    DECLARE v_new_status VARCHAR(30);
+    DECLARE v_payment_code VARCHAR(50);
+    DECLARE v_trans_code VARCHAR(50);
+    DECLARE v_new_pay_id BIGINT;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_payment_id = NULL;
+        SET p_status_code = 'ERROR';
+        SET p_message = 'Lỗi xử lý thanh toán. Đã Rollback an toàn toàn bộ giao dịch.';
+    END;
+
+    START TRANSACTION;
+
+    SELECT total_amount, paid_amount, remaining_amount
+    INTO v_total, v_current_paid, v_current_remaining
+    FROM invoices
+    WHERE id = p_invoice_id
+    FOR UPDATE;
+
+    IF v_total IS NULL THEN
+        SET p_payment_id = NULL;
+        SET p_status_code = 'NOT_FOUND';
+        SET p_message = 'Không tìm thấy hóa đơn cần thanh toán.';
+        ROLLBACK;
+    ELSEIF p_amount <= 0 THEN
+        SET p_payment_id = NULL;
+        SET p_status_code = 'INVALID_AMOUNT';
+        SET p_message = 'Số tiền thanh toán phải lớn hơn 0.';
+        ROLLBACK;
+    ELSEIF p_amount > v_current_remaining THEN
+        SET p_payment_id = NULL;
+        SET p_status_code = 'OVERPAY';
+        SET p_message = CONCAT('Số tiền nộp (', p_amount, ') vượt quá số tiền còn nợ (', v_current_remaining, ').');
+        ROLLBACK;
+    ELSE
+        SET v_new_paid = v_current_paid + p_amount;
+        SET v_new_remaining = v_current_remaining - p_amount;
+        
+        IF v_new_remaining <= 0 THEN
+            SET v_new_status = 'PAID';
+        ELSE
+            SET v_new_status = 'PARTIAL';
+        END IF;
+
+        UPDATE invoices 
+        SET paid_amount = v_new_paid, remaining_amount = v_new_remaining, status = v_new_status, updated_at = NOW()
+        WHERE id = p_invoice_id;
+
+        SET v_payment_code = CONCAT('PAY', DATE_FORMAT(NOW(), '%y%m%d'), LPAD(FLOOR(RAND() * 9999), 4, '0'));
+        INSERT INTO payments (
+            payment_code, invoice_id, amount, payment_method, payment_date,
+            received_by, notes, created_at, updated_at
+        ) VALUES (
+            v_payment_code, p_invoice_id, p_amount, p_payment_method, NOW(),
+            p_user_id, 'Thanh toán viện phí qua Demo Procedure', NOW(), NOW()
+        );
+        SET v_new_pay_id = LAST_INSERT_ID();
+
+        SET v_trans_code = CONCAT('PT', DATE_FORMAT(NOW(), '%y%m%d'), LPAD(FLOOR(RAND() * 9999), 4, '0'));
+        INSERT INTO cash_transactions (
+            transaction_code, transaction_type, reference_type, reference_id,
+            amount, payment_method, transaction_date, description, created_by, created_at
+        ) VALUES (
+            v_trans_code, 'IN', 'Payment', v_new_pay_id,
+            p_amount, p_payment_method, NOW(), CONCAT('Thu tiền viện phí hóa đơn #', p_invoice_id), p_user_id, NOW()
+        );
+
+        SET p_payment_id = v_new_pay_id;
+        SET p_remaining_amount = v_new_remaining;
+        SET p_status_code = 'SUCCESS';
+        SET p_message = CONCAT('Thanh toán thành công ', p_amount, ' VNĐ. Còn nợ: ', v_new_remaining, ' VNĐ (Trạng thái: ', v_new_status, ')');
+
+        COMMIT;
+    END IF;
+END",
+
+            'sp_demo_bao_cao_doanh_thu_bac_si' => "CREATE PROCEDURE sp_demo_bao_cao_doanh_thu_bac_si(
+    IN p_start_date DATE,
+    IN p_end_date DATE
+)
+BEGIN
+    SELECT 
+        e.id AS doctor_id,
+        e.employee_code,
+        e.full_name AS doctor_name,
+        e.department,
+        COUNT(DISTINCT v.id) AS total_visits,
+        COUNT(DISTINCT CASE WHEN v.status = 'COMPLETED' THEN v.id END) AS completed_visits,
+        COALESCE(SUM(inv.total_amount), 0) AS total_invoiced,
+        COALESCE(SUM(inv.paid_amount), 0) AS total_collected,
+        COALESCE(SUM(inv.remaining_amount), 0) AS total_debt
+    FROM employees e
+    LEFT JOIN visits v ON v.employee_id = e.id 
+        AND v.visit_date BETWEEN p_start_date AND p_end_date
+    LEFT JOIN invoices inv ON inv.visit_id = v.id 
+        AND inv.status != 'CANCELLED'
+    WHERE e.status = 'ACTIVE'
+    GROUP BY e.id, e.employee_code, e.full_name, e.department
+    ORDER BY total_collected DESC;
+END",
+
+            'sp_demo_huy_lich_hen_giai_phong_bs' => "CREATE PROCEDURE sp_demo_huy_lich_hen_giai_phong_bs(
+    IN p_appointment_id BIGINT,
+    IN p_reason TEXT,
+    IN p_user_id BIGINT,
+    OUT p_status_code VARCHAR(30),
+    OUT p_message TEXT
+)
+BEGIN
+    DECLARE v_current_status VARCHAR(30);
+    DECLARE v_doctor_id BIGINT;
+    DECLARE v_app_code VARCHAR(50);
+
+    START TRANSACTION;
+
+    SELECT status, employee_id, appointment_code 
+    INTO v_current_status, v_doctor_id, v_app_code
+    FROM appointments 
+    WHERE id = p_appointment_id 
+    FOR UPDATE;
+
+    IF v_current_status IS NULL THEN
+        SET p_status_code = 'NOT_FOUND';
+        SET p_message = 'Lịch hẹn không tồn tại.';
+        ROLLBACK;
+    ELSEIF v_current_status = 'COMPLETED' THEN
+        SET p_status_code = 'ALREADY_COMPLETED';
+        SET p_message = 'Ca khám đã hoàn thành, không thể hủy.';
+        ROLLBACK;
+    ELSEIF v_current_status = 'CANCELLED' THEN
+        SET p_status_code = 'ALREADY_CANCELLED';
+        SET p_message = 'Lịch hẹn này đã ở trạng thái hủy trước đó.';
+        ROLLBACK;
+    ELSE
+        UPDATE appointments 
+        SET status = 'CANCELLED', notes = CONCAT(COALESCE(notes, ''), ' [Lý do hủy: ', p_reason, ']'), updated_at = NOW()
+        WHERE id = p_appointment_id;
+
+        SET p_status_code = 'SUCCESS';
+        SET p_message = CONCAT('Đã hủy lịch hẹn ', v_app_code, ' thành công và giải phóng khung giờ làm việc cho bác sĩ.');
+        COMMIT;
+    END IF;
+END",
+
+            // --- D. 2 CURSORS ---
+            'sp_demo_cursor_phan_loai_tuoi_no' => "CREATE PROCEDURE sp_demo_cursor_phan_loai_tuoi_no()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE v_inv_id BIGINT;
+    DECLARE v_code VARCHAR(50);
+    DECLARE v_patient_name VARCHAR(150);
+    DECLARE v_remaining DECIMAL(15,2);
+    DECLARE v_days_overdue INT;
+    DECLARE v_aging_tier VARCHAR(30);
+
+    DECLARE cur_invoices CURSOR FOR
+        SELECT 
+            inv.id, inv.invoice_code, p.full_name, inv.remaining_amount,
+            DATEDIFF(NOW(), COALESCE(inv.issued_at, inv.created_at)) AS days_overdue
+        FROM invoices inv
+        JOIN patients p ON p.id = inv.patient_id
+        WHERE inv.remaining_amount > 0 AND inv.status != 'CANCELLED';
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    DROP TEMPORARY TABLE IF EXISTS tmp_aging_debt_result;
+    CREATE TEMPORARY TABLE tmp_aging_debt_result (
+        invoice_id BIGINT,
+        invoice_code VARCHAR(50),
+        patient_name VARCHAR(150),
+        remaining_amount DECIMAL(15,2),
+        days_overdue INT,
+        aging_tier VARCHAR(50),
+        risk_assessment VARCHAR(100)
+    );
+
+    OPEN cur_invoices;
+
+    read_loop: LOOP
+        FETCH cur_invoices INTO v_inv_id, v_code, v_patient_name, v_remaining, v_days_overdue;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        IF v_days_overdue <= 7 THEN
+            SET v_aging_tier = '0 - 7 Ngày (Nợ trong hạn)';
+            INSERT INTO tmp_aging_debt_result VALUES (v_inv_id, v_code, v_patient_name, v_remaining, v_days_overdue, v_aging_tier, 'An toàn - Gửi hóa đơn đợt 1');
+        ELSEIF v_days_overdue <= 30 THEN
+            SET v_aging_tier = '8 - 30 Ngày (Cần nhắc nợ)';
+            INSERT INTO tmp_aging_debt_result VALUES (v_inv_id, v_code, v_patient_name, v_remaining, v_days_overdue, v_aging_tier, 'Cảnh báo - Gửi SMS nhắc nợ');
+        ELSE
+            SET v_aging_tier = '> 30 Ngày (Nợ xấu có nguy cơ)';
+            INSERT INTO tmp_aging_debt_result VALUES (v_inv_id, v_code, v_patient_name, v_remaining, v_days_overdue, v_aging_tier, 'Rủi ro cao - Chuyển Ban quản lý xử lý');
+        END IF;
+    END LOOP;
+
+    CLOSE cur_invoices;
+
+    SELECT * FROM tmp_aging_debt_result ORDER BY days_overdue DESC;
+    DROP TEMPORARY TABLE IF EXISTS tmp_aging_debt_result;
+END",
+
+            'sp_demo_cursor_xep_hang_kpi_bac_si' => "CREATE PROCEDURE sp_demo_cursor_xep_hang_kpi_bac_si(
+    IN p_start_date DATE,
+    IN p_end_date DATE
+)
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE v_doc_id BIGINT;
+    DECLARE v_doc_code VARCHAR(50);
+    DECLARE v_doc_name VARCHAR(150);
+    DECLARE v_dept VARCHAR(100);
+    DECLARE v_kpi_score DECIMAL(5,2);
+    DECLARE v_rank_tier VARCHAR(50);
+
+    DECLARE cur_doctors CURSOR FOR
+        SELECT id, employee_code, full_name, department
+        FROM employees
+        WHERE status = 'ACTIVE';
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    DROP TEMPORARY TABLE IF EXISTS tmp_doctor_kpi_ranking;
+    CREATE TEMPORARY TABLE tmp_doctor_kpi_ranking (
+        doctor_id BIGINT,
+        employee_code VARCHAR(50),
+        doctor_name VARCHAR(150),
+        department VARCHAR(100),
+        kpi_score DECIMAL(5,2),
+        ranking_tier VARCHAR(50),
+        recommendation VARCHAR(150)
+    );
+
+    OPEN cur_doctors;
+
+    doctor_loop: LOOP
+        FETCH cur_doctors INTO v_doc_id, v_doc_code, v_doc_name, v_dept;
+        IF done THEN
+            LEAVE doctor_loop;
+        END IF;
+
+        SET v_kpi_score = fn_demo_tinh_kpi_bac_si(v_doc_id, p_start_date, p_end_date);
+
+        IF v_kpi_score >= 100.00 THEN
+            SET v_rank_tier = 'Xuất sắc (Vượt chỉ tiêu)';
+            INSERT INTO tmp_doctor_kpi_ranking VALUES (v_doc_id, v_doc_code, v_doc_name, v_dept, v_kpi_score, v_rank_tier, 'Khen thưởng & Tuyên dương thi đua');
+        ELSEIF v_kpi_score >= 80.00 THEN
+            SET v_rank_tier = 'Tốt (Đạt chuẩn phòng khám)';
+            INSERT INTO tmp_doctor_kpi_ranking VALUES (v_doc_id, v_doc_code, v_doc_name, v_dept, v_kpi_score, v_rank_tier, 'Duy trì năng suất hiện tại');
+        ELSEIF v_kpi_score >= 50.00 THEN
+            SET v_rank_tier = 'Đạt (Cần cố gắng)';
+            INSERT INTO tmp_doctor_kpi_ranking VALUES (v_doc_id, v_doc_code, v_doc_name, v_dept, v_kpi_score, v_rank_tier, 'Tăng cường số ca khám buổi sáng');
+        ELSE
+            SET v_rank_tier = 'Chưa đạt (Cần cải thiện)';
+            INSERT INTO tmp_doctor_kpi_ranking VALUES (v_doc_id, v_doc_code, v_doc_name, v_dept, v_kpi_score, v_rank_tier, 'Họp rà soát và điều phối lịch trực');
+        END IF;
+    END LOOP;
+
+    CLOSE cur_doctors;
+
+    SELECT * FROM tmp_doctor_kpi_ranking ORDER BY kpi_score DESC;
+    DROP TEMPORARY TABLE IF EXISTS tmp_doctor_kpi_ranking;
+END",
+
+            // --- B. 5 TRIGGERS ---
+            'trg_demo_chong_trung_lich_bs' => "CREATE TRIGGER trg_demo_chong_trung_lich_bs
+BEFORE INSERT ON appointments
+FOR EACH ROW
+BEGIN
+    DECLARE v_conflict_count INT DEFAULT 0;
+
+    IF NEW.employee_id IS NOT NULL AND NEW.appointment_date IS NOT NULL 
+       AND NEW.start_time IS NOT NULL AND NEW.end_time IS NOT NULL 
+       AND (NEW.status IS NULL OR NEW.status IN ('PENDING', 'CONFIRMED')) THEN
+        
+        SELECT COUNT(*) INTO v_conflict_count
+        FROM appointments
+        WHERE employee_id = NEW.employee_id
+          AND appointment_date = NEW.appointment_date
+          AND status IN ('PENDING', 'CONFIRMED')
+          AND (
+              (NEW.start_time < end_time AND NEW.end_time > start_time)
+          );
+
+        IF v_conflict_count > 0 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'LỖI RÀNG BUỘC (TRIGGER): Bác sĩ đã có lịch hẹn khác trong khung giờ này!';
+        END IF;
+    END IF;
+END",
+
+            'trg_demo_kiem_soat_sua_benh_an_paid' => "CREATE TRIGGER trg_demo_kiem_soat_sua_benh_an_paid
+BEFORE UPDATE ON medical_records
+FOR EACH ROW
+BEGIN
+    DECLARE v_pay_status VARCHAR(30);
+
+    SELECT payment_status INTO v_pay_status
+    FROM visits
+    WHERE id = NEW.visit_id;
+
+    IF v_pay_status = 'PAID' AND (OLD.diagnosis != NEW.diagnosis OR (OLD.diagnosis IS NULL AND NEW.diagnosis IS NOT NULL)) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'LỖI BẢO VỆ Y BẠ (TRIGGER): Ca khám đã tất toán viện phí (PAID), không được tự ý sửa chẩn đoán!';
+    END IF;
+END",
+
+            'trg_demo_ngan_so_luong_thuoc_am' => "CREATE TRIGGER trg_demo_ngan_so_luong_thuoc_am
+BEFORE INSERT ON inventory_transactions
+FOR EACH ROW
+BEGIN
+    DECLARE v_current_stock DECIMAL(15,3) DEFAULT 0;
+
+    IF NEW.transaction_type = 'OUT' THEN
+        SELECT COALESCE(SUM(
+            CASE 
+                WHEN transaction_type = 'IN' THEN quantity
+                WHEN transaction_type = 'OUT' THEN -quantity
+                WHEN transaction_type = 'ADJUST' THEN quantity
+                ELSE 0 
+            END
+        ), 0) INTO v_current_stock
+        FROM inventory_transactions
+        WHERE product_id = NEW.product_id;
+
+        IF v_current_stock < NEW.quantity THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'LỖI TỒN KHO (TRIGGER): Số lượng xuất vượt quá tồn kho khả dụng hiện tại!';
+        END IF;
+    END IF;
+END",
+
+            'trg_demo_cap_nhat_lan_kham_gan_nhat' => "CREATE TRIGGER trg_demo_cap_nhat_lan_kham_gan_nhat
+AFTER INSERT ON visits
+FOR EACH ROW
+BEGIN
+    IF NEW.patient_id IS NOT NULL THEN
+        UPDATE patients
+        SET last_visit_date = NEW.visit_date, updated_at = NOW()
+        WHERE id = NEW.patient_id;
+    END IF;
+END",
+
+            'trg_demo_ghi_nhat_ky_xoa_benh_nhan' => "CREATE TRIGGER trg_demo_ghi_nhat_ky_xoa_benh_nhan
+AFTER DELETE ON patients
+FOR EACH ROW
+BEGIN
+    INSERT INTO db_demo_audit_logs (
+        executed_at, sql_object_name, sql_object_type, target_table, action_type,
+        before_data, after_data, status, execution_message, duration_ms, created_at, updated_at
+    ) VALUES (
+        NOW(), 'trg_demo_ghi_nhat_ky_xoa_benh_nhan', 'TRIGGER', 'patients', 'DELETE',
+        JSON_OBJECT(
+            'id', OLD.id,
+            'patient_code', OLD.patient_code,
+            'full_name', OLD.full_name,
+            'phone', OLD.phone
+        ),
+        NULL, 'VERIFIED',
+        CONCAT('Kích hoạt trigger lưu vết: Đã xóa bệnh nhân mã ', OLD.patient_code, ' - ', OLD.full_name),
+        1, NOW(), NOW()
+    );
+END",
+        ];
+
+        foreach ($definitions as $name => $sql) {
+            try {
+                DB::unprepared($sql);
+                $compiled[] = $name;
+            } catch (\Throwable $e) {
+                $errors[$name] = $e->getMessage();
+                Log::error("Failed to compile SQL object {$name}: " . $e->getMessage());
+            }
+        }
+
+        $allOk = empty($errors);
+        return [
+            'success' => $allOk,
+            'message' => $allOk
+                ? 'Đã biên dịch thành công đầy đủ 15 đối tượng Quản lý thông tin SQL (5 SP, 5 Trigger, 3 Function, 2 Cursor) vào MySQL.'
+                : 'Đã biên dịch ' . count($compiled) . '/15 đối tượng. Có ' . count($errors) . ' lỗi xảy ra.',
+            'compiled_count' => count($compiled),
+            'compiled_objects' => $compiled,
+            'errors' => $errors,
+        ];
     }
 
     /**
@@ -975,9 +1689,10 @@ END;",
      * @param string $objectName
      * @param array<string, mixed> $params
      * @param int|null $userId
+     * @param bool $allowRetry
      * @return array<string, mixed>
      */
-    public function executeDemo(string $objectName, array $params = [], ?int $userId = null): array
+    public function executeDemo(string $objectName, array $params = [], ?int $userId = null, bool $allowRetry = true): array
     {
         $this->ensureSchemaReady();
         $startTime = microtime(true);
@@ -1007,9 +1722,23 @@ END;",
                     $actionType = 'PROCEDURE_EXEC';
                     $appointmentId = $params['appointment_id'] ?? null;
                     if (!$appointmentId) {
-                        // Lấy lịch hẹn CONFIRMED hoặc PENDING đầu tiên
+                        // Lấy hoặc tạo một lịch hẹn CONFIRMED/PENDING để tiếp đón
                         $app = Appointment::whereIn('status', ['CONFIRMED', 'PENDING'])->first();
-                        $appointmentId = $app ? $app->id : 1;
+                        if (!$app) {
+                            $patient = Patient::first();
+                            $doctor = Employee::first();
+                            $app = Appointment::create([
+                                'appointment_code' => 'LH_DEMO_' . rand(1000, 9999),
+                                'patient_id' => $patient ? $patient->id : 1,
+                                'employee_id' => $doctor ? $doctor->id : 1,
+                                'appointment_date' => now()->toDateString(),
+                                'start_time' => '10:00:00',
+                                'end_time' => '10:30:00',
+                                'status' => 'CONFIRMED',
+                                'notes' => 'Lịch hẹn tạo tự động phục vụ DEMO Tiếp đón Stored Procedure',
+                            ]);
+                        }
+                        $appointmentId = $app->id;
                     }
 
                     // Lưu dữ liệu Before
@@ -1048,8 +1777,25 @@ END;",
                     $actionType = 'PROCEDURE_EXEC';
                     $visitId = $params['visit_id'] ?? null;
                     if (!$visitId) {
-                        $v = Visit::doesntHave('invoices')->first() ?: Visit::first();
-                        $visitId = $v ? $v->id : 1;
+                        $v = Visit::doesntHave('invoices')->first();
+                        if (!$v) {
+                            $patient = Patient::first();
+                            $doctor = Employee::first();
+                            $v = Visit::create([
+                                'visit_code' => 'VK_DEMO_' . rand(1000, 9999),
+                                'patient_id' => $patient ? $patient->id : 1,
+                                'employee_id' => $doctor ? $doctor->id : 1,
+                                'visit_date' => now()->toDateString(),
+                                'quantity' => 1,
+                                'unit_price' => 200000.00,
+                                'discount_amount' => 0,
+                                'total_amount' => 200000.00,
+                                'payment_status' => 'UNPAID',
+                                'status' => 'COMPLETED',
+                                'notes' => 'Lượt khám tạo tự động phục vụ DEMO Lập hóa đơn',
+                            ]);
+                        }
+                        $visitId = $v->id;
                     }
 
                     $vBefore = Visit::with('invoices')->find($visitId);
@@ -1081,8 +1827,22 @@ END;",
                 // -------------------------------------------------------------
                 case 'sp_demo_thanh_toan_hoa_don':
                     $actionType = 'PROCEDURE_EXEC';
-                    $inv = Invoice::where('status', '!=', 'CANCELLED')->where('remaining_amount', '>', 0)->first() ?: Invoice::first();
-                    $invoiceId = $params['invoice_id'] ?? ($inv ? $inv->id : 1);
+                    $inv = Invoice::where('status', '!=', 'CANCELLED')->where('remaining_amount', '>', 0)->first();
+                    if (!$inv) {
+                        $patient = Patient::first();
+                        $inv = Invoice::create([
+                            'invoice_code' => 'HD_DEMO_' . rand(1000, 9999),
+                            'patient_id' => $patient ? $patient->id : 1,
+                            'subtotal_amount' => 150000.00,
+                            'discount_amount' => 0,
+                            'total_amount' => 150000.00,
+                            'paid_amount' => 0,
+                            'remaining_amount' => 150000.00,
+                            'status' => 'UNPAID',
+                            'issued_at' => now(),
+                        ]);
+                    }
+                    $invoiceId = $params['invoice_id'] ?? $inv->id;
                     $amount = (float) ($params['amount'] ?? 50000);
                     $method = $params['payment_method'] ?? 'CASH';
 
@@ -1133,8 +1893,22 @@ END;",
                 // -------------------------------------------------------------
                 case 'sp_demo_huy_lich_hen_giai_phong_bs':
                     $actionType = 'PROCEDURE_EXEC';
-                    $app = Appointment::where('status', 'PENDING')->first() ?: Appointment::first();
-                    $appId = $params['appointment_id'] ?? ($app ? $app->id : 1);
+                    $app = Appointment::whereIn('status', ['PENDING', 'CONFIRMED'])->first();
+                    if (!$app) {
+                        $patient = Patient::first();
+                        $doctor = Employee::first();
+                        $app = Appointment::create([
+                            'appointment_code' => 'LH_HUY_' . rand(1000, 9999),
+                            'patient_id' => $patient ? $patient->id : 1,
+                            'employee_id' => $doctor ? $doctor->id : 1,
+                            'appointment_date' => now()->addDays(1)->toDateString(),
+                            'start_time' => '15:00:00',
+                            'end_time' => '15:30:00',
+                            'status' => 'PENDING',
+                            'notes' => 'Lịch hẹn tạo tự động phục vụ DEMO Hủy lịch',
+                        ]);
+                    }
+                    $appId = $params['appointment_id'] ?? $app->id;
                     $reason = $params['reason'] ?? 'Bệnh nhân có việc đột xuất xin dời lịch (Demo)';
 
                     $beforeApp = Appointment::find($appId);
@@ -1163,10 +1937,21 @@ END;",
                     $actionType = 'TRIGGER_AUTO';
                     $doc = Employee::first();
                     $docId = $doc ? $doc->id : 1;
-                    $existingApp = Appointment::where('employee_id', $docId)->first();
-                    $date = $existingApp ? $existingApp->appointment_date : now()->toDateString();
-                    $startTime = $existingApp ? $existingApp->start_time : '09:00:00';
-                    $endTime = $existingApp ? $existingApp->end_time : '09:30:00';
+                    $existingApp = Appointment::where('employee_id', $docId)->whereIn('status', ['PENDING', 'CONFIRMED'])->first();
+                    if (!$existingApp) {
+                        $existingApp = Appointment::create([
+                            'appointment_code' => 'APP_BASE_' . rand(100, 999),
+                            'patient_id' => 1,
+                            'employee_id' => $docId,
+                            'appointment_date' => now()->toDateString(),
+                            'start_time' => '09:00:00',
+                            'end_time' => '09:30:00',
+                            'status' => 'CONFIRMED',
+                        ]);
+                    }
+                    $date = $existingApp->appointment_date;
+                    $startTime = $existingApp->start_time;
+                    $endTime = $existingApp->end_time;
 
                     $beforeData = [
                         'doctor_id' => $docId,
@@ -1205,30 +1990,51 @@ END;",
                 case 'trg_demo_kiem_soat_sua_benh_an_paid':
                     $actionType = 'TRIGGER_AUTO';
                     $paidVisit = Visit::where('payment_status', 'PAID')->has('medicalRecord')->first();
-                    if ($paidVisit && $paidVisit->medicalRecord) {
-                        $rec = $paidVisit->medicalRecord;
-                        $beforeData = [
-                            'visit_id' => $paidVisit->id,
-                            'payment_status' => $paidVisit->payment_status,
-                            'original_diagnosis' => $rec->diagnosis,
-                        ];
-
-                        try {
-                            DB::update("UPDATE medical_records SET diagnosis = CONCAT(COALESCE(diagnosis, ''), ' [Sửa trái phép]') WHERE id = ?", [$rec->id]);
-                            $afterData = ['updated' => true];
-                            $message = 'Đã cập nhật bệnh án.';
-                        } catch (\Throwable $e) {
-                            $afterData = [
-                                'trigger_intercepted' => true,
-                                'error_message' => $e->getMessage(),
-                            ];
-                            $message = 'TRIGGER ĐÃ HOẠT ĐỘNG HOÀN HẢO: Chặn đứng hành vi sửa chẩn đoán bệnh án của ca khám đã PAID!';
-                            $status = 'VERIFIED';
+                    if (!$paidVisit || !$paidVisit->medicalRecord) {
+                        $v = Visit::where('payment_status', 'PAID')->first();
+                        if (!$v) {
+                            $p = Patient::first();
+                            $e = Employee::first();
+                            $v = Visit::create([
+                                'visit_code' => 'VK_PAID_' . rand(100, 999),
+                                'patient_id' => $p ? $p->id : 1,
+                                'employee_id' => $e ? $e->id : 1,
+                                'visit_date' => now()->toDateString(),
+                                'total_amount' => 150000,
+                                'payment_status' => 'PAID',
+                                'status' => 'COMPLETED',
+                            ]);
                         }
+                        $rec = \App\Models\MedicalRecord::firstOrCreate(
+                            ['visit_id' => $v->id],
+                            [
+                                'patient_id' => $v->patient_id,
+                                'employee_id' => $v->employee_id,
+                                'diagnosis' => 'Chẩn đoán ban đầu hợp lệ (Đã thanh toán)',
+                                'record_date' => now()->toDateString(),
+                            ]
+                        );
+                        $paidVisit = $v;
                     } else {
-                        $beforeData = ['info' => 'Chưa có ca khám PAID có bệnh án để thử nghiệm'];
-                        $afterData = ['status' => 'Sẵn sàng'];
-                        $message = 'Trigger đã được cài đặt sẵn sàng trên bảng medical_records.';
+                        $rec = $paidVisit->medicalRecord;
+                    }
+
+                    $beforeData = [
+                        'visit_id' => $paidVisit->id,
+                        'payment_status' => $paidVisit->payment_status,
+                        'original_diagnosis' => $rec->diagnosis,
+                    ];
+
+                    try {
+                        DB::update("UPDATE medical_records SET diagnosis = CONCAT(COALESCE(diagnosis, ''), ' [Sửa trái phép]') WHERE id = ?", [$rec->id]);
+                        $afterData = ['updated' => true];
+                        $message = 'Đã cập nhật bệnh án.';
+                    } catch (\Throwable $e) {
+                        $afterData = [
+                            'trigger_intercepted' => true,
+                            'error_message' => $e->getMessage(),
+                        ];
+                        $message = 'TRIGGER ĐÃ HOẠT ĐỘNG HOÀN HẢO: Chặn đứng hành vi sửa chẩn đoán bệnh án của ca khám đã PAID!';
                         $status = 'VERIFIED';
                     }
                     break;
@@ -1269,7 +2075,16 @@ END;",
                 case 'trg_demo_cap_nhat_lan_kham_gan_nhat':
                     $actionType = 'TRIGGER_AUTO';
                     $p = Patient::first();
-                    $patientId = $p ? $p->id : 1;
+                    if (!$p) {
+                        $p = Patient::create([
+                            'patient_code' => 'BN_DEMO_01',
+                            'full_name' => 'Nguyễn Văn Mẫu',
+                            'phone' => '0912345678',
+                            'gender' => 'MALE',
+                            'status' => 'ACTIVE',
+                        ]);
+                    }
+                    $patientId = $p->id;
                     $beforeData = [
                         'patient_id' => $patientId,
                         'patient_code' => $p->patient_code ?? null,
@@ -1277,10 +2092,11 @@ END;",
                     ];
 
                     $newDate = now()->toDateString();
+                    $tempCode = 'VK_TRG_TEST_' . rand(100, 999);
                     DB::insert("
                         INSERT INTO visits (visit_code, patient_id, employee_id, visit_date, total_amount, payment_status, status, created_at, updated_at)
                         VALUES (?, ?, 1, ?, 120000, 'UNPAID', 'WAITING', NOW(), NOW())
-                    ", ['VK_TRG_TEST_' . rand(100, 999), $patientId, $newDate]);
+                    ", [$tempCode, $patientId, $newDate]);
 
                     $afterPatient = Patient::find($patientId);
                     $afterData = [
@@ -1405,6 +2221,22 @@ END;",
                 // -------------------------------------------------------------
                 case 'sp_demo_cursor_phan_loai_tuoi_no':
                     $actionType = 'CURSOR_LOOP';
+                    $hasDebts = Invoice::where('remaining_amount', '>', 0)->where('status', '!=', 'CANCELLED')->exists();
+                    if (!$hasDebts) {
+                        $patient = Patient::first();
+                        Invoice::create([
+                            'invoice_code' => 'HD_AGING_01',
+                            'patient_id' => $patient ? $patient->id : 1,
+                            'subtotal_amount' => 300000.00,
+                            'discount_amount' => 0,
+                            'total_amount' => 300000.00,
+                            'paid_amount' => 0,
+                            'remaining_amount' => 300000.00,
+                            'status' => 'UNPAID',
+                            'issued_at' => now()->subDays(15),
+                        ]);
+                    }
+
                     $resultRows = DB::select('CALL sp_demo_cursor_phan_loai_tuoi_no()');
                     $beforeData = ['action' => 'Mở CURSOR cur_invoices duyệt qua tất cả hóa đơn còn nợ'];
                     $afterData = [
@@ -1432,6 +2264,13 @@ END;",
                     break;
             }
         } catch (\Throwable $e) {
+            // Tự phục hồi: nếu lỗi thiếu thủ tục/hàm trong MySQL (1305, does not exist, 1304), biên dịch lại và thử lại 1 lần
+            if ($allowRetry && (str_contains($e->getMessage(), '1305') || str_contains($e->getMessage(), 'does not exist') || str_contains($e->getMessage(), '1304'))) {
+                Log::info("SQL Object missing detected, triggering self-healing auto compilation for {$objectName}...");
+                $this->deployAllSqlObjects();
+                return $this->executeDemo($objectName, $params, $userId, false);
+            }
+
             $status = 'FAILED';
             $message = 'Lỗi thực thi đối tượng SQL: ' . $e->getMessage();
             Log::error("Database demo error on {$objectName}: " . $e->getMessage());

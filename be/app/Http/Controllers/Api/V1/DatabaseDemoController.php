@@ -135,4 +135,19 @@ class DatabaseDemoController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Tự động biên dịch lại toàn bộ 15 đối tượng SQL (Self-healing Rebuild).
+     * POST /api/v1/database-demo/rebuild
+     */
+    public function rebuild(): JsonResponse
+    {
+        $result = $this->demoService->deployAllSqlObjects();
+
+        return response()->json([
+            'success' => $result['success'] ?? true,
+            'message' => $result['message'] ?? 'Đã biên dịch lại các đối tượng SQL.',
+            'data' => $result,
+        ]);
+    }
 }

@@ -735,6 +735,9 @@ Route::prefix('v1')->group(function (): void {
 
             Route::get('/stats', [DatabaseDemoController::class, 'stats'])
                 ->name('api.v1.database-demo.stats');
+
+            Route::post('/rebuild', [DatabaseDemoController::class, 'rebuild'])
+                ->name('api.v1.database-demo.rebuild');
         });
 
         // Data Import & Batch Tracking

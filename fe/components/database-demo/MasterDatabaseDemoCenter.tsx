@@ -36,6 +36,7 @@ import {
   executeDatabaseDemo,
   getDatabaseDemoHistory,
   getDatabaseDemoStats,
+  rebuildDatabaseDemoObjects,
   SqlObject,
   AuditLogItem,
   ExecutionResult,
@@ -70,6 +71,8 @@ export function MasterDatabaseDemoCenter({
   const [copiedName, setCopiedName] = useState<string | null>(null);
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
+  const [isRebuilding, setIsRebuilding] = useState<boolean>(false);
+  const [rebuildFeedback, setRebuildFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Load all objects and stats
   const loadData = useCallback(async () => {
@@ -147,6 +150,35 @@ export function MasterDatabaseDemoCenter({
     }
   };
 
+  const handleRebuild = async () => {
+    setIsRebuilding(true);
+    setRebuildFeedback(null);
+    try {
+      const res = await rebuildDatabaseDemoObjects();
+      if (res.success) {
+        setRebuildFeedback({
+          type: 'success',
+          message: res.message || 'Đã nạp và biên dịch thành công 15 đối tượng SQL vào MySQL!',
+        });
+        await loadData();
+        await loadHistory();
+      } else {
+        setRebuildFeedback({
+          type: 'error',
+          message: res.message || 'Có lỗi trong quá trình biên dịch lại các đối tượng SQL.',
+        });
+      }
+    } catch (err) {
+      setRebuildFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Không thể kết nối máy chủ.',
+      });
+    } finally {
+      setIsRebuilding(false);
+      setTimeout(() => setRebuildFeedback(null), 5000);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -175,10 +207,22 @@ export function MasterDatabaseDemoCenter({
 
           <div className="flex items-center space-x-2">
             <Button
+              variant="outline"
+              size="sm"
+              disabled={isRebuilding}
+              onClick={handleRebuild}
+              className="h-8 px-3 text-xs font-semibold bg-white/10 hover:bg-white/20 border-white/20 text-white rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+              title="Biên dịch lại toàn bộ 15 Stored Procedure, Trigger, Function vào CSDL MySQL"
+            >
+              <RefreshCw className={cn("h-3.5 w-3.5", isRebuilding && "animate-spin")} />
+              <span>{isRebuilding ? "Đang biên dịch CSDL..." : "Tái nạp 15 Đối tượng CSDL"}</span>
+            </Button>
+
+            <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg"
+              className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg cursor-pointer"
             >
               <X className="h-5 w-5" />
             </Button>
@@ -211,27 +255,53 @@ export function MasterDatabaseDemoCenter({
           </Tabs>
 
           {/* Quick Metrics Bar */}
-          {stats && (
-            <div className="flex items-center gap-2 text-xs text-slate-500 overflow-x-auto no-scrollbar">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Cơ cấu:</span>
-              <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">
-                5 Procedures
-              </Badge>
-              <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-700 border-purple-200">
-                5 Triggers
-              </Badge>
-              <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">
-                3 Functions
-              </Badge>
-              <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
-                2 Cursors
-              </Badge>
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-xs text-slate-500 overflow-x-auto no-scrollbar">
+            <span className="font-semibold text-slate-700 dark:text-slate-300">Cơ cấu:</span>
+            <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">
+              {stats?.procedures ?? 5} Procedures
+            </Badge>
+            <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-700 border-purple-200">
+              {stats?.triggers ?? 5} Triggers
+            </Badge>
+            <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">
+              {stats?.functions ?? 3} Functions
+            </Badge>
+            <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+              {stats?.cursors ?? 2} Cursors
+            </Badge>
+          </div>
         </div>
 
         {/* Modal Main Body Scroll Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Rebuild Feedback Notification */}
+          {rebuildFeedback && (
+            <div
+              className={cn(
+                'p-3 rounded-xl border text-xs flex items-center justify-between gap-3 animate-in fade-in duration-200',
+                rebuildFeedback.type === 'success'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 text-emerald-900 dark:text-emerald-200'
+                  : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 text-rose-900 dark:text-rose-200'
+              )}
+            >
+              <div className="flex items-center gap-2">
+                {rebuildFeedback.type === 'success' ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
+                )}
+                <span className="font-semibold">{rebuildFeedback.message}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setRebuildFeedback(null)}
+                className="h-6 w-6 p-0 hover:bg-transparent cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5 opacity-60" />
+              </Button>
+            </div>
+          )}
           {/* TAB 1: BẢNG TỔNG HỢP 15 CÂU LỆNH SQL */}
           {activeTab === 'catalog' && (
             <div className="space-y-4">
@@ -378,6 +448,48 @@ export function MasterDatabaseDemoCenter({
                         </tr>
                       );
                     })}
+
+                    {loading && (
+                      <tr>
+                        <td colSpan={7} className="text-center py-8 text-xs text-slate-500">
+                          <RefreshCw className="h-4 w-4 animate-spin mx-auto mb-2 text-indigo-600" />
+                          <span>Đang nạp danh mục 15 đối tượng Quản lý thông tin SQL...</span>
+                        </td>
+                      </tr>
+                    )}
+
+                    {!loading && filteredObjects.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="text-center py-10 text-xs text-slate-500">
+                          <AlertTriangle className="h-6 w-6 text-amber-500 mx-auto mb-2" />
+                          <p className="font-semibold text-slate-700 dark:text-slate-200">
+                            Không tìm thấy đối tượng SQL nào phù hợp với bộ lọc hiện tại.
+                          </p>
+                          <div className="mt-3 flex items-center justify-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedType('ALL');
+                                setSelectedModule('ALL');
+                                setSearchQuery('');
+                                loadData();
+                              }}
+                              className="h-7 text-xs cursor-pointer"
+                            >
+                              Đặt lại bộ lọc
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={loadData}
+                              className="h-7 text-xs bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" /> Tải lại danh sách
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -526,6 +638,25 @@ export function MasterDatabaseDemoCenter({
                                 <p className="text-[11px] opacity-80 mt-0.5">
                                   Đã đo đạc thời gian thực thi: <strong>{executionResult.duration_ms} ms</strong> · Đã ghi nhận lịch sử vào bảng <code>db_demo_audit_logs</code>
                                 </p>
+                                {!executionResult.success && (
+                                  <div className="mt-2.5 flex items-center gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="default"
+                                      disabled={isRebuilding}
+                                      onClick={async () => {
+                                        await handleRebuild();
+                                        if (selectedObject) {
+                                          handleExecute(selectedObject);
+                                        }
+                                      }}
+                                      className="h-7 text-xs bg-rose-700 hover:bg-rose-800 text-white font-medium shadow-xs flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      <RefreshCw className={cn("h-3 w-3", isRebuilding && "animate-spin")} />
+                                      <span>Tự động nạp lại CSDL & Chạy lại ngay</span>
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             </div>
 
