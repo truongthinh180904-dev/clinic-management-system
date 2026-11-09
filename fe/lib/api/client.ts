@@ -42,7 +42,7 @@ export function removeStoredToken(): void {
 
 export const getBaseUrl = (): string => {
   return (
-    process.env.NEXT_PUBLIC_API_BASE_URL || 'https://apiqlpk.anninhanthienlong.com/api/v1'
+    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000/api/v1'
   ).replace(/\/$/, '');
 };
 
