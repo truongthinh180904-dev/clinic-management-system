@@ -1,0 +1,12 @@
+# Feature/Task Review Report — P2-011 (Round 1/3)
+
+- `RUN_ID`: `run-20261027191715-32432-6846`
+- `REVIEWER_MODEL`: `claude-sonnet-5-5-high`
+- `REVIEW_ROUND`: `1/3`
+- `OVERALL_REVIEW_RESULT`: `PASS`
+
+## Reviewer Raw Output
+```json
+{"conversation_id":"e7cbddaf-ab49-464b-b57e-247b6bf9aa52","status":"SUCCESS","response":"```json\n{\n  \"task_id\": \"P2-011\",\n  \"run_id\": \"run-20261027191715-32432-6846\",\n  \"round\": \"1/3\",\n  \"verdict\": \"PASS\",\n  \"findings\": [],\n  \"verification\": {\n    \"test_report\": \"reports/tasks/P2-011-test.md shows `npx tsc --noEmit \u0026\u0026 npm run build` with exit code 0 and PASS. The build output lists the `/debts` route.\",\n    \"deliverables\": {\n      \"fe/types/debt.ts\": \"Present. It defines DebtSummary, aging buckets, DebtorPatient, PatientDebtDetail, query params and CollectDebtPaymentInput.\",\n      \"fe/lib/api/debts.ts\": \"Present. It exports getDebtSummary (/debts/summary), getDebtorPatients (/debts/patients), getPatientDebts (/patients/{id}/debts) and collectDebtPayment (POST /invoices/{id}/payments).\",\n      \"fe/app/(admin)/debts/page.tsx\": \"Present, 1376 lines. It covers the scope below.\"\n    },\n    \"scope_checks\": [\n      \"KPI cards: total invoiced, collected, remaining debt and debtor count.\",\n      \"Aging analysis: three buckets (0-7 days, 8-30 days, \u003e30 days) plus recharts BarChart and PieChart.\",\n      \"Debtor patients table: shadcn Table with a Progress bar for the paid ratio, search, sort and pagination.\",\n      \"Patient ledger Dialog: Tabs for invoices and payment history.\",\n      \"Quick collection Dialog: 50% and 100% buttons, payment method select, and a call to collectDebtPayment.\",\n      \"After a successful collection, it refreshes the summary, the patient list and the patient detail.\",\n      \"UI stack: shadcn/ui components, lucide-react icons and recharts.\"\n    ],\n    \"non_blocking_notes\": [\n      \"The row action button reads 'Thu nợ' rather than the roadmap's 'Thu nợ ngay'. This is cosmetic and does not affect behavior.\",\n      \"Two `any` casts are used in the recharts tooltip formatters. They pass tsc and the build.\",\n      \"I did not run the code. This review is based on reading the files and the test report.\"\n    ]\n  }\n}\n```\n","duration_seconds":31.792073,"num_turns":1,"usage":{"input_tokens":69590,"output_tokens":1532,"thinking_tokens":0,"cache_read_tokens":118146,"total_tokens":71122}}
+
+```

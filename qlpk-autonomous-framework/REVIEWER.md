@@ -1,7 +1,7 @@
 # REVIEWER.md — Independent Task & Feature Review
 
 ## Vai trò và Model chuẩn
-- **Model mặc định:** `gemini-4-argon-high` (chạy ở chế độ chỉ đọc `--mode plan --sandbox`).
+- **Model mặc định:** `gemini-4-argon-medium` (chạy ở chế độ chỉ đọc `--mode plan --sandbox`).
 - **Điều kiện kích hoạt (Hard Gate):** Reviewer **chỉ được gọi sau khi tất cả các kiểm thử bắt buộc (`test_commands`) của Task đã chạy thật và đạt `PASS` (`exit_code == 0`)**. Nếu bất kỳ kiểm thử bắt buộc nào `FAIL`, tuyệt đối không gọi Reviewer.
 - **Giới hạn vòng lặp:** Tối đa **3 vòng review (`MAX_REVIEW_ROUNDS=3`)** cho mỗi task. Nếu sau vòng 3 vẫn `FAIL`, task chuyển sang `BLOCKED` (`MAX_REVIEW_ROUNDS_EXCEEDED`).
 

@@ -1,0 +1,12 @@
+# Feature/Task Review Report — P2-028 (Round 1/3)
+
+- `RUN_ID`: `run-20261028005838-32432-30300`
+- `REVIEWER_MODEL`: `claude-sonnet-5-5-high`
+- `REVIEW_ROUND`: `1/3`
+- `OVERALL_REVIEW_RESULT`: `PASS`
+
+## Reviewer Raw Output
+```json
+{"conversation_id":"685257d8-955e-4a3c-97fd-ccef75e8a834","status":"SUCCESS","response":"Need P2-028 section of the roadmap.\n```json\n{\n  \"task_id\": \"P2-028\",\n  \"run_id\": \"run-20261028005838-32432-30300\",\n  \"round\": \"1/3\",\n  \"verdict\": \"PASS\",\n  \"findings\": [],\n  \"verification\": {\n    \"deliverable\": \"be/tests/Feature/Phase2EndToEndWorkflowTest.php exists with 776 lines. The class has 5 tests: scenarios 1–4 and one full-pipeline test.\",\n    \"test_report\": \"The P2-028-test.md report shows both commands at exit code 0. Phase2EndToEndWorkflowTest passed 5 of 5 tests with 138 assertions. `pint` and `pint --test` passed on 224 files.\",\n    \"scenario_1\": \"Covered. It checks a 1,000,000 invoice, a 400,000 payment giving PARTIAL with 600,000 debt, and a 600,000 payment giving PAID. It also checks cash-in of 1,000,000 and doctor KPI actual_revenue of 1,000,000 and actual_visits of 1 (50% and 20% completion).\",\n    \"scenario_2\": \"Covered. It checks a 300,000 expense approved via /approval-requests/{id}/approve, a cash OUT record of 300,000, net_change of 700,000, and an APPROVAL_APPROVED notification for the accountant.\",\n    \"scenario_3\": \"Covered. It checks stock in 10, stock out 6 leaving 4 with is_low_stock true, and LOW_STOCK notifications for ADMIN and MANAGER. A further out of 5 returns 422 and stock stays at 4.\",\n    \"scenario_4\": \"Covered. A CSV import with one good row and one bad row gives COMPLETED_WITH_ERRORS. It checks the import_batches and import_errors rows (row 3, column name) and the initial stock. It also checks the inventory and invoice exports for the BOM and text/csv, and the financial, inventory and clinical reports.\"\n  },\n  \"notes\": [\n    \"Minor, non-blocking: in scenarios 2 and the full pipeline the Expense is created directly through the model rather than through POST /expenses. The approval request is created through the API, and the approval, cash and notification effects are asserted through the API.\",\n    \"Minor, non-blocking: ROADMAP.md still shows the dependency P2-027 as READY, not DONE. P2-028 itself is marked DONE.\"\n  ]\n}\n```\n","duration_seconds":27.006466,"num_turns":1,"usage":{"input_tokens":75658,"output_tokens":1558,"thinking_tokens":0,"cache_read_tokens":91073,"total_tokens":77216}}
+
+```

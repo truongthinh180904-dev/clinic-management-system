@@ -27,6 +27,11 @@ class Payment extends Model
         ];
     }
 
+    public function getMorphClass(): string
+    {
+        return 'Payment';
+    }
+
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class, 'invoice_id');

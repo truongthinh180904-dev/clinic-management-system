@@ -27,6 +27,38 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class Visit extends Model
 {
+    public const STATUS_SCHEDULED = 'SCHEDULED';
+
+    public const STATUS_WAITING = 'WAITING';
+
+    public const STATUS_IN_PROGRESS = 'IN_PROGRESS';
+
+    public const STATUS_COMPLETED = 'COMPLETED';
+
+    public const STATUS_CANCELLED = 'CANCELLED';
+
+    public const PAYMENT_STATUS_UNPAID = 'UNPAID';
+
+    public const PAYMENT_STATUS_PARTIAL = 'PARTIAL';
+
+    public const PAYMENT_STATUS_PAID = 'PAID';
+
+    public const PAYMENT_STATUS_PACKAGED = 'PACKAGED';
+
+    /**
+     * The model's default values for attributes.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'payment_status' => self::PAYMENT_STATUS_UNPAID,
+        'status' => self::STATUS_SCHEDULED,
+        'quantity' => 1,
+        'unit_price' => 0,
+        'discount_amount' => 0,
+        'total_amount' => 0,
+    ];
+
     protected function casts(): array
     {
         return [
@@ -78,8 +110,18 @@ class Visit extends Model
         return $this->hasMany(PatientFile::class, 'visit_id');
     }
 
+    public function files(): HasMany
+    {
+        return $this->patientFiles();
+    }
+
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class, 'visit_id');
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === self::STATUS_CANCELLED;
     }
 }

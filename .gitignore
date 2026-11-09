@@ -17,9 +17,19 @@ be/storage/logs/*
 be/storage/framework/cache/*
 be/storage/framework/sessions/*
 be/storage/framework/views/
+storage/backups/
+be/storage/backups/
 
 # IDE and operating system
 .DS_Store
 .idea/
 .vscode/
 *.log
+
+# Autonomous framework runtime state & raw logs
+qlpk-autonomous-framework-v2.zip
+qlpk-autonomous-framework/.agy-state/
+qlpk-autonomous-framework/logs/
+qlpk-autonomous-framework/reports/tasks/*.json
+qlpk-autonomous-framework/reports/tasks/*.stderr
+qlpk-autonomous-framework/reports/tasks/*.cli.log

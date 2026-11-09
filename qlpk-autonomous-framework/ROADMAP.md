@@ -1,804 +1,451 @@
-# ROADMAP — HỆ THỐNG QUẢN LÝ PHÒNG KHÁM (QLPK)
+# ROADMAP & DANH SÁCH TASK GIAI ĐOẠN 3 (`PHASE-03`) — HỆ THỐNG QUẢN LÝ PHÒNG KHÁM (QLPK)
+## Chuẩn hóa UI/UX Toàn diện, Bệnh án Điện tử, Quản lý Tệp Y tế, Báo cáo Nâng cao, Tối ưu & Vận hành
 
-> **Giai đoạn hiện tại:** `PHASE-01` — **Xây dựng nền tảng và nghiệp vụ khám chữa bệnh cốt lõi** (30 Tasks: `P1-001` → `P1-030` chia làm 8 Nhóm).
-> **Nguyên tắc thực thi:** Thực hiện tuần tự theo DAG phụ thuộc, có kiểm thử tự động (`exit_code == 0`), có cổng Reviewer độc lập (tối đa 3 vòng Fix Loop) và chống trạng thái `DONE` giả (`verify_done_gate`).
-
----
-
-## Tổng quan 3 Giai đoạn của Dự án
-
-| Giai đoạn | Mã | Tên giai đoạn | Phạm vi chính | Kết quả đầu ra |
-|---|---|---|---|---|
-| **Giai đoạn 1** | `PHASE-01` | Xây dựng nền tảng và nghiệp vụ cốt lõi | Kiến trúc, CSDL 30 bảng, đăng nhập Sanctum, RBAC, nhân sự, bệnh nhân, dịch vụ, gói dịch vụ, lịch hẹn, lượt khám & bệnh án cơ bản | Hệ thống chạy ổn định, đăng nhập, phân quyền và thực hiện trọn vẹn luồng khám cơ bản |
-| **Giai đoạn 2** | `PHASE-02` | Hoàn thiện tài chính và quản trị vận hành | Hóa đơn, thanh toán nhiều lần, công nợ, thu chi, sổ quỹ, kho vật tư, KPI, báo cáo, Dashboard, Import/Export | Quản lý vận hành và tài chính tập trung |
-| **Giai đoạn 3** | `PHASE-03` | Hoàn thiện chức năng nâng cao & triển khai | Bệnh án điện tử nâng cao, tệp y tế (`patient_files`), cảnh báo (`alert_rules`), phê duyệt (`approval_requests`), thông báo (`notifications`), tối ưu & deploy | Hệ thống hoàn chỉnh, kiểm thử tổng thể và sẵn sàng vận hành thực tế |
-
----
-
-## Thông tin Môi trường & Định tuyến Model (`agy v1.4.7`)
-
-- `PROJECT_ROOT`: `/Users/truongthinh/Documents/UIT/Manage Infomation/clinic-management-system`
-- `FRAMEWORK_DIR`: `/Users/truongthinh/Documents/UIT/Manage Infomation/clinic-management-system/qlpk-autonomous-framework`
-- **Backend (`be/`)**: PHP `^8.3`, Laravel `^13.17`, PHPUnit `^12.5`, Laravel Pint, MySQL 8.0 (`DBQLPK`, `utf8mb4_unicode_ci`)
-- **Frontend (`fe/`)**: Next.js `16.4.2` (App Router), React `19.3.0`, TypeScript `5`, Tailwind CSS `v4`
-- **Phân quyền AI Models**:
-  - `PLANNER`: `claude-sonnet-5-5-high` (`--mode plan --sandbox`)
-  - `CODER`: `gemini-3.8-flash-high` (`--mode accept-edits`)
-  - `AUTOMATED_TESTER`: Shell Runner (chạy lệnh test thật, thu `exit_code`)
-  - `REVIEWER`: `gemini-4-argon-high` (`--mode plan --sandbox`, chỉ gọi khi Test `PASS`)
-  - `DEBUG_FALLBACK`: `claude-sonnet-5-5-high`
-  - `ARCH_SECURITY_ESCALATION`: `claude-opus-5-5-high`
+- **Mã giai đoạn:** `PHASE-03`
+- **Tài liệu đối chiếu Giai đoạn 1 & 2:**
+  - Giai đoạn 1 Archive: [`docs/phase-1/PHASE_1_REPORT.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-1/PHASE_1_REPORT.md), [`docs/phase-1/DATABASE_DESIGN.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-1/DATABASE_DESIGN.md)
+  - Giai đoạn 2 Archive: [`docs/phase-2/PHASE_2_REPORT.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-2/PHASE_2_REPORT.md), [`qlpk-autonomous-framework/ROADMAP-PHASE-2-ARCHIVE.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/qlpk-autonomous-framework/ROADMAP-PHASE-2-ARCHIVE.md)
+- **Báo cáo Audit Giai đoạn 3:** [`docs/phase-3/PHASE_3_AUDIT_REPORT.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_AUDIT_REPORT.md)
+- **Kế hoạch triển khai & Quản trị rủi ro:** [`docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md), [`docs/phase-3/PHASE_3_RISK_REGISTER.md`](file:///Users/truongthinh/Documents/UIT/Manage%20Infomation/clinic-management-system/docs/phase-3/PHASE_3_RISK_REGISTER.md)
+- **Tổng số Feature Giai đoạn 3:** `10 Features` (`F3-01` → `F3-10`)
+- **Tổng số Task Giai đoạn 3:** `30 Tasks` (`P3-001` → `P3-030`)
+- **Cấu hình Model Định tuyến:**
+  - Planner: `claude-sonnet-5-5-high`
+  - Coder: `gemini-3.8-flash-high`
+  - Reviewer: `claude-sonnet-5-5-high`
+  - Tester & Fallback: `gpt-oss-120b-medium`
+- **Quy tắc bất biến:**
+  1. Không chạy lệnh phá hủy dữ liệu (`migrate:fresh`, `migrate:reset`, `db:wipe`).
+  2. Mọi bảng dữ liệu trên Frontend phải có `overflow-x-auto` và `whitespace-nowrap` cho các cột ngắn/mã/ngày/trạng thái, tuyệt đối không để dồn cột vỡ giao diện.
+  3. Mọi thao tác y tế lâm sàng (`MedicalRecord`) phải bảo đảm tính toàn vẹn, có audit trail, tuyệt đối không để AI tự ý chẩn đoán hoặc kê đơn.
+  4. Mọi commit được ghi nhận tự động trên branch `dev`.
 
 ---
 
-# CHI TIẾT 30 TASK GIAI ĐOẠN 1 (`PHASE-01`)
+## BẢNG ÁNH XẠ 10 FEATURES (`F3-01` → `F3-10`) SANG 30 TASKS (`P3-001` → `P3-030`)
+
+| Feature | Nội dung cốt lõi | Danh sách Tasks | Kết quả đầu ra |
+|---|---|---|---|
+| **`F3-01`** | Audit toàn bộ hệ thống | `P3-001`, `P3-002`, `P3-003` | Báo cáo audit CSDL, API, UI và trọn bộ tài liệu hoạch định Phase 3 |
+| **`F3-02`** | Chuẩn hóa UI/UX toàn hệ thống | `P3-004`, `P3-005`, `P3-006`, `P3-007`, `P3-008`, `P3-009` | Bảng không dồn cột, form nhất quán, modal chuẩn `shadcn/ui`, responsive & báo cáo UI |
+| **`F3-03`** | Hồ sơ bệnh nhân & Bệnh án điện tử | `P3-010`, `P3-011`, `P3-012` | Clinical Timeline, màn hình khám chuyên môn cho bác sĩ, audit trail lịch sử sửa |
+| **`F3-04`** | Quy trình Lịch hẹn & Tiếp đón | `P3-013`, `P3-014`, `P3-015` | Chuẩn hóa máy trạng thái lịch hẹn, tiếp đón nhanh lễ tân, check-in nguyên tử |
+| **`F3-05`** | Quản lý tệp đính kèm y tế | `P3-016`, `P3-017`, `P3-018` | Backend API upload an toàn (`patient_files`), API stream tải/xem tệp, UI xem trước X-quang |
+| **`F3-06`** | Báo cáo & Biểu đồ chuyên nghiệp | `P3-019`, `P3-020`, `P3-021` | Donut Chart cơ cấu, Bar Chart so sánh KPI bác sĩ, Area Chart xu hướng 12 tháng |
+| **`F3-07`** | Bảo mật, Phân quyền & Kiểm toán | `P3-022`, `P3-023`, `P3-024` | RBAC hồ sơ y tế, Audit Log truy vết xem dữ liệu nhạy cảm, Data Masking & Rate Limit |
+| **`F3-08`** | Sao lưu, Khôi phục & Vận hành | `P3-025`, `P3-026` | Script `backup-db.sh`, script `restore-db.sh` kèm dry-run và sổ tay vận hành |
+| **`F3-09`** | Tối ưu hiệu năng & Truy vấn | `P3-027`, `P3-028` | Composite Indexes MySQL bảng lớn, triệt tiêu N+1 Query Eloquent, tối ưu phân trang |
+| **`F3-10`** | Kiểm thử tích hợp & Bàn giao | `P3-029`, `P3-030` | E2E Integration Test toàn bộ luồng nghiệp vụ, nghiệm thu toàn diện và báo cáo bàn giao |
 
 ---
 
-## NHÓM 1 — KHẢO SÁT VÀ CHUẨN HÓA DỰ ÁN (`F-P1-G01`)
-
-### Task P1-001 — Kiểm tra toàn bộ repository
-- `feature_id`: `F-P1-G01`
-- `task_id`: `P1-001`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `[]`
-- `status`: `READY`
-- `complexity`: `LOW`
-- `objective`: Hiểu chính xác trạng thái hiện tại của dự án (`be/`, `fe/`, `DBQLPK`, migrations, models, routes) và lập báo cáo khảo sát trước khi viết thêm code nghiệp vụ.
-- `deliverables`:
-  - `docs/phase-1/INITIAL_AUDIT.md` (gồm trạng thái repo, phiên bản công cụ, trạng thái 30 bảng & 30 models đã khởi tạo, danh sách cấu hình còn thiếu và thứ tự triển khai).
-- `acceptance_criteria`:
-  1. Có báo cáo `docs/phase-1/INITIAL_AUDIT.md` phản ánh đúng trạng thái thực tế của `be/`, `fe/` và `DBQLPK`.
-  2. Không in mật khẩu hoặc secret từ `be/.env` ra tài liệu hay log.
-  3. Không tự ý sửa code nghiệp vụ hoặc xóa dữ liệu database.
-- `test_commands`:
-  - `test -s "$PROJECT_ROOT/docs/phase-1/INITIAL_AUDIT.md"`
-  - `cd "$PROJECT_ROOT/be" && php artisan --version`
-- `allowed_files`: `docs/phase-1/INITIAL_AUDIT.md`, `qlpk-autonomous-framework/reports/tasks/P1-001.md`
+## CHI TIẾT 30 TASKS GIAI ĐOẠN 3 (`P3-001` → `P3-030`)
 
 ---
 
-### Task P1-002 — Xác lập kiến trúc kỹ thuật
-- `feature_id`: `F-P1-G01`
-- `task_id`: `P1-002`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-001"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Thiết lập chuẩn kiến trúc Laravel REST API (`be/`) và Next.js App Router (`fe/`), quy ước đặt tên, cấu trúc JSON envelope, xử lý lỗi, phân trang, xác thực Sanctum và phân quyền RBAC.
-- `deliverables`:
-  - `docs/phase-1/ARCHITECTURE.md`
-- `acceptance_criteria`:
-  1. Quy định rõ cấu trúc thư mục `be/app/{Http/Controllers/Api/V1,Http/Requests,Http/Resources,Services,Models,Policies}` và `fe/app`, `fe/lib/api`, `fe/types`.
-  2. Quy định chuẩn JSON envelope (`success`, `message`, `data`, `meta`, `errors`) và mã HTTP (`200`, `201`, `400`, `401`, `403`, `404`, `409`, `422`, `429`, `500`).
-  3. Không thêm microservice hay độ phức tạp không cần thiết.
-- `test_commands`:
-  - `test -s "$PROJECT_ROOT/docs/phase-1/ARCHITECTURE.md"`
-- `allowed_files`: `docs/phase-1/ARCHITECTURE.md`, `qlpk-autonomous-framework/reports/tasks/P1-002.md`
+# FEATURE `F3-01` — AUDIT TOÀN BỘ HỆ THỐNG
+
+### TASK `P3-001` (`F3-01-01` / `F3-01-02` / `F3-01-03`): Khảo sát Git, Schema 30 Bảng MySQL và Danh mục API Backend
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P2-030`
+- **goal:** Khảo sát chi tiết hiện trạng mã nguồn, đối chiếu schema thực tế của 30 bảng MySQL trên `DBQLPK` với Eloquent models và 28 API controller groups; lập báo cáo audit kỹ thuật tại `docs/phase-3/PHASE_3_AUDIT_REPORT.md`.
+- **scope:** `be/app/Models/*`, `be/app/Http/Controllers/Api/V1/*`, `be/routes/api.php`, `docs/phase-3/PHASE_3_AUDIT_REPORT.md`.
+- **deliverables:**
+  - `docs/phase-3/PHASE_3_AUDIT_REPORT.md`
+- **test_commands:**
+  - `test -f "docs/phase-3/PHASE_3_AUDIT_REPORT.md"`
+  - `grep -Fq "BÁO CÁO AUDIT TOÀN BỘ HỆ THỐNG GIAI ĐOẠN 3" docs/phase-3/PHASE_3_AUDIT_REPORT.md`
+
+### TASK `P3-002` (`F3-01-04` / `F3-01-05`): Khảo sát Frontend UI/UX, Bảng dữ liệu và Kiểm chứng Test Suites Hiện có
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-001`
+- **goal:** Rà soát toàn bộ các trang frontend trong `fe/app/(admin)/`, ghi nhận chi tiết hiện tượng dồn cột bảng, các form chưa đồng bộ validation, kiểm chứng kết quả chạy test suites thực tế (PHPUnit, Pint, Next.js build).
+- **scope:** `fe/app/(admin)/*`, `docs/phase-3/PHASE_3_AUDIT_REPORT.md`.
+- **deliverables:**
+  - Cập nhật mục 4 và mục 5 trong `docs/phase-3/PHASE_3_AUDIT_REPORT.md`.
+- **test_commands:**
+  - `cd be && php artisan test`
+  - `test -f "docs/phase-3/PHASE_3_AUDIT_REPORT.md"`
+
+### TASK `P3-003` (`F3-01-06` / `F3-01-07`): Thẩm tra Logic Nghiệp vụ Tiềm ẩn & Hoàn tất Bộ Tài liệu Hoạch định Phase 3
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-002`
+- **goal:** Kiểm tra logic liên kết giữa Thanh toán, Sổ quỹ, Công nợ, Lượt khám, Kho dược và Bệnh án; hoàn thiện trọn bộ 4 tài liệu hoạch định Phase 3 (`PHASE_3_AUDIT_REPORT.md`, `PHASE_3_TASKS.md`, `PHASE_3_IMPLEMENTATION_PLAN.md`, `PHASE_3_RISK_REGISTER.md`).
+- **scope:** `docs/phase-3/*`, `qlpk-autonomous-framework/ROADMAP.md`, `qlpk-autonomous-framework/PROGRESS.md`.
+- **deliverables:**
+  - `docs/phase-3/PHASE_3_TASKS.md`
+  - `docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md`
+  - `docs/phase-3/PHASE_3_RISK_REGISTER.md`
+- **test_commands:**
+  - `test -f "docs/phase-3/PHASE_3_TASKS.md"`
+  - `test -f "docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md"`
+  - `test -f "docs/phase-3/PHASE_3_RISK_REGISTER.md"`
 
 ---
 
-### Task P1-003 — Chuẩn hóa môi trường phát triển và lệnh kiểm tra
-- `feature_id`: `F-P1-G01`
-- `task_id`: `P1-003`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-001", "P1-002"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Chuẩn hóa cấu hình môi trường mẫu (`be/.env.example`, `fe/.env.example`), kích hoạt định tuyến API (`/api/v1/health`) ở Laravel và ghi tài liệu hướng dẫn phát triển.
-- `deliverables`:
-  - `docs/phase-1/DEVELOPMENT.md`
-  - `be/routes/api.php` (kèm endpoint `GET /api/v1/health` trả JSON chuẩn)
-  - `fe/.env.example` (chứa `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1`)
-  - Feature test kiểm tra `/api/v1/health`
-- `acceptance_criteria`:
-  1. `GET /api/v1/health` trả HTTP 200 kèm JSON trạng thái ứng dụng.
-  2. `php artisan test`, `pint --test` bên `be/` và `npx tsc --noEmit` bên `fe/` đều chạy thành công.
-  3. Không ghi thông tin nhạy cảm vào `.env.example` hoặc source code.
-- `test_commands`:
-  - `test -s "$PROJECT_ROOT/docs/phase-1/DEVELOPMENT.md"`
-  - `cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint --test`
-  - `cd "$PROJECT_ROOT/fe" && npx tsc --noEmit`
-- `allowed_files`: `docs/phase-1/DEVELOPMENT.md`, `be/bootstrap/app.php`, `be/routes/api.php`, `be/.env.example`, `fe/.env.example`, `be/tests/Feature/*`, `qlpk-autonomous-framework/reports/tasks/P1-003.md`
+# FEATURE `F3-02` — CHUẨN HÓA UI/UX TOÀN HỆ THỐNG
+
+### TASK `P3-004` (`F3-02-01`): Chuẩn hóa Bảng Dữ liệu Toàn Hệ thống Chống Dồn Cột và Vỡ Bố Cục
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-003`
+- **goal:** Khắc phục triệt để tình trạng tiêu đề cột và nội dung bị xuống dòng 2-3 hàng; bọc bảng trong container có `overflow-x-auto`, thiết lập độ rộng cột hợp lý, áp dụng `whitespace-nowrap` cho các cột ngắn (Mã, Ngày giờ, Trạng thái, Thao tác), nội dung dài có tooltip/ellipsis, và bố trí nút thao tác không bị chồng lấn.
+- **scope:**
+  - `fe/app/(admin)/patients/page.tsx`
+  - `fe/app/(admin)/invoices/page.tsx`
+  - `fe/app/(admin)/debts/page.tsx`
+  - `fe/app/(admin)/inventory/page.tsx`
+  - `fe/app/(admin)/appointments/page.tsx`
+  - `fe/app/(admin)/visits/page.tsx`
+  - `fe/app/(admin)/cash-book/page.tsx`
+- **deliverables:**
+  - Bảng dữ liệu được bọc `overflow-x-auto` và áp dụng `whitespace-nowrap` chuẩn mực.
+- **test_commands:**
+  - `cd fe && npm run build`
+
+### TASK `P3-005` (`F3-02-02`): Chuẩn hóa Toàn bộ Biểu mẫu (Form), Validation và Chống Submit Lặp
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-004`
+- **goal:** Chuẩn hóa toàn bộ các form nhập liệu: bổ sung dấu sao bắt buộc (`*`), nhóm thông tin logic, hiển thị lỗi validation dưới từng trường, hiển thị loading spinner khi gửi form, vô hiệu hóa nút submit ngăn gửi lặp (`isSubmitting`), và thông báo toast kết quả.
+- **scope:** Toàn bộ modal/sheet nhập liệu trong `fe/app/(admin)/*`.
+- **deliverables:**
+  - Các form nhập liệu đồng nhất trạng thái validation, loading spinner và toasts.
+- **test_commands:**
+  - `cd fe && npm run build`
+
+### TASK `P3-006` (`F3-02-03`): Chuẩn hóa Cấu trúc Trang Danh sách Thống nhất (List Page Pattern)
+- **priority:** `P1`
+- **status:** `DONE`
+- **dependencies:** `P3-005`
+- **goal:** Áp dụng mô hình chuẩn 8 khối cho các trang danh sách: Header -> Action button -> Khối tóm tắt thống kê -> Thanh tìm kiếm -> Bộ lọc đa cấp -> Data Table -> Phân trang -> Empty/Loading States.
+- **scope:** `fe/app/(admin)/*` các trang danh sách.
+- **deliverables:**
+  - Cấu trúc trang danh sách thống nhất, empty state trực quan với icon và nút điều hướng phù hợp.
+- **test_commands:**
+  - `cd fe && npm run build`
+
+### TASK `P3-007` (`F3-02-04`): Chuẩn hóa Dialog Xác nhận Thao tác và Modal Nghiệp vụ
+- **priority:** `P1`
+- **status:** `DONE`
+- **dependencies:** `P3-006`
+- **goal:** Thay thế toàn bộ hộp thoại `window.confirm` mặc định của trình duyệt bằng component `Dialog` / `AlertDialog` của `shadcn/ui`; thiết kế modal xác nhận rõ ràng cho các thao tác rủi ro cao (Hủy lịch, Hủy hóa đơn, Xóa bệnh nhân); đảm bảo dialog có thanh cuộn nội dung, không tràn màn hình nhỏ.
+- **scope:** `fe/components/ui/dialog.tsx`, `fe/app/(admin)/*`.
+- **deliverables:**
+  - Thống nhất các modal xác nhận và thao tác nhanh bằng `AlertDialog`.
+- **test_commands:**
+  - `cd fe && npm run build`
+
+### TASK `P3-008` (`F3-02-05`): Tối ưu Responsive Đa Màn hình (Desktop, Tablet, Mobile) và Khả năng Truy cập
+- **priority:** `P1`
+- **status:** `DONE`
+- **dependencies:** `P3-007`
+- **goal:** Kiểm tra và tinh chỉnh giao diện trên 3 độ phân giải chuẩn (Desktop, Tablet, Mobile); đảm bảo sidebar thu gọn mượt mà không che nội dung, các khối thống kê tự động xuống hàng theo grid linh hoạt, bàn phím và nhãn truy cập (ARIA labels) đầy đủ.
+- **scope:** `fe/components/layout/AdminShell.tsx`, `fe/app/(admin)/*`.
+- **deliverables:**
+  - Bố cục responsive hoàn chỉnh trên mọi kích thước màn hình.
+- **test_commands:**
+  - `cd fe && npm run build`
+
+### TASK `P3-009` (`F3-02-06` / `F3-02-07`): Kiểm chứng Toàn diện Giao diện Toàn Hệ thống & Lập Biên bản Nghiệm thu UI/UX
+- **priority:** `P1`
+- **status:** `DONE`
+- **dependencies:** `P3-008`
+- **goal:** Rà soát toàn bộ 28 routes thực tế của hệ thống; đối chiếu các tiêu chí nghiệm thu của Feature `F3-02`: không còn bảng dồn cột, form nhất quán, modal không vỡ; lập tài liệu kiểm tra giao diện trước và sau chuẩn hóa tại `docs/phase-3/UI_STANDARDIZATION_REPORT.md`.
+- **scope:** `docs/phase-3/UI_STANDARDIZATION_REPORT.md`.
+- **deliverables:**
+  - `docs/phase-3/UI_STANDARDIZATION_REPORT.md`
+- **test_commands:**
+  - `test -f "docs/phase-3/UI_STANDARDIZATION_REPORT.md"`
+  - `cd fe && npm run build`
 
 ---
 
-## NHÓM 2 — DATABASE VÀ NỀN TẢNG DỮ LIỆU (`F-P1-G02`)
+# FEATURE `F3-03` — HOÀN THIỆN HỒ SƠ BỆNH NHÂN VÀ BỆNH ÁN ĐIỆN TỬ
 
-### Task P1-004 — Đối chiếu và chốt mô hình dữ liệu 30 bảng
-- `feature_id`: `F-P1-G02`
-- `task_id`: `P1-004`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-001", "P1-002"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Tài liệu hóa chi tiết thiết kế 30 bảng, khóa chính/ngoại, khóa chính ghép, ràng buộc `UNIQUE`, quy tắc giá trị `status`/`gender`/`payment_method` và sơ đồ quan hệ.
-- `deliverables`:
-  - `docs/phase-1/DATABASE_DESIGN.md`
-  - `docs/phase-1/DATABASE_RELATIONSHIPS.md`
-- `acceptance_criteria`:
-  1. Liệt kê đầy đủ 30 bảng, kiểu dữ liệu, PK/FK/Unique/Index và giải trình 10 điểm lưu ý nghiệp vụ trong Phần C.
-  2. Tài liệu khớp 100% với bộ migrations và Eloquent Models đã triển khai.
-- `test_commands`:
-  - `test -s "$PROJECT_ROOT/docs/phase-1/DATABASE_DESIGN.md"`
-  - `test -s "$PROJECT_ROOT/docs/phase-1/DATABASE_RELATIONSHIPS.md"`
-- `allowed_files`: `docs/phase-1/DATABASE_DESIGN.md`, `docs/phase-1/DATABASE_RELATIONSHIPS.md`, `qlpk-autonomous-framework/reports/tasks/P1-004.md`
+### TASK `P3-010` (`F3-03-01` / `F3-03-02` / `F3-03-03`): Hoàn thiện Hồ sơ Bệnh nhân và Trục Thời gian Lịch sử Khám (Timeline)
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-009`
+- **goal:** Nâng cấp trang chi tiết bệnh nhân `fe/app/(admin)/patients/[id]/page.tsx`: hiển thị thông tin định danh y tế rõ ràng (Mã BN, Họ tên, Giới tính, Nhóm máu, Tiền sử dị ứng), xây dựng khối Trục thời gian lịch sử khám (Clinical Timeline) theo thứ tự ngày giờ giảm dần, hiển thị trạng thái lượt khám, bác sĩ phụ trách và liên kết nhanh đến bệnh án chi tiết.
+- **scope:** `fe/app/(admin)/patients/[id]/page.tsx`, `be/app/Http/Controllers/Api/V1/PatientController.php`.
+- **deliverables:**
+  - Giao diện Timeline lâm sàng chi tiết và API trả về lịch sử khám đính kèm thông tin chẩn đoán.
+- **test_commands:**
+  - `cd be && php artisan test --filter=PatientTest`
+  - `cd fe && npm run build`
 
----
+### TASK `P3-011` (`F3-03-04` / `F3-03-06`): Hoàn thiện Giao diện & Nghiệp vụ Bệnh án Điện tử (Khám bệnh Chuyên môn)
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-010`
+- **goal:** Xây dựng màn hình nhập liệu và hiển thị Bệnh án điện tử hoàn chỉnh cho bác sĩ: hỗ trợ nhập Tiền sử bệnh, Triệu chứng lâm sàng, Chẩn đoán sơ bộ/xác định, Chỉ định cận lâm sàng, Kết quả cận lâm sàng, Phác đồ điều trị và Ngày hẹn tái khám (`follow_up_date`); liên kết chặt chẽ với lượt khám tương ứng (`visit_id`).
+- **scope:** `fe/app/(admin)/visits/[id]/medical-record/page.tsx` hoặc Modal Bệnh án chuyên sâu tại `visits/page.tsx`, `be/app/Http/Controllers/Api/V1/MedicalRecordController.php`.
+- **deliverables:**
+  - Màn hình khám bệnh cho bác sĩ, form bệnh án chuẩn y khoa, API đồng bộ trạng thái lượt khám sang `COMPLETED` khi lưu bệnh án.
+- **test_commands:**
+  - `cd be && php artisan test --filter=MedicalRecordTest`
+  - `cd fe && npm run build`
 
-### Task P1-005 — Triển khai migration cho 30 bảng
-- `feature_id`: `F-P1-G02`
-- `task_id`: `P1-005`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-004"]`
-- `status`: `DONE`
-- `complexity`: `HIGH`
-- `objective`: Tạo đầy đủ 30 bảng theo đúng thứ tự phụ thuộc khóa ngoại trên Laravel và chạy migration an toàn lên `DBQLPK` + kiểm thử tự động trên SQLite `:memory:`.
-- `deliverables`:
-  - 30 bảng migrations trong `be/database/migrations/`
-  - `be/tests/Feature/DatabaseSchemaTest.php`
-- `acceptance_criteria`:
-  1. Đủ 30 bảng mục tiêu, đúng tên cột, kiểu dữ liệu `DECIMAL(15,2)` / `DECIMAL(15,3)`, khóa chính ghép và khóa ngoại.
-  2. Đã chạy `php artisan migrate` thành công trên `DBQLPK` và pass `DatabaseSchemaTest` (66 assertions).
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=DatabaseSchemaTest`
-  - `cd "$PROJECT_ROOT/be" && php artisan migrate:status`
-- `allowed_files`: `be/database/migrations/*`, `be/tests/Feature/DatabaseSchemaTest.php`
+### TASK `P3-012` (`F3-03-05` / `F3-03-07` / `F3-03-08`): Phân quyền Nghiêm ngặt & Lưu vết Lịch sử Chỉnh sửa Bệnh án (Audit Trail)
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-011`
+- **goal:** Triển khai cơ chế bảo vệ tính toàn vẹn y bạ: Chỉ tài khoản có quyền `medical_records.update` mới được chỉnh sửa bệnh án; mọi thao tác chỉnh sửa bệnh án sau khi đã kết thúc lượt khám phải được ghi nhận vào bảng `audit_logs` kèm lý do chỉnh sửa; cung cấp API và giao diện xem lịch sử các lần sửa bệnh án.
+- **scope:** `be/app/Http/Controllers/Api/V1/MedicalRecordController.php`, `fe/app/(admin)/visits/*`.
+- **deliverables:**
+  - API `GET /api/v1/visits/{visit}/medical-record/history` và giao diện xem lịch sử chỉnh sửa bệnh án có lưu vết thời gian và người sửa.
+- **test_commands:**
+  - `cd be && php artisan test --filter=MedicalRecordTest`
+  - `cd fe && npm run build`
 
 ---
 
-### Task P1-006 — Xây dựng Model và quan hệ Eloquent
-- `feature_id`: `F-P1-G02`
-- `task_id`: `P1-006`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-005"]`
-- `status`: `DONE`
-- `complexity`: `HIGH`
-- `objective`: Xây dựng đầy đủ 30 Eloquent Models (27 Entity Models + 3 Pivot Models) kèm `#[Fillable]`, `casts()`, `UPDATED_AT` và đầy đủ Relationships.
-- `deliverables`:
-  - 30 Models trong `be/app/Models/`
-  - `be/tests/Feature/EloquentModelsRelationshipTest.php`
-- `acceptance_criteria`:
-  1. Đủ 30 Models khớp với 30 bảng trong database.
-  2. Toàn bộ quan hệ `BelongsTo`, `HasMany`, `HasOne`, `BelongsToMany` (`using` Pivot) và `MorphTo`/`MorphMany` hoạt động chính xác qua test `EloquentModelsRelationshipTest`.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=EloquentModelsRelationshipTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Models/*`, `be/tests/Feature/EloquentModelsRelationshipTest.php`
+# FEATURE `F3-04` — HOÀN THIỆN QUY TRÌNH LỊCH HẸN, TIẾP ĐÓN VÀ KHÁM BỆNH
+
+### TASK `P3-013` (`F3-04-01` / `F3-04-02` / `F3-04-03`): Chuẩn hóa Máy trạng thái Lịch hẹn và Bộ lọc Lịch khám Đa tiêu chí
+- **priority:** `P1`
+- **status:** `DONE`
+- **dependencies:** `P3-012`
+- **goal:** Chuẩn hóa quy tắc chuyển trạng thái của Lịch hẹn (`appointments`): `PENDING` -> `CONFIRMED` -> `COMPLETED` (hoặc `CANCELLED` kèm lý do hủy); hoàn thiện bộ lọc lịch hẹn đa năng theo Khoảng ngày khám, Bác sĩ phụ trách, Chuyên khoa/Dịch vụ và Trạng thái xác nhận.
+- **scope:** `be/app/Http/Controllers/Api/V1/AppointmentController.php`, `fe/app/(admin)/appointments/page.tsx`.
+- **deliverables:**
+  - Logic xác thực chuyển trạng thái lịch hẹn chống nhảy cóc trạng thái bất hợp lệ; bộ lọc danh sách lịch hẹn mượt mà.
+- **test_commands:**
+  - `cd be && php artisan test --filter=AppointmentTest`
+  - `cd fe && npm run build`
+
+### TASK `P3-014` (`F3-04-04` / `F3-04-05`): Hoàn thiện Luồng Tiếp đón Bệnh nhân tại Quầy Lễ tân
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-013`
+- **goal:** Xây dựng màn hình/chức năng Tiếp đón nhanh tại quầy lễ tân: tìm kiếm bệnh nhân nhanh qua SĐT hoặc CCCD, tự động điền thông tin nếu bệnh nhân cũ, thêm bệnh nhân mới tức thời, phân luồng vào phòng khám chuyên khoa, và cấp số thứ tự chờ khám.
+- **scope:** `fe/app/(admin)/visits/page.tsx`, `fe/app/(admin)/appointments/page.tsx`.
+- **deliverables:**
+  - Thao tác tiếp đón 1-click tại quầy, sinh lượt khám với trạng thái `WAITING` rõ ràng.
+- **test_commands:**
+  - `cd be && php artisan test --filter=VisitTest`
+  - `cd fe && npm run build`
+
+### TASK `P3-015` (`F3-04-06` / `F3-04-07`): Chuyển đổi Nguyên tử từ Lịch hẹn sang Lượt khám Chống Tạo Trùng
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-014`
+- **goal:** Xây dựng endpoint và UI chuyển đổi nguyên tử: khi bấm "Tiếp nhận từ Lịch hẹn", hệ thống kích hoạt `DB::transaction()` khóa bi quan lịch hẹn, tạo lượt khám `Visit` liên kết `appointment_id`, chuyển trạng thái `Appointment` thành `COMPLETED`, chống tạo đúp 2 lượt khám cho cùng một lịch hẹn khi có nhiều click đồng thời.
+- **scope:** `be/app/Http/Controllers/Api/V1/AppointmentController.php`, `fe/app/(admin)/appointments/page.tsx`.
+- **deliverables:**
+  - API `POST /api/v1/appointments/{appointment}/check-in` hoạt động nguyên tử và UI nút tiếp nhận trực quan.
+- **test_commands:**
+  - `cd be && php artisan test --filter=AppointmentCheckInTest`
+  - `cd fe && npm run build`
 
 ---
 
-### Task P1-007 — Seed dữ liệu nền và quy tắc dữ liệu mẫu
-- `feature_id`: `F-P1-G02`
-- `task_id`: `P1-007`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-005", "P1-006"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Tạo Seeder idempotent (`updateOrCreate` / `firstOrCreate`) cho 8 vai trò (`ADMIN`, `MANAGER`, `DOCTOR`, `RECEPTIONIST`, `CASHIER`, `ACCOUNTANT`, `EMPLOYEE`, `VIEWER`), danh mục quyền chuẩn theo module, và dữ liệu mẫu dịch vụ/gói trong môi trường dev/test.
-- `deliverables`:
-  - `be/database/seeders/RolePermissionSeeder.php`
-  - `be/database/seeders/DemoCatalogSeeder.php`
-  - Cập nhật `be/database/seeders/DatabaseSeeder.php`
-  - `be/tests/Feature/DatabaseSeederTest.php`
-- `acceptance_criteria`:
-  1. Chạy Seeder nhiều lần liên tiếp không gây lỗi trùng lặp (`idempotent`).
-  2. Tạo đủ 8 vai trò chuẩn và ma trận quyền tương ứng.
-  3. Không chứa dữ liệu bệnh nhân thật và không tạo mật khẩu cố định nguy hiểm khi `APP_ENV=production`.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=DatabaseSeederTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/database/seeders/*`, `be/tests/Feature/DatabaseSeederTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-007.md`
+# FEATURE `F3-05` — QUẢN LÝ TÀI LIỆU VÀ TỆP ĐÍNH KÈM Y TẾ
+
+### TASK `P3-016` (`F3-05-01` / `F3-05-02`): Xây dựng Backend API Tải lên & Quản lý Tệp Đính kèm Y tế (`patient_files`)
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-015`
+- **goal:** Xây dựng `PatientFileController` và các Form Request: hỗ trợ tải lên tài liệu y tế (kết quả xét nghiệm, ảnh X-quang, MRI, đơn thuốc ngoài, file PDF kết luận); kiểm tra nghiêm ngặt MIME type, giới hạn dung lượng tối đa 10MB/file, lưu trữ trong thư mục bảo vệ `storage/app/patient_files/{patient_id}/`.
+- **scope:**
+  - `be/app/Http/Controllers/Api/V1/PatientFileController.php`
+  - `be/app/Http/Requests/PatientFile/UploadPatientFileRequest.php`
+  - `be/app/Http/Resources/PatientFileResource.php`
+  - `be/routes/api.php`
+- **deliverables:**
+  - API `POST /api/v1/patients/{patient}/files` và `POST /api/v1/visits/{visit}/files` kèm validation bảo mật.
+- **test_commands:**
+  - `cd be && php artisan test --filter=PatientFileTest`
+
+### TASK `P3-017` (`F3-05-03` / `F3-05-04`): Xây dựng Backend API Tải xuống & Xem Trực tiếp Tệp Y tế có Phân quyền
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-016`
+- **goal:** Xây dựng API phát trực tuyến tệp an toàn (`stream file`): yêu cầu token xác thực Sanctum và quyền `patient_files.view`; hỗ trợ xem trước hình ảnh/PDF trong trình duyệt (`Content-Disposition: inline`) và tải về máy (`Content-Disposition: attachment`); hỗ trợ xóa tệp đính kèm (`patient_files.delete`) có ghi nhận audit log.
+- **scope:** `be/app/Http/Controllers/Api/V1/PatientFileController.php`, `be/routes/api.php`.
+- **deliverables:**
+  - API `GET /api/v1/patient-files/{id}/download`, `GET /api/v1/patient-files/{id}/preview`, `DELETE /api/v1/patient-files/{id}`.
+- **test_commands:**
+  - `cd be && php artisan test --filter=PatientFileDownloadTest`
+
+### TASK `P3-018` (`F3-05-05` / `F3-05-06`): Xây dựng Giao diện Quản lý và Xem trước Tệp Y tế trên Frontend
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-017`
+- **goal:** Xây dựng giao diện danh sách và tải lên tệp y tế trong trang chi tiết bệnh nhân (`fe/app/(admin)/patients/[id]/page.tsx`) và màn hình khám bệnh (`visits/page.tsx`): hỗ trợ kéo thả tệp, thanh tiến trình tải lên, hiển thị thumbnail ảnh thu nhỏ, modal xem trước hình ảnh phóng to hoặc mở xem PDF trực tiếp trong ứng dụng.
+- **scope:** `fe/components/patient-files/*`, `fe/app/(admin)/patients/[id]/page.tsx`, `fe/lib/api/patient-files.ts`.
+- **deliverables:**
+  - Module quản lý tệp y tế trực quan, chuyên nghiệp, hỗ trợ xem trước ảnh X-quang/kết quả xét nghiệm.
+- **test_commands:**
+  - `cd fe && npm run build`
 
 ---
 
-## NHÓM 3 — ĐĂNG NHẬP VÀ PHÂN QUYỀN (`F-P1-G03`)
+# FEATURE `F3-06` — HOÀN THIỆN BÁO CÁO VÀ BIỂU ĐỒ CHUYÊN NGHIỆP
 
-### Task P1-008 — Xây dựng hệ thống đăng nhập
-- `feature_id`: `F-P1-G03`
-- `task_id`: `P1-008`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-005", "P1-006", "P1-007"]`
-- `status`: `READY`
-- `complexity`: `HIGH`
-- `objective`: Xây dựng hệ thống xác thực API (`POST /api/v1/auth/login`, `GET /api/v1/auth/me`, `POST /api/v1/auth/logout`) với kiểm tra `status === ACTIVE`, cập nhật `last_login_at`, ghi `audit_logs`, rate limiting chống brute-force và ẩn tuyệt đối `password_hash`.
-- `deliverables`:
-  - `be/app/Http/Controllers/Api/V1/AuthController.php`
-  - `be/app/Http/Requests/Auth/LoginRequest.php`
-  - `be/app/Http/Resources/UserResource.php`
-  - Middleware kiểm tra tài khoản `ACTIVE`
-  - `be/tests/Feature/AuthApiTest.php`
-- `acceptance_criteria`:
-  1. Đăng nhập đúng `username`/`password` với tài khoản `ACTIVE` trả token/session hợp lệ và cập nhật `last_login_at`.
-  2. Sai mật khẩu trả `401`; tài khoản `INACTIVE`/`LOCKED` bị từ chối (`403`); vượt giới hạn tần suất trả `429`.
-  3. `GET /api/v1/auth/me` trả thông tin user kèm `roles`, `permissions`, `employee` và tuyệt đối không lộ `password_hash`.
-  4. `POST /api/v1/auth/logout` thu hồi token/session hiện tại.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=AuthApiTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Http/Controllers/Api/V1/AuthController.php`, `be/app/Http/Requests/Auth/*`, `be/app/Http/Resources/*`, `be/app/Http/Middleware/*`, `be/app/Models/User.php`, `be/routes/api.php`, `be/bootstrap/app.php`, `be/config/*`, `be/database/migrations/*`, `be/tests/Feature/AuthApiTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-008.md`
+### TASK `P3-019` (`F3-06-01`): Chuẩn hóa Biểu đồ Tròn/Donut (Pie/Donut Chart) Biểu diễn Cơ cấu Doanh thu & Tỷ trọng
+- **priority:** `P1`
+- **status:** `DONE`
+- **dependencies:** `P3-018`
+- **goal:** Nâng cấp Trung tâm Báo cáo và Dashboard: sử dụng biểu đồ Donut Chart từ thư viện `recharts` để trực quan hóa: (1) Cơ cấu phương thức thanh toán (Tiền mặt, Chuyển khoản, Thẻ, Bảo hiểm), (2) Tỷ trọng cơ cấu chi phí vận hành theo danh mục chi, (3) Phân bố trạng thái lịch hẹn (Hoàn thành, Đã hủy, Bỏ khám).
+- **scope:** `fe/app/(admin)/reports/page.tsx`, `fe/app/(admin)/dashboard/page.tsx`, `fe/components/charts/*`.
+- **deliverables:**
+  - Biểu đồ Donut Chart có tooltip tùy biến đẹp mắt, chú thích (legend) rõ ràng, tỷ lệ phần trăm trực quan.
+- **test_commands:**
+  - `cd fe && npm run build`
 
----
+### TASK `P3-020` (`F3-06-02`): Chuẩn hóa Biểu đồ Cột (Bar Chart) So sánh Hiệu suất Bác sĩ và Chỉ tiêu KPI
+- **priority:** `P1`
+- **status:** `DONE`
+- **dependencies:** `P3-019`
+- **goal:** Hoàn thiện biểu đồ Bar Chart so sánh đa chiều: (1) Doanh thu thực tế vs Mục tiêu KPI theo từng bác sĩ/nhân viên trong tháng, (2) Số lượt khám hoàn thành giữa các chuyên khoa phòng khám, (3) Top 10 thuốc/vật tư tiêu hao nhiều nhất.
+- **scope:** `fe/app/(admin)/kpi/page.tsx`, `fe/app/(admin)/reports/page.tsx`.
+- **deliverables:**
+  - Biểu đồ Bar Chart so sánh trực quan, có vạch ngưỡng chỉ tiêu (ReferenceLine) và bảng màu chuẩn Medical SaaS.
+- **test_commands:**
+  - `cd fe && npm run build`
 
-### Task P1-009 — Xây dựng hệ thống Role và Permission (RBAC)
-- `feature_id`: `F-P1-G03`
-- `task_id`: `P1-009`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-006", "P1-008"]`
-- `status`: `READY`
-- `complexity`: `HIGH`
-- `objective`: Xây dựng helper/methods kiểm tra quyền trên `User` (`hasRole`, `hasPermission`), middleware `permission:<key>`, và các API quản trị Role & Permission (`GET /api/v1/roles`, `GET /api/v1/permissions`, `PUT /api/v1/roles/{role}/permissions`, `PUT /api/v1/users/{user}/roles`).
-- `deliverables`:
-  - `be/app/Http/Middleware/CheckPermission.php`
-  - `be/app/Http/Controllers/Api/V1/RolePermissionController.php`
-  - `be/tests/Feature/RbacAuthorizationTest.php`
-- `acceptance_criteria`:
-  1. Middleware chặn `403` với tài khoản không có `permission_key` yêu cầu.
-  2. Tài khoản `VIEWER` không thể gọi các API tạo/sửa/xóa; `RECEPTIONIST` không có quyền tài chính.
-  3. Chỉ tài khoản có quyền quản trị phân quyền mới sửa được `role_permissions` hoặc gán `user_roles`.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=RbacAuthorizationTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Models/User.php`, `be/app/Http/Middleware/*`, `be/app/Http/Controllers/Api/V1/RolePermissionController.php`, `be/app/Http/Requests/*`, `be/app/Http/Resources/*`, `be/routes/api.php`, `be/bootstrap/app.php`, `be/tests/Feature/RbacAuthorizationTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-009.md`
+### TASK `P3-021` (`F3-06-03`): Chuẩn hóa Biểu đồ Đường/Vùng (Line/Area Chart) Xu hướng Tăng trưởng Doanh thu & Lưu lượng
+- **priority:** `P1`
+- **status:** `DONE`
+- **dependencies:** `P3-020`
+- **goal:** Nâng cấp biểu đồ Line/Area Chart thể hiện chuỗi thời gian (Time-series analytics): theo dõi xu hướng biến động doanh thu thuần, dòng tiền thực thu và số lượt khám hàng ngày trong tháng, so sánh với cùng kỳ tháng trước; hỗ trợ bộ lọc nhanh (7 ngày qua, 30 ngày qua, Quý này, Năm nay).
+- **scope:** `fe/app/(admin)/dashboard/page.tsx`, `fe/app/(admin)/reports/page.tsx`.
+- **deliverables:**
+  - Biểu đồ xu hướng Area Chart mượt mà với đường cong spline, gradient tinh tế và bộ lọc thời gian tương tác cao.
+- **test_commands:**
+  - `cd fe && npm run build`
 
 ---
 
-### Task P1-010 — Xây dựng giao diện đăng nhập và bảo vệ trang quản trị
-- `feature_id`: `F-P1-G03`
-- `task_id`: `P1-010`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-008", "P1-009"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Xây dựng API client xác thực trên Next.js (`fe/`), AuthProvider/guard bảo vệ khu vực quản trị, trang `/login`, hiển thị thông tin tài khoản đang đăng nhập và chức năng đăng xuất.
-- `deliverables`:
-  - `fe/lib/api/client.ts`, `fe/lib/api/auth.ts`
-  - `fe/types/auth.ts`
-  - `fe/app/login/page.tsx`
-  - `fe/components/layout/AdminShell.tsx`
-- `acceptance_criteria`:
-  1. Trang `/login` validate input, hiển thị trạng thái loading và thông báo lỗi rõ ràng từ Backend.
-  2. Người chưa đăng nhập vào trang quản trị sẽ được chuyển hướng về `/login`.
-  3. `npx tsc --noEmit` và `npm run build` bên `fe/` đạt exit code `0`.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build`
-- `allowed_files`: `fe/app/**`, `fe/components/**`, `fe/lib/**`, `fe/types/**`, `qlpk-autonomous-framework/reports/tasks/P1-010.md`
+# FEATURE `F3-07` — NÂNG CAO BẢO MẬT, PHÂN QUYỀN VÀ KIỂM TOÁN
+
+### TASK `P3-022` (`F3-07-01` / `F3-07-02`): Hoàn thiện Ma trận Phân quyền RBAC Chuyên sâu cho Hồ sơ Y tế và Tệp đính kèm
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-021`
+- **goal:** Bổ sung và đồng bộ các quyền chi tiết mới vào `RolePermissionSeeder`: `patient_files.view`, `patient_files.upload`, `patient_files.delete`, `medical_records.history.view`; phân định rõ ranh giới quyền giữa bác sĩ, điều dưỡng, và thu ngân/hành chính.
+- **scope:** `be/database/seeders/RolePermissionSeeder.php`, `be/app/Http/Controllers/Api/V1/RolePermissionController.php`.
+- **deliverables:**
+  - Seeder quyền RBAC đầy đủ, kiểm soát chặt chẽ ở cấp Middleware API và ẩn/hiện nút bấm trên Frontend.
+- **test_commands:**
+  - `cd be && php artisan test --filter=RolePermissionTest`
+
+### TASK `P3-023` (`F3-07-03` / `F3-07-04`): Nâng cấp Nhật ký Kiểm toán (Audit Log) Truy vết Truy cập và Thao tác Nhạy cảm
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-022`
+- **goal:** Tự động ghi nhật ký kiểm toán vào bảng `audit_logs` khi có người dùng: (1) Xem hoặc tải tệp hồ sơ y tế bệnh nhân, (2) Xuất file CSV báo cáo tài chính/kho, (3) Thay đổi thông tin bệnh án, (4) Thay đổi trạng thái tài khoản người dùng hoặc vai trò.
+- **scope:** `be/app/Models/AuditLog.php`, `be/app/Http/Controllers/Api/V1/AuditLogController.php`.
+- **deliverables:**
+  - Cơ chế tự động ghi log kiểm toán không thể xóa sửa (Append-only Audit Log) và UI xem nhật ký quản trị.
+- **test_commands:**
+  - `cd be && php artisan test --filter=AuditLogTest`
+
+### TASK `P3-024` (`F3-07-05` / `F3-07-06`): Che dấu Dữ liệu Nhạy cảm (Data Masking) và Giới hạn Tần suất Truy cập (Rate Limiting)
+- **priority:** `P1`
+- **status:** `DONE`
+- **dependencies:** `P3-023`
+- **goal:** Triển khai cơ chế che giấu thông tin cá nhân (Data Masking): che bớt số điện thoại (`0912***456`) và CCCD với vai trò không có quyền quản trị trực tiếp; thiết lập Middleware Rate Limiting trên các API nhạy cảm (Login, Export, Upload) để chống brute-force và DDoS.
+- **scope:** `be/routes/api.php`, `be/app/Http/Resources/*`.
+- **deliverables:**
+  - Cấu hình Rate Limiting theo chuẩn Laravel Throttle và các Resource che dấu thông tin cá nhân.
+- **test_commands:**
+  - `cd be && php artisan test --filter=RateLimitTest`
 
 ---
 
-## NHÓM 4 — NHÂN SỰ VÀ TÀI KHOẢN (`F-P1-G04`)
+# FEATURE `F3-08` — SAO LƯU, KHÔI PHỤC VÀ QUY TRÌNH VẬN HÀNH
 
-### Task P1-011 — Xây dựng API quản lý nhân viên
-- `feature_id`: `F-P1-G04`
-- `task_id`: `P1-011`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-006", "P1-009"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Xây dựng REST API CRUD nhân viên (`/api/v1/employees`) kèm sinh mã `employee_code` duy nhất an toàn, tìm kiếm theo mã/tên, lọc theo `status`/`department`, phân trang và bảo vệ bằng RBAC.
-- `deliverables`:
-  - `be/app/Http/Controllers/Api/V1/EmployeeController.php`
-  - `be/app/Http/Requests/Employee/*`
-  - `be/app/Http/Resources/EmployeeResource.php`
-  - `be/tests/Feature/EmployeeApiTest.php`
-- `acceptance_criteria`:
-  1. Danh sách, chi tiết, tạo mới, cập nhật và đổi trạng thái nhân viên hoạt động đúng và validate chặt chẽ.
-  2. Mã nhân viên không trùng; không xóa nhân viên đã có lịch sử khám/lịch hẹn.
-  3. Kiểm tra quyền `employees.view`, `employees.create`, `employees.update` trên từng endpoint.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=EmployeeApiTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Http/Controllers/Api/V1/EmployeeController.php`, `be/app/Http/Requests/Employee/*`, `be/app/Http/Resources/EmployeeResource.php`, `be/app/Services/*`, `be/routes/api.php`, `be/tests/Feature/EmployeeApiTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-011.md`
+### TASK `P3-025` (`F3-08-01` / `F3-08-02`): Xây dựng Kịch bản Sao lưu Cơ sở Dữ liệu Tự động (`scripts/backup-db.sh`)
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-024`
+- **goal:** Xây dựng script shell an toàn `scripts/backup-db.sh`: tự động đọc thông tin kết nối từ file `.env`, trích xuất toàn bộ cấu trúc và dữ liệu 30 bảng MySQL sang file SQL nén `gzip`, đặt tên có nhãn thời gian, lưu trong thư mục `storage/backups/`, tự động dọn dẹp các bản sao lưu cũ quá 30 ngày; che giấu mật khẩu khỏi tiến trình hệ thống.
+- **scope:** `scripts/backup-db.sh`.
+- **deliverables:**
+  - File kịch bản `scripts/backup-db.sh` có quyền thực thi `chmod +x` và tài liệu hướng dẫn cron job.
+- **test_commands:**
+  - `test -x "scripts/backup-db.sh"`
+  - `bash scripts/backup-db.sh --dry-run`
 
----
-
-### Task P1-012 — Xây dựng API quản lý tài khoản và vai trò
-- `feature_id`: `F-P1-G04`
-- `task_id`: `P1-012`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-009", "P1-011"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Xây dựng API quản lý tài khoản (`/api/v1/users`), liên kết `employee_id`, đổi trạng thái, đổi mật khẩu an toàn, gán vai trò, chống tự nâng quyền và chống khóa tài khoản `ADMIN` hoạt động cuối cùng.
-- `deliverables`:
-  - `be/app/Http/Controllers/Api/V1/UserController.php`
-  - `be/app/Http/Requests/User/*`
-  - `be/tests/Feature/UserManagementApiTest.php`
-- `acceptance_criteria`:
-  1. Tạo/xem/cập nhật tài khoản, đổi mật khẩu và gán vai trò hoạt động đúng.
-  2. Chặn vô hiệu hóa tài khoản `ADMIN` cuối cùng đang hoạt động (`422`/`409`).
-  3. Không trả `password_hash` trong bất kỳ response nào; thu hồi phiên khi tài khoản bị vô hiệu hóa.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=UserManagementApiTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Http/Controllers/Api/V1/UserController.php`, `be/app/Http/Requests/User/*`, `be/app/Http/Resources/*`, `be/routes/api.php`, `be/tests/Feature/UserManagementApiTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-012.md`
+### TASK `P3-026` (`F3-08-03` / `F3-08-04`): Xây dựng Kịch bản Khôi phục CSDL (`scripts/restore-db.sh`) và Sổ tay Vận hành Khẩn cấp
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-025`
+- **goal:** Xây dựng script khôi phục cơ sở dữ liệu `scripts/restore-db.sh` với cơ chế kiểm tra an toàn cao nhất: (1) Luôn yêu cầu xác nhận rõ ràng từ người vận hành, (2) Có chế độ dry-run kiểm tra tính toàn vẹn của tệp sao lưu trên một database thử nghiệm tạm thời (`DBQLPK_TEST_RESTORE`), (3) Tuyệt đối không bao giờ tự động ghi đè lên database chính `DBQLPK` khi chưa có xác nhận; biên soạn Sổ tay Vận hành Khôi phục thảm họa tại `docs/phase-3/DISASTER_RECOVERY_RUNBOOK.md`.
+- **scope:** `scripts/restore-db.sh`, `docs/phase-3/DISASTER_RECOVERY_RUNBOOK.md`.
+- **deliverables:**
+  - `scripts/restore-db.sh` và `docs/phase-3/DISASTER_RECOVERY_RUNBOOK.md`.
+- **test_commands:**
+  - `test -x "scripts/restore-db.sh"`
+  - `test -f "docs/phase-3/DISASTER_RECOVERY_RUNBOOK.md"`
+  - `bash scripts/restore-db.sh --help`
 
 ---
 
-### Task P1-013 — Xây dựng giao diện nhân sự và tài khoản
-- `feature_id`: `F-P1-G04`
-- `task_id`: `P1-013`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-010", "P1-011", "P1-012"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Xây dựng các trang quản lý Nhân viên (`/employees`, `/employees/[id]`) và Tài khoản & Phân quyền (`/users`) kết nối API thật, có tìm kiếm, lọc, phân trang, trạng thái loading/empty/error và ẩn thao tác theo quyền.
-- `deliverables`:
-  - `fe/lib/api/employees.ts`, `fe/lib/api/users.ts`
-  - `fe/app/(admin)/employees/**`, `fe/app/(admin)/users/**`
-- `acceptance_criteria`:
-  1. Tạo/sửa nhân viên, tạo tài khoản và gán vai trò trực tiếp trên giao diện kết nối Backend thật.
-  2. Hiển thị lỗi validation từ Backend rõ ràng; `npx tsc --noEmit` và `npm run build` PASS.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build`
-- `allowed_files`: `fe/app/**`, `fe/components/**`, `fe/lib/**`, `fe/types/**`, `qlpk-autonomous-framework/reports/tasks/P1-013.md`
+# FEATURE `F3-09` — TỐI ƯU HIỆU NĂNG VÀ TRUY VẤN CƠ SỞ DỮ LIỆU
+
+### TASK `P3-027` (`F3-09-01` / `F3-09-02`): Bổ sung Chỉ mục Phức hợp (Composite Indexes) trên các Bảng Giao dịch Lớn
+- **priority:** `P1`
+- **status:** `DONE`
+- **dependencies:** `P3-026`
+- **goal:** Rà soát các câu truy vấn lọc, tìm kiếm và thống kê thời gian; tạo migration bổ sung các Composite Indexes chiến lược trên MySQL cho `visits`, `appointments`, `invoices`, `cash_transactions`, `inventory_transactions`, `audit_logs`.
+- **scope:** `be/database/migrations/2026_10_29_110000_add_phase_3_composite_indexes.php`.
+- **deliverables:**
+  - File migration bổ sung index an toàn (có kiểm tra `hasIndex` trước khi tạo để tránh lỗi trùng lặp).
+- **test_commands:**
+  - `cd be && php artisan migrate --pretend`
+  - `cd be && php artisan test`
+
+### TASK `P3-028` (`F3-09-03` / `F3-09-04`): Tối ưu Truy vấn Eloquent Chống N+1 và Tối ưu Phân trang Danh mục Lớn
+- **priority:** `P1`
+- **status:** `DONE`
+- **dependencies:** `P3-027`
+- **goal:** Rà soát toàn bộ các Controller báo cáo, hóa đơn, tồn kho và lượt khám; áp dụng triệt để Eager Loading (`with()`) loại bỏ hoàn toàn các điểm nghẽn N+1 Query; tối ưu các truy vấn đếm tổng (`count()`) và phân trang danh mục lớn; đảm bảo thời gian phản hồi của 95% API đạt dưới 100ms.
+- **scope:** `be/app/Http/Controllers/Api/V1/*`.
+- **deliverables:**
+  - Mã nguồn backend được tối ưu hóa truy vấn, kiểm thử hiệu năng thông suốt.
+- **test_commands:**
+  - `cd be && php artisan test`
+  - `cd be && ./vendor/bin/pint --test`
 
 ---
 
-## NHÓM 5 — BỆNH NHÂN VÀ DỮ LIỆU DỊCH VỤ (`F-P1-G05`)
+# FEATURE `F3-10` — KIỂM THỬ TÍCH HỢP TOÀN DIỆN VÀ BÀN GIAO GIAI ĐOẠN 3
 
-### Task P1-014 — Xây dựng API quản lý bệnh nhân
-- `feature_id`: `F-P1-G05`
-- `task_id`: `P1-014`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-006", "P1-009"]`
-- `status`: `READY`
-- `complexity`: `HIGH`
-- `objective`: Xây dựng API CRUD bệnh nhân (`/api/v1/patients`) với cơ chế cấp mã `patient_code` duy nhất an toàn khi đồng thời (concurrency-safe), cảnh báo khả năng trùng hồ sơ (`duplicate_warnings` theo SĐT/họ tên + ngày sinh) mà không tự gộp hồ sơ, tìm kiếm và phân trang.
-- `deliverables`:
-  - `be/app/Http/Controllers/Api/V1/PatientController.php`
-  - `be/app/Http/Requests/Patient/*`
-  - `be/app/Http/Resources/PatientResource.php`
-  - `be/tests/Feature/PatientApiTest.php`
-- `acceptance_criteria`:
-  1. `patient_code` duy nhất, không dùng `count() + 1` ngây thơ dễ trùng khi tạo đồng thời.
-  2. Cảnh báo `duplicate_warnings` khi trùng SĐT nhưng vẫn cho phép lưu (không ép `phone` unique cứng).
-  3. Tìm kiếm theo `patient_code`, `full_name`, `phone` và kiểm tra quyền `patients.view`/`create`/`update`.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=PatientApiTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Http/Controllers/Api/V1/PatientController.php`, `be/app/Http/Requests/Patient/*`, `be/app/Http/Resources/PatientResource.php`, `be/app/Services/*`, `be/routes/api.php`, `be/tests/Feature/PatientApiTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-014.md`
+### TASK `P3-029` (`F3-10-01` / `F3-10-02`): Xây dựng Bộ Kiểm thử Tích hợp Toàn diện Toàn bộ Luồng Nghiệp vụ (E2E)
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-028`
+- **goal:** Xây dựng bộ test suite tích hợp tự động kịch bản trọn vẹn từ đầu đến cuối (End-to-End Workflow Test): Đặt lịch -> Tiếp đón -> Khám -> Đính kèm tệp -> Kê đơn -> Trừ kho -> Lập hóa đơn -> Thu tiền nhiều đợt -> Giảm công nợ -> Sổ quỹ -> Kết thúc lượt khám -> Ghi log kiểm toán.
+- **scope:** `be/tests/Feature/EndToEndPhase3WorkflowTest.php`.
+- **deliverables:**
+  - File test suite E2E bao phủ toàn bộ vòng đời bệnh nhân và dòng tiền phòng khám, 100% assertions PASS.
+- **test_commands:**
+  - `cd be && php artisan test tests/Feature/EndToEndPhase3WorkflowTest.php`
 
----
-
-### Task P1-015 — Xây dựng trang danh sách và hồ sơ bệnh nhân
-- `feature_id`: `F-P1-G05`
-- `task_id`: `P1-015`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-010", "P1-014"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Xây dựng giao diện danh sách bệnh nhân (`/patients`), form thêm/sửa có hiển thị cảnh báo trùng hồ sơ, và trang chi tiết bệnh nhân (`/patients/[id]`) kèm khu vực lịch sử khám & gói dịch vụ.
-- `deliverables`:
-  - `fe/lib/api/patients.ts`
-  - `fe/app/(admin)/patients/**`
-- `acceptance_criteria`:
-  1. Danh sách, tìm kiếm theo mã/tên/SĐT, thêm/sửa và xem chi tiết hồ sơ bệnh nhân hoạt động với API thật.
-  2. Không hiển thị dữ liệu bệnh án nhạy cảm nếu tài khoản không có quyền y tế.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build`
-- `allowed_files`: `fe/app/**`, `fe/components/**`, `fe/lib/**`, `fe/types/**`, `qlpk-autonomous-framework/reports/tasks/P1-015.md`
-
----
-
-### Task P1-016 — Xây dựng API quản lý dịch vụ
-- `feature_id`: `F-P1-G05`
-- `task_id`: `P1-016`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-006", "P1-009"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Xây dựng API CRUD danh mục dịch vụ (`/api/v1/services`), kiểm tra `price >= 0`, `duration_minutes > 0`, mã `service_code` duy nhất, lọc theo `status` và giữ nguyên lịch sử cho các lượt khám cũ.
-- `deliverables`:
-  - `be/app/Http/Controllers/Api/V1/ServiceController.php`
-  - `be/app/Http/Requests/Service/*`
-  - `be/app/Http/Resources/ServiceResource.php`
-  - `be/tests/Feature/ServiceApiTest.php`
-- `acceptance_criteria`:
-  1. CRUD dịch vụ hoạt động đúng; validate giá không âm và thời lượng hợp lệ.
-  2. Tìm kiếm theo `service_code`/`name`, lọc theo `status`, phân trang và bảo vệ bằng RBAC.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=ServiceApiTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Http/Controllers/Api/V1/ServiceController.php`, `be/app/Http/Requests/Service/*`, `be/app/Http/Resources/ServiceResource.php`, `be/app/Services/*`, `be/routes/api.php`, `be/tests/Feature/ServiceApiTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-016.md`
-
----
-
-### Task P1-017 — Xây dựng API quản lý gói dịch vụ
-- `feature_id`: `F-P1-G05`
-- `task_id`: `P1-017`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-016"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Xây dựng API CRUD danh mục gói dịch vụ (`/api/v1/service-packages`), validate `price >= 0`, `total_sessions >= 1`, `validity_days >= 1`, mã `package_code` duy nhất và bảo toàn lịch sử giá của các gói bệnh nhân đã mua.
-- `deliverables`:
-  - `be/app/Http/Controllers/Api/V1/ServicePackageController.php`
-  - `be/app/Http/Requests/ServicePackage/*`
-  - `be/app/Http/Resources/ServicePackageResource.php`
-  - `be/tests/Feature/ServicePackageApiTest.php`
-- `acceptance_criteria`:
-  1. CRUD gói dịch vụ hoạt động đúng, kiểm tra chặt `total_sessions` và `validity_days`.
-  2. Cập nhật giá gói danh mục không làm thay đổi trường `price` của các bản ghi `patient_packages` đã cấp trước đó.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=ServicePackageApiTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Http/Controllers/Api/V1/ServicePackageController.php`, `be/app/Http/Requests/ServicePackage/*`, `be/app/Http/Resources/ServicePackageResource.php`, `be/routes/api.php`, `be/tests/Feature/ServicePackageApiTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-017.md`
-
----
-
-### Task P1-018 — Xây dựng chức năng cấu hình dịch vụ trong gói
-- `feature_id`: `F-P1-G05`
-- `task_id`: `P1-018`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-016", "P1-017"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Xây dựng các API quản lý thành phần dịch vụ trong gói (`GET/POST/PUT/DELETE /api/v1/service-packages/{package}/services`) trên bảng trung gian `package_services` trong transaction.
-- `deliverables`:
-  - `be/app/Http/Controllers/Api/V1/PackageServiceController.php`
-  - `be/tests/Feature/PackageServiceConfigApiTest.php`
-- `acceptance_criteria`:
-  1. Thêm, cập nhật `quantity` (`>= 1`), xóa và xem danh sách dịch vụ thành phần của gói hoạt động chính xác.
-  2. Ngăn thêm trùng `(package_id, service_id)` (`409`/`422`).
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=PackageServiceConfigApiTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Http/Controllers/Api/V1/PackageServiceController.php`, `be/app/Http/Controllers/Api/V1/ServicePackageController.php`, `be/app/Http/Requests/ServicePackage/*`, `be/app/Http/Resources/*`, `be/routes/api.php`, `be/tests/Feature/PackageServiceConfigApiTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-018.md`
-
----
-
-### Task P1-019 — Xây dựng nghiệp vụ cấp gói cho bệnh nhân
-- `feature_id`: `F-P1-G05`
-- `task_id`: `P1-019`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-014", "P1-017", "P1-018"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Xây dựng API cấp gói dịch vụ cho bệnh nhân (`POST /api/v1/patients/{patient}/packages`, `GET /api/v1/patients/{patient}/packages`, `GET /api/v1/patient-packages/{id}`) khởi tạo `total_sessions`, `used_sessions = 0`, `remaining_sessions = total_sessions`, `expiry_date` từ `validity_days` và chốt `price` tại thời điểm cấp.
-- `deliverables`:
-  - `be/app/Http/Controllers/Api/V1/PatientPackageController.php`
-  - `be/app/Http/Requests/PatientPackage/*`
-  - `be/app/Http/Resources/PatientPackageResource.php`
-  - `be/tests/Feature/PatientPackageApiTest.php`
-  - Giao diện quản lý Dịch vụ & Gói dịch vụ (`fe/app/(admin)/services/**`, `fe/app/(admin)/packages/**`)
-- `acceptance_criteria`:
-  1. Cấp gói thành công cho bệnh nhân đang hoạt động với gói `ACTIVE`; tự động tính `expiry_date = purchase_date + validity_days`.
-  2. Đảm bảo bất biến `used_sessions = 0`, `remaining_sessions = total_sessions`, `price` lưu theo giá tại thời điểm cấp.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=PatientPackageApiTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Http/Controllers/Api/V1/PatientPackageController.php`, `be/app/Http/Requests/PatientPackage/*`, `be/app/Http/Resources/PatientPackageResource.php`, `be/app/Services/*`, `be/routes/api.php`, `be/tests/Feature/PatientPackageApiTest.php`, `fe/app/**`, `fe/components/**`, `fe/lib/**`, `fe/types/**`, `qlpk-autonomous-framework/reports/tasks/P1-019.md`
-
----
-
-## NHÓM 6 — LỊCH HẸN VÀ LƯỢT KHÁM (`F-P1-G06`)
-
-### Task P1-020 — Xây dựng API quản lý lịch hẹn
-- `feature_id`: `F-P1-G06`
-- `task_id`: `P1-020`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-014", "P1-016", "P1-011"]`
-- `status`: `READY`
-- `complexity`: `HIGH`
-- `objective`: Xây dựng API quản lý lịch hẹn (`/api/v1/appointments`) kèm kiểm tra `end_time > start_time`, dịch vụ đang `ACTIVE`, và khóa chống trùng lịch (`existing.start_time < new.end_time AND existing.end_time > new.start_time`) cho cùng nhân viên trong cùng ngày đối với các lịch chưa hủy (`status != CANCELLED`).
-- `deliverables`:
-  - `be/app/Http/Controllers/Api/V1/AppointmentController.php`
-  - `be/app/Services/AppointmentService.php`
-  - `be/app/Http/Requests/Appointment/*`
-  - `be/app/Http/Resources/AppointmentResource.php`
-  - `be/tests/Feature/AppointmentApiTest.php`
-- `acceptance_criteria`:
-  1. Chặn đặt lịch hoặc đổi giờ bị chồng lấn khung giờ của cùng `employee_id` trong cùng `appointment_date` (trả `409`/`422` kèm thông báo rõ ràng).
-  2. Lịch đã hủy (`CANCELLED`) không giữ chỗ, cho phép đặt lịch mới vào khung giờ đó.
-  3. Sử dụng transaction + row lock (`lockForUpdate`) trên nhân viên để giảm thiểu race condition.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=AppointmentApiTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Http/Controllers/Api/V1/AppointmentController.php`, `be/app/Services/AppointmentService.php`, `be/app/Http/Requests/Appointment/*`, `be/app/Http/Resources/AppointmentResource.php`, `be/routes/api.php`, `be/tests/Feature/AppointmentApiTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-020.md`
-
----
-
-### Task P1-021 — Xây dựng giao diện quản lý lịch hẹn
-- `feature_id`: `F-P1-G06`
-- `task_id`: `P1-021`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-010", "P1-020"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Xây dựng trang quản lý lịch hẹn (`/appointments`), form đặt lịch/cập nhật/hủy lịch, bộ lọc theo ngày/nhân viên/bệnh nhân/trạng thái và hiển thị cảnh báo khi trùng khung giờ nhân viên.
-- `deliverables`:
-  - `fe/lib/api/appointments.ts`
-  - `fe/app/(admin)/appointments/**`
-- `acceptance_criteria`:
-  1. Đặt lịch, cập nhật, hủy lịch và lọc danh sách lịch hẹn qua API thật.
-  2. Hiển thị thông báo lỗi rõ ràng khi nhân viên bị trùng lịch; `npx tsc --noEmit` và `npm run build` PASS.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build`
-- `allowed_files`: `fe/app/**`, `fe/components/**`, `fe/lib/**`, `fe/types/**`, `qlpk-autonomous-framework/reports/tasks/P1-021.md`
-
----
-
-### Task P1-022 — Xây dựng API tạo và quản lý lượt khám
-- `feature_id`: `F-P1-G06`
-- `task_id`: `P1-022`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-014", "P1-016", "P1-019", "P1-020"]`
-- `status`: `READY`
-- `complexity`: `HIGH`
-- `objective`: Xây dựng API quản lý lượt khám (`/api/v1/visits`), tự sinh `visit_code` duy nhất, tính `total_amount = max(0, quantity * unit_price - discount_amount)` (kiểm tra `discount_amount <= quantity * unit_price`), quản lý vòng đời trạng thái (`SCHEDULED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`) và cập nhật `first_visit_date`/`last_visit_date` của bệnh nhân.
-- `deliverables`:
-  - `be/app/Http/Controllers/Api/V1/VisitController.php`
-  - `be/app/Services/VisitService.php`
-  - `be/app/Http/Requests/Visit/*`
-  - `be/app/Http/Resources/VisitResource.php`
-  - `be/tests/Feature/VisitApiTest.php`
-- `acceptance_criteria`:
-  1. Tạo, xem, cập nhật và đổi trạng thái lượt khám hoạt động đúng trong DB transaction.
-  2. Công thức `total_amount = quantity * unit_price - discount_amount` chính xác, từ chối giảm giá vượt thành tiền hoặc số âm.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=VisitApiTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Http/Controllers/Api/V1/VisitController.php`, `be/app/Services/VisitService.php`, `be/app/Http/Requests/Visit/*`, `be/app/Http/Resources/VisitResource.php`, `be/routes/api.php`, `be/tests/Feature/VisitApiTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-022.md`
-
----
-
-### Task P1-023 — Xây dựng quy tắc sử dụng gói trong lượt khám
-- `feature_id`: `F-P1-G06`
-- `task_id`: `P1-023`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-019", "P1-022"]`
-- `status`: `READY`
-- `complexity`: `HIGH`
-- `objective`: Triển khai logic trừ buổi an toàn (`lockForUpdate` trong transaction) khi lượt khám sử dụng `patient_package_id`: kiểm tra gói thuộc đúng bệnh nhân, đang `ACTIVE`, chưa hết hạn (`expiry_date`), dịch vụ nằm trong `package_services`, `remaining_sessions >= quantity`, chống trừ 2 lần và hoàn buổi đúng quy tắc nếu hủy lượt khám.
-- `deliverables`:
-  - Cập nhật `be/app/Services/VisitService.php`
-  - `be/tests/Feature/VisitPackageUsageTest.php`
-- `acceptance_criteria`:
-  1. Gói còn buổi, đúng bệnh nhân, đúng dịch vụ trong gói và chưa hết hạn mới được trừ buổi; luôn bảo toàn `used_sessions + remaining_sessions == total_sessions`.
-  2. Gói hết buổi hoặc hết hạn bị từ chối (`422`); gọi cập nhật lặp lại cùng trạng thái không bao giờ trừ buổi 2 lần.
-  3. Khi `remaining_sessions == 0`, tự động chuyển trạng thái gói sang `COMPLETED`/`EXHAUSTED`.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=VisitPackageUsageTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Services/VisitService.php`, `be/app/Http/Controllers/Api/V1/VisitController.php`, `be/app/Models/PatientPackage.php`, `be/app/Models/Visit.php`, `be/tests/Feature/VisitPackageUsageTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-023.md`
-
----
-
-### Task P1-024 — Xây dựng hồ sơ bệnh án cơ bản
-- `feature_id`: `F-P1-G06`
-- `task_id`: `P1-024`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-022", "P1-009"]`
-- `status`: `READY`
-- `complexity`: `HIGH`
-- `objective`: Xây dựng API xem/tạo/cập nhật hồ sơ bệnh án theo lượt khám (`GET/POST/PUT /api/v1/visits/{visit}/medical-record`), bảo đảm mỗi lượt khám có tối đa 1 bệnh án (`visit_id` unique), ghi `audit_logs` khi tạo/sửa và bảo vệ nghiêm ngặt bằng quyền y tế (`medical_records.view`, `medical_records.create`, `medical_records.update`).
-- `deliverables`:
-  - `be/app/Http/Controllers/Api/V1/MedicalRecordController.php`
-  - `be/app/Http/Requests/MedicalRecord/*`
-  - `be/app/Http/Resources/MedicalRecordResource.php`
-  - `be/tests/Feature/MedicalRecordApiTest.php`
-- `acceptance_criteria`:
-  1. Tạo và cập nhật bệnh án gắn với `visit_id`; chặn tạo bệnh án thứ 2 cho cùng `visit_id`.
-  2. Tài khoản `RECEPTIONIST` hoặc `CASHIER` không có quyền `medical_records.view` bị chặn `403` và không nhận được dữ liệu chẩn đoán/điều trị qua API lượt khám.
-  3. Ghi vết thay đổi vào bảng `audit_logs`.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=MedicalRecordApiTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/app/Http/Controllers/Api/V1/MedicalRecordController.php`, `be/app/Http/Controllers/Api/V1/VisitController.php`, `be/app/Http/Requests/MedicalRecord/*`, `be/app/Http/Resources/MedicalRecordResource.php`, `be/app/Http/Resources/VisitResource.php`, `be/routes/api.php`, `be/tests/Feature/MedicalRecordApiTest.php`, `qlpk-autonomous-framework/reports/tasks/P1-024.md`
-
----
-
-### Task P1-025 — Xây dựng giao diện lượt khám và bệnh án
-- `feature_id`: `F-P1-G06`
-- `task_id`: `P1-025`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-015", "P1-021", "P1-022", "P1-024"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Xây dựng trang danh sách lượt khám (`/visits`), form tạo lượt khám (chọn bệnh nhân, nhân viên, dịch vụ, gói bệnh nhân nếu có), và trang chi tiết lượt khám (`/visits/[id]`) tích hợp khu vực nhập/xem bệnh án theo quyền.
-- `deliverables`:
-  - `fe/lib/api/visits.ts`, `fe/lib/api/medical-records.ts`
-  - `fe/app/(admin)/visits/**`
-- `acceptance_criteria`:
-  1. Thực hiện trọn vẹn luồng tạo lượt khám (dùng lẻ hoặc dùng gói) và nhập bệnh án trên giao diện thật.
-  2. Hiển thị rõ lỗi nghiệp vụ khi gói hết buổi/hết hạn; ẩn/chặn khu vực bệnh án đối với vai trò không có quyền y tế.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build`
-- `allowed_files`: `fe/app/**`, `fe/components/**`, `fe/lib/**`, `fe/types/**`, `qlpk-autonomous-framework/reports/tasks/P1-025.md`
-
----
-
-## NHÓM 7 — TÍCH HỢP, KIỂM THỬ VÀ HOÀN THIỆN (`F-P1-G07`)
-
-### Task P1-026 — Hoàn thiện kiểm thử Backend
-- `feature_id`: `F-P1-G07`
-- `task_id`: `P1-026`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-008", "P1-009", "P1-011", "P1-012", "P1-014", "P1-016", "P1-017", "P1-018", "P1-019", "P1-020", "P1-022", "P1-023", "P1-024"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Rà soát và bổ sung đầy đủ bộ kiểm thử Backend cho toàn bộ 20 kịch bản trọng yếu của Giai đoạn 1 (Auth, RBAC, Employees, Users, Patients, Services, Packages, PatientPackages, Appointments overlap, Visits & Package session deduction, MedicalRecords privacy, Transaction rollback).
-- `deliverables`:
-  - Bộ test đầy đủ trong `be/tests/Feature/`
-- `acceptance_criteria`:
-  1. Tất cả test trong `be/tests/` đều PASS (`php artisan test` exit code `0`).
-  2. `Laravel Pint` kiểm tra toàn bộ code `be/` đạt PASS.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint --test`
-- `allowed_files`: `be/tests/**`, `be/app/**`, `qlpk-autonomous-framework/reports/tasks/P1-026.md`
-
----
-
-### Task P1-027 — Hoàn thiện kiểm thử Frontend và tích hợp API
-- `feature_id`: `F-P1-G07`
-- `task_id`: `P1-027`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-013", "P1-015", "P1-021", "P1-025"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Kiểm tra tổng thể toàn bộ các trang Frontend Giai đoạn 1 (`login`, `employees`, `users`, `patients`, `services`, `packages`, `appointments`, `visits`), đồng bộ TypeScript types với API Resources của Backend, vượt qua `tsc --noEmit`, `eslint` và `next build` production.
-- `deliverables`:
-  - Hoàn thiện các trang & components trong `fe/`
-- `acceptance_criteria`:
-  1. Không dùng dữ liệu giả thay cho API thật trên bất kỳ trang nghiệm thu nào.
-  2. `npx tsc --noEmit`, `npm run lint` và `npm run build` đều PASS (`exit_code == 0`).
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run lint && npm run build`
-- `allowed_files`: `fe/**`, `qlpk-autonomous-framework/reports/tasks/P1-027.md`
-
----
-
-### Task P1-028 — Kiểm thử tích hợp luồng nghiệp vụ đầu cuối (E2E Flows)
-- `feature_id`: `F-P1-G07`
-- `task_id`: `P1-028`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-026", "P1-027"]`
-- `status`: `READY`
-- `complexity`: `HIGH`
-- `objective`: Viết và chạy bài kiểm thử tích hợp đầu-cuối (`Phase1EndToEndWorkflowTest`) mô phỏng xuyên suốt 4 luồng nghiệp vụ: (1) Nhân sự & Phân quyền, (2) Bệnh nhân & Cảnh báo trùng, (3) Dịch vụ & Cấp gói, (4) Đặt lịch hẹn (kèm chặn trùng lịch) → Tạo lượt khám trừ buổi gói → Tạo bệnh án & Kiểm tra bảo mật y tế.
-- `deliverables`:
-  - `be/tests/Feature/Phase1EndToEndWorkflowTest.php`
-- `acceptance_criteria`:
-  1. Cả 4 luồng nghiệp vụ đầu-cuối chạy liên hoàn từ đầu đến cuối trong `Phase1EndToEndWorkflowTest` đạt `PASS`.
-- `test_commands`:
-  - `cd "$PROJECT_ROOT/be" && php artisan test --filter=Phase1EndToEndWorkflowTest`
-  - `cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test`
-- `allowed_files`: `be/tests/Feature/Phase1EndToEndWorkflowTest.php`, `be/app/**`, `qlpk-autonomous-framework/reports/tasks/P1-028.md`
-
----
-
-## NHÓM 8 — TÀI LIỆU, REVIEW VÀ BÀN GIAO (`F-P1-G08`)
-
-### Task P1-029 — Hoàn thiện tài liệu kỹ thuật và hướng dẫn sử dụng
-- `feature_id`: `F-P1-G08`
-- `task_id`: `P1-029`
-- `priority`: `P1`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-028"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Tổng hợp và hoàn thiện bộ tài liệu kỹ thuật Giai đoạn 1: tài liệu API (`API_DOCUMENTATION.md`), thiết kế CSDL (`DATABASE_DESIGN.md`), hướng dẫn phát triển (`DEVELOPMENT.md`) và các giới hạn/vấn đề tồn đọng (`KNOWN_ISSUES.md`).
-- `deliverables`:
-  - `docs/phase-1/API_DOCUMENTATION.md`
-  - `docs/phase-1/DATABASE_DESIGN.md`
-  - `docs/phase-1/DEVELOPMENT.md`
-  - `docs/phase-1/KNOWN_ISSUES.md`
-- `acceptance_criteria`:
-  1. Cả 4 tài liệu tồn tại, đầy đủ nội dung thực tế và không chứa bất kỳ secret/mật khẩu nào.
-- `test_commands`:
-  - `test -s "$PROJECT_ROOT/docs/phase-1/API_DOCUMENTATION.md"`
-  - `test -s "$PROJECT_ROOT/docs/phase-1/DATABASE_DESIGN.md"`
-  - `test -s "$PROJECT_ROOT/docs/phase-1/DEVELOPMENT.md"`
-  - `test -s "$PROJECT_ROOT/docs/phase-1/KNOWN_ISSUES.md"`
-- `allowed_files`: `docs/phase-1/*`, `qlpk-autonomous-framework/reports/tasks/P1-029.md`
-
----
-
-### Task P1-030 — Kiểm tra cuối giai đoạn và bàn giao review
-- `feature_id`: `F-P1-G08`
-- `task_id`: `P1-030`
-- `priority`: `P0`
-- `role`: `CODER`
-- `model`: `gemini-3.8-flash-high`
-- `reviewer_model`: `gemini-4-argon-high`
-- `dependencies`: `["P1-028", "P1-029"]`
-- `status`: `READY`
-- `complexity`: `MEDIUM`
-- `objective`: Chạy toàn bộ cổng kiểm tra cuối Giai đoạn 1 (Backend tests, Pint, Frontend TypeScript/Build, Git status, kiểm tra không lộ `.env`/secret) và xuất báo cáo tổng kết bàn giao `docs/phase-1/PHASE_1_REPORT.md` ở trạng thái `REVIEW_REQUIRED` để người dùng nghiệm thu.
-- `deliverables`:
-  - `docs/phase-1/PHASE_1_REPORT.md`
-- `acceptance_criteria`:
-  1. Toàn bộ test Backend (`php artisan test`), Pint (`pint --test`) và Frontend (`tsc --noEmit`, `npm run build`) đều PASS.
-  2. Báo cáo `docs/phase-1/PHASE_1_REPORT.md` tổng hợp đầy đủ 30 tasks, kết quả kiểm thử, danh sách file thay đổi và điểm bắt đầu cho Giai đoạn 2.
-- `test_commands`:
-  - `test -s "$PROJECT_ROOT/docs/phase-1/PHASE_1_REPORT.md"`
-  - `cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint --test`
-  - `cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build`
-- `allowed_files`: `docs/phase-1/PHASE_1_REPORT.md`, `qlpk-autonomous-framework/PROGRESS.md`, `qlpk-autonomous-framework/reports/tasks/P1-030.md`
+### TASK `P3-030` (`F3-10-03` / `F3-10-04`): Nghiệm thu Toàn diện Hệ thống và Lập Hồ sơ Bàn giao Giai đoạn 3
+- **priority:** `P0`
+- **status:** `DONE`
+- **dependencies:** `P3-029`
+- **goal:** Tiến hành tổng nghiệm thu toàn bộ 30 Tasks Giai đoạn 3; rà soát chuẩn hóa mã nguồn với Pint (PHP) và ESLint/TypeScript (Next.js); biên soạn tài liệu Báo cáo Hoàn thành Giai đoạn 3 tại `docs/phase-3/PHASE_3_REPORT.md` và Cập nhật Hướng dẫn Vận hành Hệ thống tại `docs/phase-3/OPERATIONAL_GUIDE.md`.
+- **scope:**
+  - `docs/phase-3/PHASE_3_REPORT.md`
+  - `docs/phase-3/OPERATIONAL_GUIDE.md`
+  - `qlpk-autonomous-framework/PROGRESS.md`
+  - `qlpk-autonomous-framework/ROADMAP.md`
+- **deliverables:**
+  - `docs/phase-3/PHASE_3_REPORT.md`
+  - `docs/phase-3/OPERATIONAL_GUIDE.md`
+  - Cập nhật toàn bộ bảng tiến độ Phase 3 thành `100% DONE`.
+- **test_commands:**
+  - `test -f "docs/phase-3/PHASE_3_REPORT.md"`
+  - `test -f "docs/phase-3/OPERATIONAL_GUIDE.md"`
+  - `cd be && php artisan test`
+  - `cd be && ./vendor/bin/pint --test`
+  - `cd fe && npm run build`

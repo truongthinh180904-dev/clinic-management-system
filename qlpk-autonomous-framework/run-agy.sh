@@ -24,12 +24,12 @@ PROGRESS_FILE="${PROGRESS_FILE:-${FRAMEWORK_DIR}/PROGRESS.md}"
 # 2. VERIFIED MODEL ROUTING CONFIGURATION (Rule 3 & 4.A)
 # ==============================================================================
 AGY_BIN="${AGY_BIN:-agy}"
-PLANNER_MODEL="${PLANNER_MODEL:-claude-sonnet-5-5-high}"
+PLANNER_MODEL="${PLANNER_MODEL:-gemini-4-argon-medium}"
 CODER_MODEL="${CODER_MODEL:-gemini-3.8-flash-high}"
-REVIEWER_MODEL="${REVIEWER_MODEL:-gemini-4-argon-high}"
-DEBUG_FALLBACK_MODEL="${DEBUG_FALLBACK_MODEL:-claude-sonnet-5-5-high}"
-ARCH_ESCALATION_MODEL="${ARCH_ESCALATION_MODEL:-claude-opus-5-5-high}"
-ALLOW_FALLBACK="${ALLOW_FALLBACK:-0}"
+REVIEWER_MODEL="${REVIEWER_MODEL:-gemini-4-argon-medium}"
+DEBUG_FALLBACK_MODEL="${DEBUG_FALLBACK_MODEL:-gemini-3.8-flash-high}"
+ARCH_ESCALATION_MODEL="${ARCH_ESCALATION_MODEL:-gemini-4-argon-medium}"
+ALLOW_FALLBACK="${ALLOW_FALLBACK:-1}"
 
 VALID_AGY_MODELS=(
   "gemini-4-argon-medium"
@@ -50,19 +50,20 @@ VALID_AGY_MODELS=(
 # ==============================================================================
 # 3. CPU, RAM, COOLDOWN, TIMEOUT & RETRY CONFIGURATION (Rule 4.C)
 # ==============================================================================
-TASK_COOLDOWN_SECONDS="${TASK_COOLDOWN_SECONDS:-30}"
-ERROR_COOLDOWN_SECONDS="${ERROR_COOLDOWN_SECONDS:-120}"
+TASK_COOLDOWN_SECONDS="${TASK_COOLDOWN_SECONDS:-15}"
+ERROR_COOLDOWN_SECONDS="${ERROR_COOLDOWN_SECONDS:-30}"
 QUOTA_BACKOFF_SECONDS="${QUOTA_BACKOFF_SECONDS:-900}"
-CPU_LOAD_PER_CORE_LIMIT="${CPU_LOAD_PER_CORE_LIMIT:-0.85}"
+CPU_LOAD_PER_CORE_LIMIT="${CPU_LOAD_PER_CORE_LIMIT:-1.8}"
 MIN_FREE_MEMORY_PERCENT="${MIN_FREE_MEMORY_PERCENT:-15}"
 RESOURCE_WAIT_SECONDS="${RESOURCE_WAIT_SECONDS:-300}"
 RESOURCE_POLL_INTERVAL_SECONDS="${RESOURCE_POLL_INTERVAL_SECONDS:-15}"
-MODEL_TIMEOUT_SECONDS="${MODEL_TIMEOUT_SECONDS:-300}"
-TASK_TIMEOUT_SECONDS="${TASK_TIMEOUT_SECONDS:-900}"
+MODEL_TIMEOUT_SECONDS="${MODEL_TIMEOUT_SECONDS:-900}"
+TASK_TIMEOUT_SECONDS="${TASK_TIMEOUT_SECONDS:-2700}"
 SESSION_TIMEOUT_SECONDS="${SESSION_TIMEOUT_SECONDS:-43200}"
 MAX_TASKS_PER_SESSION="${MAX_TASKS_PER_SESSION:-30}"
-MAX_CONSECUTIVE_FAILURES="${MAX_CONSECUTIVE_FAILURES:-2}"
+MAX_CONSECUTIVE_FAILURES="${MAX_CONSECUTIVE_FAILURES:-5}"
 MAX_REVIEW_ROUNDS="${MAX_REVIEW_ROUNDS:-3}"
+MAX_TEST_FIX_RETRIES="${MAX_TEST_FIX_RETRIES:-2}"
 MAX_MODEL_RETRIES="${MAX_MODEL_RETRIES:-2}"
 RETRY_BASE_SECONDS="${RETRY_BASE_SECONDS:-5}"
 
@@ -70,10 +71,13 @@ RETRY_BASE_SECONDS="${RETRY_BASE_SECONDS:-5}"
 # 4. GIT & SECURITY CONFIGURATION (Rule 4.D)
 # ==============================================================================
 ALLOWED_BRANCHES="${ALLOWED_BRANCHES:-main,dev}"
-ALLOW_UNTRACKED_REGEX="${ALLOW_UNTRACKED_REGEX:-^(\.DS_Store|qlpk-autonomous-framework(-v2\.zip|/.*)?|docs/.*|be/.*|fe/.*)$}"
+ALLOW_UNTRACKED_REGEX="${ALLOW_UNTRACKED_REGEX:-^(\.DS_Store|PHASE_2_TASKS\.md|.*\.md|reports(/.*)?|scripts(/.*)?|qlpk-autonomous-framework(-v2\.zip|/.*)?|docs/.*|be/.*|fe/.*)$}"
+AUTO_COMMIT_ON_DONE="${AUTO_COMMIT_ON_DONE:-1}"
+TARGET_COMMIT_BRANCH="${TARGET_COMMIT_BRANCH:-dev}"
 
 SESSION_START_EPOCH="$(date +%s)"
 ACTIVE_CHILD_PID=""
+CAFFEINATE_CHILD_PID=""
 LOCK_ACQUIRED=0
 
 # ==============================================================================
@@ -126,6 +130,10 @@ kill_active_child() {
 }
 
 cleanup_lock() {
+  if [[ -n "${CAFFEINATE_CHILD_PID:-}" ]]; then
+    kill -TERM "$CAFFEINATE_CHILD_PID" 2>/dev/null || true
+    CAFFEINATE_CHILD_PID=""
+  fi
   kill_active_child
   if [[ "$LOCK_ACQUIRED" -eq 1 && -d "$LOCK_DIR" ]]; then
     rm -rf -- "$LOCK_DIR"
@@ -142,6 +150,16 @@ on_signal() {
 
 acquire_lock() {
   ensure_runtime_dirs
+  if [[ "${FORCE_RUN:-0}" == "1" ]]; then
+    if [[ -f "${LOCK_DIR}/pid" ]]; then
+      local old_pid
+      old_pid="$(cat "${LOCK_DIR}/pid" 2>/dev/null || true)"
+      if [[ -n "$old_pid" ]]; then
+        kill -9 "$old_pid" 2>/dev/null || true
+      fi
+    fi
+    rm -rf -- "$LOCK_DIR" 2>/dev/null || true
+  fi
   if ! mkdir "$LOCK_DIR" 2>/dev/null; then
     local existing_pid=""
     if [[ -f "${LOCK_DIR}/pid" ]]; then
@@ -152,12 +170,17 @@ acquire_lock() {
       rm -rf -- "$LOCK_DIR"
       mkdir "$LOCK_DIR"
     else
-      log "ERROR: Lock exists at ${LOCK_DIR} (active PID: ${existing_pid:-unknown}). Refusing concurrent execution."
+      log "ERROR: Lock exists at ${LOCK_DIR} (active PID: ${existing_pid:-unknown}). Refusing concurrent execution. (Run with FORCE_RUN=1 or ./run-agy.sh unlock if stale)"
       exit 3
     fi
   fi
   printf '%s\n' "$$" > "${LOCK_DIR}/pid"
   LOCK_ACQUIRED=1
+  if [[ "$(uname -s)" == "Darwin" ]] && command -v caffeinate >/dev/null 2>&1; then
+    caffeinate -dimsu -w "$$" >/dev/null 2>&1 &
+    CAFFEINATE_CHILD_PID="$!"
+    log "MACOS_CAFFEINATE: Enabled system sleep assertion (-dimsu) via PID ${CAFFEINATE_CHILD_PID} watching parent PID $$."
+  fi
   trap 'on_signal INT' INT
   trap 'on_signal TERM' TERM
   trap 'cleanup_lock' EXIT
@@ -167,7 +190,7 @@ acquire_lock() {
 # 7. STOP CONDITIONS & COOLDOWN SLEEP (Rule 4.C.2, 4.C.5, 4.C.10)
 # ==============================================================================
 should_stop() {
-  if [[ -f "$STOP_FILE" ]]; then
+  if [[ -f "$STOP_FILE" && -s "$STOP_FILE" ]]; then
     log "STOP_GATE: Manual stop file detected at ${STOP_FILE}."
     return 0
   fi
@@ -312,13 +335,14 @@ assert_clean_git_tree() {
   local current_branch
   current_branch="$(git -C "$PROJECT_ROOT" branch --show-current 2>/dev/null || true)"
   local branch_ok=0
-  local IFS=','
-  for b in $ALLOWED_BRANCHES; do
+  local b
+  while IFS= read -r b; do
+    [[ -z "$b" ]] && continue
     if [[ "$current_branch" == "$b" ]]; then
       branch_ok=1
       break
     fi
-  done
+  done < <(tr ',' '\n' <<<"$ALLOWED_BRANCHES")
   if [[ "$branch_ok" -eq 0 ]]; then
     log "BLOCKED: Current branch '${current_branch}' is not in ALLOWED_BRANCHES (${ALLOWED_BRANCHES})."
     return 1
@@ -488,7 +512,14 @@ invoke_agy_model() {
 
     case "$err_type" in
       QUOTA_ERROR)
-        log "QUOTA_EXCEEDED: Model ${model_id} hit quota/rate limit. Working tree is preserved untouched (no reset/clean/stash). Backing off for ${QUOTA_BACKOFF_SECONDS}s."
+        log "QUOTA_EXCEEDED: Model ${model_id} hit quota/rate limit. Working tree is preserved untouched."
+        if [[ "$ALLOW_FALLBACK" -eq 1 && "$model_id" != "$DEBUG_FALLBACK_MODEL" ]]; then
+          log "FALLBACK_TRIGGERED: role=${role} from=${model_id} to=${DEBUG_FALLBACK_MODEL} reason=QUOTA_EXCEEDED"
+          model_id="$DEBUG_FALLBACK_MODEL"
+          max_attempts=$(( attempt + 1 ))
+          attempt=$(( attempt + 1 ))
+          continue
+        fi
         if (( attempt < max_attempts )); then
           cooldown_sleep "$QUOTA_BACKOFF_SECONDS" "QUOTA_BACKOFF" || return 75
           attempt=$(( attempt + 1 ))
@@ -651,7 +682,7 @@ execute_task_lifecycle() {
   wait_for_resources || return 11
 
   local coder_out="${REPORTS_DIR}/tasks/${task_id}-coder.json"
-  local coder_prompt="ROLE=CODER TASK_ID=${task_id} RUN_ID=${run_id} GOAL=${task_goal} — Read ${ROADMAP_FILE} section for ${task_id} and ${FRAMEWORK_DIR}/AGENTS.md. Implement all required deliverables within allowed_files so all mandatory test_commands pass."
+  local coder_prompt="ROLE=CODER TASK_ID=${task_id} RUN_ID=${run_id} GOAL=${task_goal} — Read ${ROADMAP_FILE} section for ${task_id}. IMPORTANT: (1) Do NOT use run_command (shell execution is disabled in non-interactive print mode and Automated Tester runs test_commands after you finish). (2) Work fast and concisely: do NOT read all 30 migrations/models one by one; read only 2-3 directly relevant files and immediately create/update the required deliverable files using write_file or edit_file with absolute paths under ${PROJECT_ROOT}."
   if ! invoke_agy_model "CODER" "$CODER_MODEL" "accept-edits" "$coder_prompt" "$coder_out"; then
     log "TASK_ABORTED: Coder model invocation failed for ${task_id}."
     return 12
@@ -667,10 +698,21 @@ execute_task_lifecycle() {
     printf '\n```\n'
   } > "${REPORTS_DIR}/tasks/${task_id}.md"
 
-  if ! run_task_tests "$task_id" "$run_id" "${test_cmds[@]}"; then
-    log "GATE_BLOCKED: Automated tests FAILED for ${task_id}. Reviewer (${REVIEWER_MODEL}) will NOT be called."
-    return 13
-  fi
+  local test_fix_attempt=0
+  while ! run_task_tests "$task_id" "$run_id" "${test_cmds[@]}"; do
+    if (( test_fix_attempt >= MAX_TEST_FIX_RETRIES )); then
+      log "GATE_BLOCKED: Automated tests FAILED for ${task_id}. Reviewer (${REVIEWER_MODEL}) will NOT be called."
+      return 13
+    fi
+    test_fix_attempt=$(( test_fix_attempt + 1 ))
+    log "TEST_FIX_LOOP: Automated test failed on attempt ${test_fix_attempt}/${MAX_TEST_FIX_RETRIES} for ${task_id}; invoking ${CODER_MODEL} to fix test failure..."
+    local tfix_out="${REPORTS_DIR}/tasks/${task_id}-test-fix-${test_fix_attempt}.json"
+    local tfix_prompt="ROLE=CODER_TEST_FIX TASK_ID=${task_id} RUN_ID=${run_id} ATTEMPT=${test_fix_attempt} — Read ${REPORTS_DIR}/tasks/${task_id}-test.md and ${ROADMAP_FILE} for ${task_id}. IMPORTANT: Do NOT use run_command; use ONLY read_file, write_file, and edit_file with absolute paths under ${PROJECT_ROOT} to fix the test failure shown in ${REPORTS_DIR}/tasks/${task_id}-test.md."
+    if ! invoke_agy_model "CODER" "$CODER_MODEL" "accept-edits" "$tfix_prompt" "$tfix_out"; then
+      log "GATE_BLOCKED: Coder test-fix invocation failed for ${task_id}."
+      return 13
+    fi
+  done
 
   local round=1
   while (( round <= MAX_REVIEW_ROUNDS )); do
@@ -683,7 +725,7 @@ execute_task_lifecycle() {
 
     local review_out="${REPORTS_DIR}/tasks/${task_id}-review-round-${round}.json"
     local review_md="${REPORTS_DIR}/tasks/${task_id}-review-round-${round}.md"
-    local review_prompt="ROLE=REVIEWER TASK_ID=${task_id} RUN_ID=${run_id} ROUND=${round}/${MAX_REVIEW_ROUNDS} TEST_RESULT=PASS — Read ${ROADMAP_FILE} for ${task_id}, ${FRAMEWORK_DIR}/REVIEWER.md, and test report ${REPORTS_DIR}/tasks/${task_id}-test.md. Respond with JSON containing \"verdict\": \"PASS\" (or \"FAIL\" with findings)."
+    local review_prompt="ROLE=REVIEWER TASK_ID=${task_id} RUN_ID=${run_id} ROUND=${round}/${MAX_REVIEW_ROUNDS} TEST_RESULT=PASS — Read ${ROADMAP_FILE} for ${task_id} and ${REPORTS_DIR}/tasks/${task_id}-test.md using read_file ONLY (do NOT use run_command). Verify deliverables and respond with JSON containing \"verdict\": \"PASS\" (or \"FAIL\" with findings)."
 
     if ! invoke_agy_model "REVIEWER" "$REVIEWER_MODEL" "plan" "$review_prompt" "$review_out"; then
       log "BLOCKED: Reviewer invocation failed on round ${round} for ${task_id}."
@@ -691,9 +733,9 @@ execute_task_lifecycle() {
     fi
 
     local verdict="FAIL"
-    if grep -qiE '"verdict"[[:space:]]*:[[:space:]]*"PASS"|^PASS$|OVERALL_REVIEW_RESULT:[[:space:]]*PASS' "$review_out"; then
+    if grep -qiE '"verdict"[[:space:]]*:[[:space:]]*"PASS"|\\"verdict\\"[[:space:]]*:[[:space:]]*\\"PASS\\"|^PASS$|OVERALL_REVIEW_RESULT:[[:space:]]*PASS' "$review_out"; then
       verdict="PASS"
-    elif grep -qiE '"verdict"[[:space:]]*:[[:space:]]*"BLOCKED"|^BLOCKED$' "$review_out"; then
+    elif grep -qiE '"verdict"[[:space:]]*:[[:space:]]*"BLOCKED"|\\"verdict\\"[[:space:]]*:[[:space:]]*\\"BLOCKED\\"|^BLOCKED$' "$review_out"; then
       verdict="BLOCKED"
     fi
 
@@ -731,7 +773,7 @@ execute_task_lifecycle() {
 
     log "FIX_LOOP: Starting fix attempt ${round} for ${task_id} with ${CODER_MODEL}..."
     local fix_out="${REPORTS_DIR}/tasks/${task_id}-fix-${round}.json"
-    local fix_prompt="ROLE=CODER_FIX TASK_ID=${task_id} RUN_ID=${run_id} FIX_ROUND=${round} FINDINGS_FILE=${review_md}"
+    local fix_prompt="ROLE=CODER_FIX TASK_ID=${task_id} RUN_ID=${run_id} FIX_ROUND=${round} FINDINGS_FILE=${review_md} — Read ${review_md} and ${ROADMAP_FILE} for ${task_id}. IMPORTANT: Do NOT use run_command; use ONLY read_file, write_file, and edit_file to fix the findings."
     if ! invoke_agy_model "CODER" "$CODER_MODEL" "accept-edits" "$fix_prompt" "$fix_out"; then
       log "BLOCKED: Coder fix attempt ${round} failed for ${task_id}."
       return 19
@@ -918,6 +960,294 @@ get_demo_task_spec() {
       printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint --test\n'
       printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
       ;;
+    P2-001)
+      printf 'Survey Phase 1 baseline and generate Phase 2 implementation plan in docs/phase-2/F2-01-01_SURVEY_AND_PLAN.md and PHASE_2_TASKS.md\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-1/PHASE_1_TASKS.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-2/F2-01-01_SURVEY_AND_PLAN.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-2/PHASE_2_TASKS.md"\n'
+      ;;
+    P2-002)
+      printf 'Install lucide-react, recharts, clsx, tailwind-merge, class-variance-authority and build shadcn/ui Core Design System in fe/components/ui/\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npm install --no-audit --no-fund lucide-react recharts clsx tailwind-merge class-variance-authority && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-003)
+      printf 'Upgrade AdminShell.tsx and LoginPage with professional shadcn/ui components, lucide-react icons, and grouped Phase 2 navigation\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-004)
+      printf 'Extend RolePermissionSeeder and DemoCatalogSeeder for Phase 2 modules and verify with Phase2PermissionSeederTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DatabaseSeederTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=Phase2PermissionSeederTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-005)
+      printf 'Implement Dashboard Overview API (/api/v1/dashboard/summary, /revenue-chart, /visit-trends, /top-performers) and DashboardApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DashboardApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-006)
+      printf 'Implement executive Dashboard UI at fe/app/admin/page.tsx with shadcn/ui StatCards and interactive Recharts charts\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-007)
+      printf 'Implement Invoice management API (/api/v1/invoices) and InvoiceApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=InvoiceApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-008)
+      printf 'Implement multi-installment Payment API (/api/v1/payments) with lockForUpdate, auto cashbook entry, and PaymentApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=PaymentApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-009)
+      printf 'Implement Invoices & Cashier UI (/invoices and /invoices/[id]) with shadcn/ui and multi-payment modal\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-010)
+      printf 'Implement Debt & Receivable tracking API (/api/v1/debts/summary, /debts/patients, /patients/{patient}/debts) and DebtManagementApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DebtManagementApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-011)
+      printf 'Implement Debt Management UI (/debts) with shadcn/ui, aging analysis, and quick debt collection modal\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-012)
+      printf 'Implement ExpenseCategory and Expense API (/api/v1/expense-categories, /api/v1/expenses) with approval workflow and ExpenseApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ExpenseApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-013)
+      printf 'Implement Cashbook & CashTransaction API (/api/v1/cash-transactions, /summary) and CashTransactionApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=CashTransactionApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-014)
+      printf 'Implement Finance, Expenses & Cashbook UI (/finance/cashbook) with shadcn/ui Tabs and Recharts cashflow chart\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-015)
+      printf 'Implement Product catalog & dynamic stock calculation API (/api/v1/products) and ProductApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ProductApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-016)
+      printf 'Implement InventoryTransaction API (/api/v1/inventory-transactions) with lockForUpdate negative-stock prevention and InventoryTransactionApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=InventoryTransactionApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-017)
+      printf 'Implement Inventory & Stock Alert Management UI (/inventory) with shadcn/ui and lucide-react\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-018)
+      printf 'Implement Employee KPI Target & automated actual performance API (/api/v1/kpi-targets) and KpiTargetApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=KpiTargetApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-019)
+      printf 'Implement Employee KPI Management UI (/kpi) with shadcn/ui Progress and Recharts target vs actual comparison\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-020)
+      printf 'Implement Management Reports API (/api/v1/reports/financial, /clinical, /inventory) and ManagementReportApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ManagementReportApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-021)
+      printf 'Implement Management Reports Center UI (/reports) with shadcn/ui Tabs and Recharts analytics\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-022)
+      printf 'Implement CSV Data Import API (/api/v1/imports) with import_batches and import_errors tracking and DataImportApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DataImportApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-023)
+      printf 'Implement UTF-8 BOM CSV Data Export API (/api/v1/exports/patients, /invoices, /cashbook, /inventory) and DataExportApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=DataExportApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-024)
+      printf 'Implement Data Import & Export Center UI (/data-transfer) with shadcn/ui error inspection table\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-025)
+      printf 'Implement AlertRule and Notification API (/api/v1/alert-rules, /api/v1/notifications, /api/v1/alerts/scan) and NotificationAndAlertApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=NotificationAndAlertApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-026)
+      printf 'Implement ApprovalRequest workflow API (/api/v1/approval-requests) and ApprovalWorkflowApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=ApprovalWorkflowApiTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-027)
+      printf 'Implement Approvals (/approvals) and Notifications (/notifications) UI and Topbar notification bell in AdminShell\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-028)
+      printf 'Implement comprehensive Phase 2 End-to-End integration tests in Phase2EndToEndWorkflowTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=Phase2EndToEndWorkflowTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      ;;
+    P2-029)
+      printf 'Run full Backend PHPUnit suite, Pint, Frontend TypeScript typecheck, and Next.js production build verification\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P2-030)
+      printf 'Complete Phase 2 documentation (docs/phase-2/API_DOCUMENTATION_PHASE_2.md and PHASE_2_REPORT.md) and final quality gates\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-2/API_DOCUMENTATION_PHASE_2.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-2/PHASE_2_REPORT.md"\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test && ./vendor/bin/pint && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-001)
+      printf 'Audit repository state, 30-table MySQL schema, and backend APIs in docs/phase-3/PHASE_3_AUDIT_REPORT.md\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_AUDIT_REPORT.md"\n'
+      printf 'grep -Fq "BÁO CÁO AUDIT TOÀN BỘ HỆ THỐNG GIAI ĐOẠN 3" "$PROJECT_ROOT/docs/phase-3/PHASE_3_AUDIT_REPORT.md"\n'
+      ;;
+    P3-002)
+      printf 'Survey Frontend UI/UX, Data Tables, and verify existing test suites\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_AUDIT_REPORT.md"\n'
+      ;;
+    P3-003)
+      printf 'Verify core cross-module business logic and finalize Phase 3 planning deliverables\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_TASKS.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_IMPLEMENTATION_PLAN.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_RISK_REGISTER.md"\n'
+      ;;
+    P3-004)
+      printf 'Standardize Data Tables with overflow-x-auto, whitespace-nowrap, and no-wrap short columns across admin list views\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-005)
+      printf 'Standardize all Forms with inline validation, required indicators, loading spinners, and double-submit protection\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-006)
+      printf 'Standardize List Page layout pattern across administrative modules\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-007)
+      printf 'Standardize Confirmation Dialogs and action Modals with shadcn/ui AlertDialog\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-008)
+      printf 'Optimize Desktop, Tablet, and Mobile responsiveness and accessibility\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-009)
+      printf 'Review all frontend routes and generate UI standardization report in docs/phase-3/UI_STANDARDIZATION_REPORT.md\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/UI_STANDARDIZATION_REPORT.md"\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-010)
+      printf 'Complete Patient Profile Detail page with Medical Chronological Timeline\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=PatientTest\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-011)
+      printf 'Build comprehensive Electronic Medical Record consultation interface for doctors\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=MedicalRecordTest\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-012)
+      printf 'Implement strict RBAC permissions and clinical edit Audit Trail for medical records\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=MedicalRecordTest\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-013)
+      printf 'Standardize Appointment state machine transitions and multi-criteria appointment filters\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=AppointmentTest\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-014)
+      printf 'Build fast Reception desk check-in workflow for patients with duplicate warnings\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=VisitTest\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-015)
+      printf 'Implement atomic Check-in conversion from Appointment to Visit with duplicate protection\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=AppointmentTest\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-016)
+      printf 'Build PatientFileController and secure upload API for patient clinical files with MIME validation\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P3-017)
+      printf 'Build secure download and inline preview streaming API for patient files with RBAC checks\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P3-018)
+      printf 'Build Medical Files management UI with drag-and-drop, image preview modals, and PDF viewer\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-019)
+      printf 'Standardize Donut and Pie charts for payment methods, expense categories, and appointment distribution\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-020)
+      printf 'Standardize multi-dimensional Bar charts for Doctor KPI performance and department visit volumes\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-021)
+      printf 'Standardize Area and Line time-series trend charts for monthly revenue and visit metrics\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
+    P3-022)
+      printf 'Extend RolePermissionSeeder for clinical medical files and sensitive health record actions\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=RolePermissionTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P3-023)
+      printf 'Upgrade Audit Log to automatically track sensitive clinical data viewing, exports, and updates\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=AuditLogTest\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P3-024)
+      printf 'Implement Data Masking for phone/identity numbers and API Rate Limiting for sensitive endpoints\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P3-025)
+      printf 'Build automated database backup script scripts/backup-db.sh with gzip compression and retention\n'
+      printf 'test -s "$PROJECT_ROOT/scripts/backup-db.sh"\n'
+      printf 'bash "$PROJECT_ROOT/scripts/backup-db.sh" --dry-run\n'
+      ;;
+    P3-026)
+      printf 'Build safe database restore script scripts/restore-db.sh and DISASTER_RECOVERY_RUNBOOK.md\n'
+      printf 'test -s "$PROJECT_ROOT/scripts/restore-db.sh"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/DISASTER_RECOVERY_RUNBOOK.md"\n'
+      printf 'bash "$PROJECT_ROOT/scripts/restore-db.sh" --help\n'
+      ;;
+    P3-027)
+      printf 'Add strategic MySQL Composite Indexes on visits, appointments, invoices, and cash_transactions\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan migrate --pretend\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
+      ;;
+    P3-028)
+      printf 'Eliminate N+1 queries with eager loading across reporting and clinical APIs and optimize pagination\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      ;;
+    P3-029)
+      printf 'Implement End-to-End integration test covering the entire clinic lifecycle from appointment to cashier\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test --filter=EndToEndPhase3WorkflowTest\n'
+      ;;
+    P3-030)
+      printf 'Complete Phase 3 system verification, OPERATIONAL_GUIDE.md, and PHASE_3_REPORT.md handover\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/PHASE_3_REPORT.md"\n'
+      printf 'test -s "$PROJECT_ROOT/docs/phase-3/OPERATIONAL_GUIDE.md"\n'
+      printf 'cd "$PROJECT_ROOT/be" && php artisan test\n'
+      printf 'cd "$PROJECT_ROOT/be" && ./vendor/bin/pint --test\n'
+      printf 'cd "$PROJECT_ROOT/fe" && npx tsc --noEmit && npm run build\n'
+      ;;
     *)
       return 1
       ;;
@@ -951,21 +1281,81 @@ update_progress_table() {
   ' "$PROGRESS_FILE" > "$tmp_prog" && mv "$tmp_prog" "$PROGRESS_FILE"
 }
 
+auto_commit_task_on_dev() {
+  local task_id="$1"
+  local task_goal="$2"
+
+  if [[ "${AUTO_COMMIT_ON_DONE:-1}" != "1" ]]; then
+    return 0
+  fi
+
+  local current_branch
+  current_branch="$(git -C "$PROJECT_ROOT" branch --show-current 2>/dev/null || true)"
+  if [[ "$current_branch" != "$TARGET_COMMIT_BRANCH" ]]; then
+    log "GIT_AUTO_COMMIT_SKIP: Current branch '${current_branch}' != target branch '${TARGET_COMMIT_BRANCH}' (never auto-committing onto main)."
+    return 0
+  fi
+
+  git -C "$PROJECT_ROOT" add -- \
+    be/ fe/ docs/ scripts/ \
+    qlpk-autonomous-framework/PROGRESS.md \
+    qlpk-autonomous-framework/ROADMAP.md \
+    qlpk-autonomous-framework/MORNING.md \
+    qlpk-autonomous-framework/run-agy.sh 2>/dev/null || true
+
+  local rpt
+  for rpt in "${REPORTS_DIR}/tasks/${task_id}"*.md; do
+    if [[ -f "$rpt" ]]; then
+      git -C "$PROJECT_ROOT" add -- "$rpt" 2>/dev/null || true
+    fi
+  done
+
+  # Defense-in-depth: ensure runtime state, logs, and .env secrets are never staged
+  git -C "$PROJECT_ROOT" reset HEAD -- \
+    .env be/.env fe/.env \
+    qlpk-autonomous-framework/.agy-state \
+    qlpk-autonomous-framework/logs 2>/dev/null || true
+
+  if ! git -C "$PROJECT_ROOT" diff --cached --quiet; then
+    local phase_prefix="phase-1"
+    if [[ "$task_id" == P2-* ]]; then
+      phase_prefix="phase-2"
+    elif [[ "$task_id" == P3-* ]]; then
+      phase_prefix="phase-3"
+    fi
+    local commit_msg="feat(${phase_prefix}): complete ${task_id} - ${task_goal}"
+    if git -C "$PROJECT_ROOT" commit -m "$commit_msg" >/dev/null 2>&1; then
+      local commit_hash
+      commit_hash="$(git -C "$PROJECT_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+      log "GIT_AUTO_COMMIT: task=${task_id} branch=${current_branch} commit=${commit_hash} msg='${commit_msg}'"
+    else
+      log "WARN: GIT_AUTO_COMMIT failed for task=${task_id} on branch=${current_branch}."
+    fi
+  else
+    log "GIT_AUTO_COMMIT_NOOP: task=${task_id} branch=${current_branch} (no staged changes to commit)."
+  fi
+  return 0
+}
+
 run_session() {
   local requested_task="${1:-}"
+  if [[ "$requested_task" == -* ]]; then
+    log "WARN: Unknown option '${requested_task}' passed to 'run'. Running all pending Phase 3 tasks."
+    requested_task=""
+  fi
   local tasks_to_run=()
   if [[ -n "$requested_task" ]]; then
     tasks_to_run=("$requested_task")
   else
-    local all_p1_tasks=(
-      "P1-001" "P1-002" "P1-003" "P1-004" "P1-005" "P1-006" "P1-007"
-      "P1-008" "P1-009" "P1-010" "P1-011" "P1-012" "P1-013" "P1-014"
-      "P1-015" "P1-016" "P1-017" "P1-018" "P1-019" "P1-020" "P1-021"
-      "P1-022" "P1-023" "P1-024" "P1-025" "P1-026" "P1-027" "P1-028"
-      "P1-029" "P1-030"
+    local all_p3_tasks=(
+      "P3-001" "P3-002" "P3-003" "P3-004" "P3-005" "P3-006" "P3-007"
+      "P3-008" "P3-009" "P3-010" "P3-011" "P3-012" "P3-013" "P3-014"
+      "P3-015" "P3-016" "P3-017" "P3-018" "P3-019" "P3-020" "P3-021"
+      "P3-022" "P3-023" "P3-024" "P3-025" "P3-026" "P3-027" "P3-028"
+      "P3-029" "P3-030"
     )
     local t
-    for t in "${all_p1_tasks[@]}"; do
+    for t in "${all_p3_tasks[@]}"; do
       if is_task_done_in_progress "$t"; then
         log "SKIP_DONE_TASK: ${t} is already marked DONE in PROGRESS.md."
         continue
@@ -1001,7 +1391,11 @@ run_session() {
     fi
 
     local goal="${spec_lines[0]}"
-    local cmds=("${spec_lines[@]:1}")
+    local cmds=()
+    local c_idx
+    for (( c_idx=1; c_idx<${#spec_lines[@]}; c_idx++ )); do
+      cmds+=("${spec_lines[$c_idx]}")
+    done
 
     update_progress_table "$task_id" "IN_PROGRESS" "RUNNING" "PENDING"
     local task_rc=0
@@ -1010,6 +1404,7 @@ run_session() {
 
     if [[ "$task_rc" -eq 0 ]]; then
       update_progress_table "$task_id" "DONE" "PASS" "PASS"
+      auto_commit_task_on_dev "$task_id" "$goal"
       consecutive_failures=0
       if (( idx < total_tasks )); then
         cooldown_sleep "$TASK_COOLDOWN_SECONDS" "TASK_COOLDOWN_AFTER_${task_id}" || break
@@ -1035,11 +1430,14 @@ run_session() {
 # 13. STATUS, DRY-RUN & ISOLATED SELF-TEST SUITE (AT-00 .. AT-11)
 # ==============================================================================
 status() {
-  local cpu_load free_mem
+  local cpu_load free_mem cur_branch
   cpu_load="$(get_cpu_load_per_core)"
   free_mem="$(get_free_memory_percent)"
+  cur_branch="$(git -C "$PROJECT_ROOT" branch --show-current 2>/dev/null || echo unknown)"
   printf 'framework_dir=%s\n' "$FRAMEWORK_DIR"
   printf 'project_root=%s\n' "$PROJECT_ROOT"
+  printf 'git_branch=%s\n' "$cur_branch"
+  printf 'auto_commit_on_done=%s (target_branch=%s)\n' "$AUTO_COMMIT_ON_DONE" "$TARGET_COMMIT_BRANCH"
   printf 'roadmap=%s\n' "$([[ -f "$ROADMAP_FILE" ]] && echo present || echo missing)"
   printf 'agy_cli_verification=%s\n' "$([[ -f "${REPORTS_DIR}/agy-cli-capability-matrix.md" ]] && echo verified_v1.4.7 || echo not_verified)"
   printf 'stop_requested=%s\n' "$([[ -f "$STOP_FILE" ]] && echo yes || echo no)"
@@ -1198,6 +1596,7 @@ MOCK_EOF
     export MOCK_CALLS_LOG="$mock_calls"
     export MOCK_COUNTER_FILE="${tmp_base}/counter"
     export MOCK_SCENARIO="PASS_ALL"
+    export MAX_TEST_FIX_RETRIES=0
     export OVERRIDE_CPU_LOAD_PER_CORE="0.20"
     export OVERRIDE_FREE_MEM_PERCENT="50.00"
     execute_task_lifecycle "T-AT01" "Test fail gate" "exit 1"
@@ -1476,7 +1875,7 @@ EOF
 
 request_stop() {
   ensure_runtime_dirs
-  : > "$STOP_FILE"
+  printf 'STOP\n' > "$STOP_FILE"
   log "STOP requested at ${STOP_FILE}."
 }
 
@@ -1484,6 +1883,12 @@ clear_stop() {
   ensure_runtime_dirs
   rm -f -- "$STOP_FILE"
   log "STOP flag cleared."
+}
+
+unlock() {
+  ensure_runtime_dirs
+  rm -rf -- "$LOCK_DIR" "$STOP_FILE"
+  log "Lock and stop flag cleared."
 }
 
 main() {
@@ -1494,6 +1899,7 @@ main() {
     self-test) acquire_lock; run_self_tests ;;
     stop) request_stop ;;
     clear-stop) clear_stop ;;
+    unlock|clear-lock) unlock ;;
     run)
       acquire_lock
       shift

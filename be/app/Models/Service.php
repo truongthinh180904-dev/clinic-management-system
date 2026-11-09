@@ -17,6 +17,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Service extends Model
 {
+    /**
+     * The model's default values for attributes.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'duration_minutes' => 30,
+        'status' => 'ACTIVE',
+    ];
+
     protected function casts(): array
     {
         return [
