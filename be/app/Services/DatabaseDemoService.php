@@ -52,7 +52,7 @@ class DatabaseDemoService
     }
 
     /**
-     * Kiểm tra xem các thủ tục SQL demo đã thực sự tồn tại trong MySQL chưa.
+     * Kiểm tra xem các thủ tục SQL demo đã thực sự tồn tại và ở phiên bản mới nhất trong MySQL chưa.
      */
     public function isSchemaCompiled(): bool
     {
@@ -63,6 +63,7 @@ class DatabaseDemoService
                 FROM information_schema.ROUTINES 
                 WHERE ROUTINE_SCHEMA = ? 
                   AND ROUTINE_NAME = 'sp_demo_tiep_nhan_benh_nhan'
+                  AND ROUTINE_DEFINITION LIKE '%v_valid_user_id%'
             ", [$dbName]);
 
             return !empty($res) && ($res[0]->cnt ?? 0) > 0;
@@ -230,19 +231,24 @@ BEGIN
     DECLARE v_patient_id BIGINT;
     DECLARE v_doctor_id BIGINT;
     DECLARE v_service_id BIGINT;
+    DECLARE v_valid_user_id BIGINT DEFAULT NULL;
     DECLARE v_app_status VARCHAR(30);
     DECLARE v_visit_code VARCHAR(50);
     DECLARE v_new_visit_id BIGINT;
+    DECLARE v_sql_err TEXT;
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
+        GET DIAGNOSTICS CONDITION 1 v_sql_err = MESSAGE_TEXT;
         ROLLBACK;
         SET p_visit_id = NULL;
         SET p_status_code = 'ERROR';
-        SET p_message = 'Lỗi hệ thống khi tiếp đón bệnh nhân. Giao dịch đã được hủy bỏ an toàn (Rollback).';
+        SET p_message = CONCAT('Lỗi hệ thống khi tiếp đón bệnh nhân (Rollback): ', COALESCE(v_sql_err, 'Unknown SQL Error'));
     END;
 
     START TRANSACTION;
+
+    SELECT id INTO v_valid_user_id FROM users WHERE id = p_user_id LIMIT 1;
 
     SELECT patient_id, employee_id, service_id, status 
     INTO v_patient_id, v_doctor_id, v_service_id, v_app_status
@@ -261,11 +267,15 @@ BEGIN
         SET p_message = CONCAT('Không thể tiếp nhận. Trạng thái lịch hẹn hiện tại là: ', v_app_status);
         ROLLBACK;
     ELSE
+        IF v_service_id IS NULL THEN
+            SELECT id INTO v_service_id FROM services ORDER BY id ASC LIMIT 1;
+        END IF;
+
         UPDATE appointments 
         SET status = 'COMPLETED', updated_at = NOW() 
         WHERE id = p_appointment_id;
 
-        SET v_visit_code = CONCAT('VK', DATE_FORMAT(NOW(), '%y%m%d'), LPAD(FLOOR(RAND() * 9999), 4, '0'));
+        SET v_visit_code = CONCAT('VK', DATE_FORMAT(NOW(), '%y%m%d%H%i%s'), LPAD(FLOOR(RAND() * 999), 3, '0'));
 
         INSERT INTO visits (
             visit_code, patient_id, employee_id, service_id, appointment_id,
@@ -274,7 +284,7 @@ BEGIN
         ) VALUES (
             v_visit_code, v_patient_id, v_doctor_id, v_service_id, p_appointment_id,
             CURRENT_DATE(), 1, 150000.00, 0, 150000.00,
-            'UNPAID', 'WAITING', 'Tiếp đón nguyên tử từ Lịch hẹn (Demo Procedure)', p_user_id, NOW(), NOW()
+            'UNPAID', 'WAITING', 'Tiếp đón nguyên tử từ Lịch hẹn (Demo Procedure)', v_valid_user_id, NOW(), NOW()
         );
 
         SET v_new_visit_id = LAST_INSERT_ID();
@@ -297,20 +307,26 @@ END",
 BEGIN
     DECLARE v_patient_id BIGINT;
     DECLARE v_existing_inv_id BIGINT;
+    DECLARE v_valid_user_id BIGINT DEFAULT NULL;
     DECLARE v_invoice_code VARCHAR(50);
     DECLARE v_subtotal DECIMAL(15,2) DEFAULT 0;
+    DECLARE v_sql_err TEXT;
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
+        GET DIAGNOSTICS CONDITION 1 v_sql_err = MESSAGE_TEXT;
         ROLLBACK;
         SET p_invoice_id = NULL;
         SET p_status_code = 'ERROR';
-        SET p_message = 'Lỗi tạo hóa đơn và xuất kho. Giao dịch đã được hoàn tác an toàn.';
+        SET p_message = CONCAT('Lỗi tạo hóa đơn và xuất kho (Rollback): ', COALESCE(v_sql_err, 'Unknown SQL Error'));
     END;
 
     START TRANSACTION;
 
-    SELECT patient_id, total_amount INTO v_patient_id, v_subtotal
+    SELECT id INTO v_valid_user_id FROM users WHERE id = p_user_id LIMIT 1;
+
+    SELECT patient_id, COALESCE(NULLIF(total_amount, 0), 200000.00)
+    INTO v_patient_id, v_subtotal
     FROM visits 
     WHERE id = p_visit_id 
     FOR UPDATE;
@@ -330,7 +346,7 @@ BEGIN
             SET p_message = 'Lượt khám này đã được lập hóa đơn trước đó.';
             COMMIT;
         ELSE
-            SET v_invoice_code = CONCAT('HD', DATE_FORMAT(NOW(), '%y%m%d'), LPAD(FLOOR(RAND() * 9999), 4, '0'));
+            SET v_invoice_code = CONCAT('HD', DATE_FORMAT(NOW(), '%y%m%d%H%i%s'), LPAD(FLOOR(RAND() * 999), 3, '0'));
             
             INSERT INTO invoices (
                 invoice_code, patient_id, visit_id, subtotal_amount, discount_amount,
@@ -339,7 +355,7 @@ BEGIN
             ) VALUES (
                 v_invoice_code, v_patient_id, p_visit_id, v_subtotal, 0,
                 v_subtotal, 0, v_subtotal, 'UNPAID', NOW(),
-                p_user_id, NOW(), NOW()
+                v_valid_user_id, NOW(), NOW()
             );
 
             SET p_invoice_id = LAST_INSERT_ID();
@@ -372,16 +388,21 @@ BEGIN
     DECLARE v_payment_code VARCHAR(50);
     DECLARE v_trans_code VARCHAR(50);
     DECLARE v_new_pay_id BIGINT;
+    DECLARE v_valid_user_id BIGINT DEFAULT NULL;
+    DECLARE v_sql_err TEXT;
 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
+        GET DIAGNOSTICS CONDITION 1 v_sql_err = MESSAGE_TEXT;
         ROLLBACK;
         SET p_payment_id = NULL;
         SET p_status_code = 'ERROR';
-        SET p_message = 'Lỗi xử lý thanh toán. Đã Rollback an toàn toàn bộ giao dịch.';
+        SET p_message = CONCAT('Lỗi xử lý thanh toán (Rollback): ', COALESCE(v_sql_err, 'Unknown SQL Error'));
     END;
 
     START TRANSACTION;
+
+    SELECT id INTO v_valid_user_id FROM users WHERE id = p_user_id LIMIT 1;
 
     SELECT total_amount, paid_amount, remaining_amount
     INTO v_total, v_current_paid, v_current_remaining
@@ -418,23 +439,23 @@ BEGIN
         SET paid_amount = v_new_paid, remaining_amount = v_new_remaining, status = v_new_status, updated_at = NOW()
         WHERE id = p_invoice_id;
 
-        SET v_payment_code = CONCAT('PAY', DATE_FORMAT(NOW(), '%y%m%d'), LPAD(FLOOR(RAND() * 9999), 4, '0'));
+        SET v_payment_code = CONCAT('PAY', DATE_FORMAT(NOW(), '%y%m%d%H%i%s'), LPAD(FLOOR(RAND() * 999), 3, '0'));
         INSERT INTO payments (
             payment_code, invoice_id, amount, payment_method, payment_date,
             received_by, notes, created_at, updated_at
         ) VALUES (
             v_payment_code, p_invoice_id, p_amount, p_payment_method, NOW(),
-            p_user_id, 'Thanh toán viện phí qua Demo Procedure', NOW(), NOW()
+            v_valid_user_id, 'Thanh toán viện phí qua Demo Procedure', NOW(), NOW()
         );
         SET v_new_pay_id = LAST_INSERT_ID();
 
-        SET v_trans_code = CONCAT('PT', DATE_FORMAT(NOW(), '%y%m%d'), LPAD(FLOOR(RAND() * 9999), 4, '0'));
+        SET v_trans_code = CONCAT('PT', DATE_FORMAT(NOW(), '%y%m%d%H%i%s'), LPAD(FLOOR(RAND() * 999), 3, '0'));
         INSERT INTO cash_transactions (
             transaction_code, transaction_type, reference_type, reference_id,
             amount, payment_method, transaction_date, description, created_by, created_at
         ) VALUES (
             v_trans_code, 'IN', 'Payment', v_new_pay_id,
-            p_amount, p_payment_method, NOW(), CONCAT('Thu tiền viện phí hóa đơn #', p_invoice_id), p_user_id, NOW()
+            p_amount, p_payment_method, NOW(), CONCAT('Thu tiền viện phí hóa đơn #', p_invoice_id), v_valid_user_id, NOW()
         );
 
         SET p_payment_id = v_new_pay_id;
@@ -482,6 +503,15 @@ BEGIN
     DECLARE v_current_status VARCHAR(30);
     DECLARE v_doctor_id BIGINT;
     DECLARE v_app_code VARCHAR(50);
+    DECLARE v_sql_err TEXT;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        GET DIAGNOSTICS CONDITION 1 v_sql_err = MESSAGE_TEXT;
+        ROLLBACK;
+        SET p_status_code = 'ERROR';
+        SET p_message = CONCAT('Lỗi hủy lịch hẹn (Rollback): ', COALESCE(v_sql_err, 'Unknown SQL Error'));
+    END;
 
     START TRANSACTION;
 
@@ -505,7 +535,7 @@ BEGIN
         ROLLBACK;
     ELSE
         UPDATE appointments 
-        SET status = 'CANCELLED', notes = CONCAT(COALESCE(notes, ''), ' [Lý do hủy: ', p_reason, ']'), updated_at = NOW()
+        SET status = 'CANCELLED', notes = CONCAT(COALESCE(notes, ''), ' [Lý do hủy: ', COALESCE(p_reason, 'Hủy qua Demo'), ']'), updated_at = NOW()
         WHERE id = p_appointment_id;
 
         SET p_status_code = 'SUCCESS';
@@ -797,19 +827,24 @@ BEGIN
     DECLARE v_patient_id BIGINT;
     DECLARE v_doctor_id BIGINT;
     DECLARE v_service_id BIGINT;
+    DECLARE v_valid_user_id BIGINT DEFAULT NULL;
     DECLARE v_app_status VARCHAR(30);
     DECLARE v_visit_code VARCHAR(50);
     DECLARE v_new_visit_id BIGINT;
+    DECLARE v_sql_err TEXT;
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
+        GET DIAGNOSTICS CONDITION 1 v_sql_err = MESSAGE_TEXT;
         ROLLBACK;
         SET p_visit_id = NULL;
         SET p_status_code = 'ERROR';
-        SET p_message = 'Lỗi hệ thống khi tiếp đón bệnh nhân. Giao dịch đã được hủy bỏ an toàn (Rollback).';
+        SET p_message = CONCAT('Lỗi hệ thống khi tiếp đón bệnh nhân (Rollback): ', COALESCE(v_sql_err, 'Unknown SQL Error'));
     END;
 
     START TRANSACTION;
+
+    SELECT id INTO v_valid_user_id FROM users WHERE id = p_user_id LIMIT 1;
 
     SELECT patient_id, employee_id, service_id, status 
     INTO v_patient_id, v_doctor_id, v_service_id, v_app_status
@@ -828,11 +863,15 @@ BEGIN
         SET p_message = CONCAT('Không thể tiếp nhận. Trạng thái lịch hẹn hiện tại là: ', v_app_status);
         ROLLBACK;
     ELSE
+        IF v_service_id IS NULL THEN
+            SELECT id INTO v_service_id FROM services ORDER BY id ASC LIMIT 1;
+        END IF;
+
         UPDATE appointments 
         SET status = 'COMPLETED', updated_at = NOW() 
         WHERE id = p_appointment_id;
 
-        SET v_visit_code = CONCAT('VK', DATE_FORMAT(NOW(), '%y%m%d'), LPAD(FLOOR(RAND() * 9999), 4, '0'));
+        SET v_visit_code = CONCAT('VK', DATE_FORMAT(NOW(), '%y%m%d%H%i%s'), LPAD(FLOOR(RAND() * 999), 3, '0'));
 
         INSERT INTO visits (
             visit_code, patient_id, employee_id, service_id, appointment_id,
@@ -841,7 +880,7 @@ BEGIN
         ) VALUES (
             v_visit_code, v_patient_id, v_doctor_id, v_service_id, p_appointment_id,
             CURRENT_DATE(), 1, 150000.00, 0, 150000.00,
-            'UNPAID', 'WAITING', 'Tiếp đón nguyên tử từ Lịch hẹn (Demo Procedure)', p_user_id, NOW(), NOW()
+            'UNPAID', 'WAITING', 'Tiếp đón nguyên tử từ Lịch hẹn (Demo Procedure)', v_valid_user_id, NOW(), NOW()
         );
 
         SET v_new_visit_id = LAST_INSERT_ID();
@@ -886,20 +925,26 @@ SELECT @p_visit_id AS visit_id, @p_status_code AS status_code, @p_message AS mes
 BEGIN
     DECLARE v_patient_id BIGINT;
     DECLARE v_existing_inv_id BIGINT;
+    DECLARE v_valid_user_id BIGINT DEFAULT NULL;
     DECLARE v_invoice_code VARCHAR(50);
     DECLARE v_subtotal DECIMAL(15,2) DEFAULT 0;
+    DECLARE v_sql_err TEXT;
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
+        GET DIAGNOSTICS CONDITION 1 v_sql_err = MESSAGE_TEXT;
         ROLLBACK;
         SET p_invoice_id = NULL;
         SET p_status_code = 'ERROR';
-        SET p_message = 'Lỗi tạo hóa đơn và xuất kho. Giao dịch đã được hoàn tác an toàn.';
+        SET p_message = CONCAT('Lỗi tạo hóa đơn và xuất kho (Rollback): ', COALESCE(v_sql_err, 'Unknown SQL Error'));
     END;
 
     START TRANSACTION;
 
-    SELECT patient_id, total_amount INTO v_patient_id, v_subtotal
+    SELECT id INTO v_valid_user_id FROM users WHERE id = p_user_id LIMIT 1;
+
+    SELECT patient_id, COALESCE(NULLIF(total_amount, 0), 200000.00)
+    INTO v_patient_id, v_subtotal
     FROM visits 
     WHERE id = p_visit_id 
     FOR UPDATE;
@@ -919,7 +964,7 @@ BEGIN
             SET p_message = 'Lượt khám này đã được lập hóa đơn trước đó.';
             COMMIT;
         ELSE
-            SET v_invoice_code = CONCAT('HD', DATE_FORMAT(NOW(), '%y%m%d'), LPAD(FLOOR(RAND() * 9999), 4, '0'));
+            SET v_invoice_code = CONCAT('HD', DATE_FORMAT(NOW(), '%y%m%d%H%i%s'), LPAD(FLOOR(RAND() * 999), 3, '0'));
             
             INSERT INTO invoices (
                 invoice_code, patient_id, visit_id, subtotal_amount, discount_amount,
@@ -928,7 +973,7 @@ BEGIN
             ) VALUES (
                 v_invoice_code, v_patient_id, p_visit_id, v_subtotal, 0,
                 v_subtotal, 0, v_subtotal, 'UNPAID', NOW(),
-                p_user_id, NOW(), NOW()
+                v_valid_user_id, NOW(), NOW()
             );
 
             SET p_invoice_id = LAST_INSERT_ID();
@@ -985,16 +1030,21 @@ BEGIN
     DECLARE v_payment_code VARCHAR(50);
     DECLARE v_trans_code VARCHAR(50);
     DECLARE v_new_pay_id BIGINT;
+    DECLARE v_valid_user_id BIGINT DEFAULT NULL;
+    DECLARE v_sql_err TEXT;
 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
+        GET DIAGNOSTICS CONDITION 1 v_sql_err = MESSAGE_TEXT;
         ROLLBACK;
         SET p_payment_id = NULL;
         SET p_status_code = 'ERROR';
-        SET p_message = 'Lỗi xử lý thanh toán. Đã Rollback an toàn toàn bộ giao dịch.';
+        SET p_message = CONCAT('Lỗi xử lý thanh toán (Rollback): ', COALESCE(v_sql_err, 'Unknown SQL Error'));
     END;
 
     START TRANSACTION;
+
+    SELECT id INTO v_valid_user_id FROM users WHERE id = p_user_id LIMIT 1;
 
     SELECT total_amount, paid_amount, remaining_amount
     INTO v_total, v_current_paid, v_current_remaining
@@ -1031,23 +1081,23 @@ BEGIN
         SET paid_amount = v_new_paid, remaining_amount = v_new_remaining, status = v_new_status, updated_at = NOW()
         WHERE id = p_invoice_id;
 
-        SET v_payment_code = CONCAT('PAY', DATE_FORMAT(NOW(), '%y%m%d'), LPAD(FLOOR(RAND() * 9999), 4, '0'));
+        SET v_payment_code = CONCAT('PAY', DATE_FORMAT(NOW(), '%y%m%d%H%i%s'), LPAD(FLOOR(RAND() * 999), 3, '0'));
         INSERT INTO payments (
             payment_code, invoice_id, amount, payment_method, payment_date,
             received_by, notes, created_at, updated_at
         ) VALUES (
             v_payment_code, p_invoice_id, p_amount, p_payment_method, NOW(),
-            p_user_id, 'Thanh toán viện phí qua Demo Procedure', NOW(), NOW()
+            v_valid_user_id, 'Thanh toán viện phí qua Demo Procedure', NOW(), NOW()
         );
         SET v_new_pay_id = LAST_INSERT_ID();
 
-        SET v_trans_code = CONCAT('PT', DATE_FORMAT(NOW(), '%y%m%d'), LPAD(FLOOR(RAND() * 9999), 4, '0'));
+        SET v_trans_code = CONCAT('PT', DATE_FORMAT(NOW(), '%y%m%d%H%i%s'), LPAD(FLOOR(RAND() * 999), 3, '0'));
         INSERT INTO cash_transactions (
             transaction_code, transaction_type, reference_type, reference_id,
             amount, payment_method, transaction_date, description, created_by, created_at
         ) VALUES (
             v_trans_code, 'IN', 'Payment', v_new_pay_id,
-            p_amount, p_payment_method, NOW(), CONCAT('Thu tiền viện phí hóa đơn #', p_invoice_id), p_user_id, NOW()
+            p_amount, p_payment_method, NOW(), CONCAT('Thu tiền viện phí hóa đơn #', p_invoice_id), v_valid_user_id, NOW()
         );
 
         SET p_payment_id = v_new_pay_id;
@@ -1133,6 +1183,15 @@ BEGIN
     DECLARE v_current_status VARCHAR(30);
     DECLARE v_doctor_id BIGINT;
     DECLARE v_app_code VARCHAR(50);
+    DECLARE v_sql_err TEXT;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        GET DIAGNOSTICS CONDITION 1 v_sql_err = MESSAGE_TEXT;
+        ROLLBACK;
+        SET p_status_code = 'ERROR';
+        SET p_message = CONCAT('Lỗi hủy lịch hẹn (Rollback): ', COALESCE(v_sql_err, 'Unknown SQL Error'));
+    END;
 
     START TRANSACTION;
 
@@ -1156,7 +1215,7 @@ BEGIN
         ROLLBACK;
     ELSE
         UPDATE appointments 
-        SET status = 'CANCELLED', notes = CONCAT(COALESCE(notes, ''), ' [Lý do hủy: ', p_reason, ']'), updated_at = NOW()
+        SET status = 'CANCELLED', notes = CONCAT(COALESCE(notes, ''), ' [Lý do hủy: ', COALESCE(p_reason, 'Hủy qua Demo'), ']'), updated_at = NOW()
         WHERE id = p_appointment_id;
 
         SET p_status_code = 'SUCCESS';
@@ -1695,7 +1754,7 @@ END;",
     public function executeDemo(string $objectName, array $params = [], ?int $userId = null, bool $allowRetry = true): array
     {
         $this->ensureSchemaReady();
-        $startTime = microtime(true);
+        $execStartTime = microtime(true);
         $obj = $this->getObjectByName($objectName);
 
         if (!$obj) {
@@ -1705,7 +1764,45 @@ END;",
             ];
         }
 
-        $userId = $userId ?: 1;
+        $validUserId = DB::table('users')->where('id', $userId ?: 1)->value('id')
+            ?: DB::table('users')->orderBy('id')->value('id');
+        $userId = $validUserId ?: 1;
+
+        $defaultPatient = Patient::first();
+        if (!$defaultPatient) {
+            $defaultPatient = Patient::create([
+                'patient_code' => 'BN_DEMO_' . rand(100, 999),
+                'full_name' => 'Nguyễn Văn Bệnh Nhân Mẫu',
+                'phone' => '0901234567',
+                'gender' => 'MALE',
+                'status' => 'ACTIVE',
+            ]);
+        }
+
+        $defaultDoctor = Employee::first();
+        if (!$defaultDoctor) {
+            $defaultDoctor = Employee::create([
+                'employee_code' => 'BS_DEMO_' . rand(100, 999),
+                'full_name' => 'BS. Trần Văn Mẫu',
+                'department' => 'Nội tổng quát',
+                'position' => 'Bác sĩ',
+                'status' => 'ACTIVE',
+            ]);
+        }
+
+        $defaultServiceId = DB::table('services')->orderBy('id')->value('id');
+        if (!$defaultServiceId) {
+            $defaultServiceId = DB::table('services')->insertGetId([
+                'service_code' => 'DV_DEMO_' . rand(100, 999),
+                'name' => 'Khám Nội Tổng Quát (Demo)',
+                'category' => 'EXAMINATION',
+                'price' => 150000.00,
+                'status' => 'ACTIVE',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
         $beforeData = null;
         $afterData = null;
         $status = 'SUCCESS';
@@ -1725,15 +1822,16 @@ END;",
                         // Lấy hoặc tạo một lịch hẹn CONFIRMED/PENDING để tiếp đón
                         $app = Appointment::whereIn('status', ['CONFIRMED', 'PENDING'])->first();
                         if (!$app) {
-                            $patient = Patient::first();
-                            $doctor = Employee::first();
+                            $randDayOffset = rand(10, 90);
+                            $randHour = rand(8, 16);
                             $app = Appointment::create([
                                 'appointment_code' => 'LH_DEMO_' . rand(1000, 9999),
-                                'patient_id' => $patient ? $patient->id : 1,
-                                'employee_id' => $doctor ? $doctor->id : 1,
-                                'appointment_date' => now()->toDateString(),
-                                'start_time' => '10:00:00',
-                                'end_time' => '10:30:00',
+                                'patient_id' => $defaultPatient->id,
+                                'employee_id' => $defaultDoctor->id,
+                                'service_id' => $defaultServiceId,
+                                'appointment_date' => now()->addDays($randDayOffset)->toDateString(),
+                                'start_time' => sprintf('%02d:00:00', $randHour),
+                                'end_time' => sprintf('%02d:30:00', $randHour),
                                 'status' => 'CONFIRMED',
                                 'notes' => 'Lịch hẹn tạo tự động phục vụ DEMO Tiếp đón Stored Procedure',
                             ]);
@@ -1749,8 +1847,13 @@ END;",
                         'patient_id' => $beforeApp->patient_id ?? null,
                     ];
 
-                    // Thực thi Procedure
-                    $res = DB::select('CALL sp_demo_tiep_nhan_benh_nhan(?, ?, @v_id, @v_code, @v_msg)', [$appointmentId, $userId]);
+                    // Thực thi Procedure qua text protocol để MySQL gán biến OUT @v_id, @v_code, @v_msg chính xác
+                    $userParam = $validUserId ? (int) $validUserId : 'NULL';
+                    DB::unprepared(sprintf(
+                        'CALL sp_demo_tiep_nhan_benh_nhan(%d, %s, @v_id, @v_code, @v_msg)',
+                        (int) $appointmentId,
+                        $userParam
+                    ));
                     $outVars = DB::select('SELECT @v_id AS visit_id, @v_code AS status_code, @v_msg AS message')[0] ?? null;
 
                     $newVisitId = $outVars->visit_id ?? null;
@@ -1779,12 +1882,11 @@ END;",
                     if (!$visitId) {
                         $v = Visit::doesntHave('invoices')->first();
                         if (!$v) {
-                            $patient = Patient::first();
-                            $doctor = Employee::first();
                             $v = Visit::create([
                                 'visit_code' => 'VK_DEMO_' . rand(1000, 9999),
-                                'patient_id' => $patient ? $patient->id : 1,
-                                'employee_id' => $doctor ? $doctor->id : 1,
+                                'patient_id' => $defaultPatient->id,
+                                'employee_id' => $defaultDoctor->id,
+                                'service_id' => $defaultServiceId,
                                 'visit_date' => now()->toDateString(),
                                 'quantity' => 1,
                                 'unit_price' => 200000.00,
@@ -1805,7 +1907,12 @@ END;",
                         'total_amount' => $vBefore->total_amount ?? 0,
                     ];
 
-                    DB::select('CALL sp_demo_tao_hoa_don_xuat_thuoc(?, ?, @v_inv_id, @v_total, @v_code, @v_msg)', [$visitId, $userId]);
+                    $userParam = $validUserId ? (int) $validUserId : 'NULL';
+                    DB::unprepared(sprintf(
+                        'CALL sp_demo_tao_hoa_don_xuat_thuoc(%d, %s, @v_inv_id, @v_total, @v_code, @v_msg)',
+                        (int) $visitId,
+                        $userParam
+                    ));
                     $outVars = DB::select('SELECT @v_inv_id AS invoice_id, @v_total AS total_amount, @v_code AS status_code, @v_msg AS message')[0] ?? null;
 
                     $invId = $outVars->invoice_id ?? null;
@@ -1829,10 +1936,9 @@ END;",
                     $actionType = 'PROCEDURE_EXEC';
                     $inv = Invoice::where('status', '!=', 'CANCELLED')->where('remaining_amount', '>', 0)->first();
                     if (!$inv) {
-                        $patient = Patient::first();
                         $inv = Invoice::create([
                             'invoice_code' => 'HD_DEMO_' . rand(1000, 9999),
-                            'patient_id' => $patient ? $patient->id : 1,
+                            'patient_id' => $defaultPatient->id,
                             'subtotal_amount' => 150000.00,
                             'discount_amount' => 0,
                             'total_amount' => 150000.00,
@@ -1859,7 +1965,15 @@ END;",
                         $amount = (float) $beforeInv->remaining_amount;
                     }
 
-                    DB::select('CALL sp_demo_thanh_toan_hoa_don(?, ?, ?, ?, @v_pay_id, @v_rem, @v_code, @v_msg)', [$invoiceId, $amount, $method, $userId]);
+                    $userParam = $validUserId ? (int) $validUserId : 'NULL';
+                    $quotedMethod = DB::connection()->getPdo()->quote($method);
+                    DB::unprepared(sprintf(
+                        'CALL sp_demo_thanh_toan_hoa_don(%d, %s, %s, %s, @v_pay_id, @v_rem, @v_code, @v_msg)',
+                        (int) $invoiceId,
+                        number_format($amount, 2, '.', ''),
+                        $quotedMethod,
+                        $userParam
+                    ));
                     $outVars = DB::select('SELECT @v_pay_id AS payment_id, @v_rem AS remaining_amount, @v_code AS status_code, @v_msg AS message')[0] ?? null;
 
                     $message = $outVars->message ?? 'Thực thi xong';
@@ -1895,15 +2009,16 @@ END;",
                     $actionType = 'PROCEDURE_EXEC';
                     $app = Appointment::whereIn('status', ['PENDING', 'CONFIRMED'])->first();
                     if (!$app) {
-                        $patient = Patient::first();
-                        $doctor = Employee::first();
+                        $randDayOffset = rand(100, 200);
+                        $randHour = rand(8, 16);
                         $app = Appointment::create([
                             'appointment_code' => 'LH_HUY_' . rand(1000, 9999),
-                            'patient_id' => $patient ? $patient->id : 1,
-                            'employee_id' => $doctor ? $doctor->id : 1,
-                            'appointment_date' => now()->addDays(1)->toDateString(),
-                            'start_time' => '15:00:00',
-                            'end_time' => '15:30:00',
+                            'patient_id' => $defaultPatient->id,
+                            'employee_id' => $defaultDoctor->id,
+                            'service_id' => $defaultServiceId,
+                            'appointment_date' => now()->addDays($randDayOffset)->toDateString(),
+                            'start_time' => sprintf('%02d:00:00', $randHour),
+                            'end_time' => sprintf('%02d:30:00', $randHour),
                             'status' => 'PENDING',
                             'notes' => 'Lịch hẹn tạo tự động phục vụ DEMO Hủy lịch',
                         ]);
@@ -1917,7 +2032,14 @@ END;",
                         'status' => $beforeApp->status ?? 'NOT_FOUND',
                     ];
 
-                    DB::select('CALL sp_demo_huy_lich_hen_giai_phong_bs(?, ?, ?, @v_code, @v_msg)', [$appId, $reason, $userId]);
+                    $userParam = $validUserId ? (int) $validUserId : 'NULL';
+                    $quotedReason = DB::connection()->getPdo()->quote($reason);
+                    DB::unprepared(sprintf(
+                        'CALL sp_demo_huy_lich_hen_giai_phong_bs(%d, %s, %s, @v_code, @v_msg)',
+                        (int) $appId,
+                        $quotedReason,
+                        $userParam
+                    ));
                     $outVars = DB::select('SELECT @v_code AS status_code, @v_msg AS message')[0] ?? null;
 
                     $message = $outVars->message ?? 'Thực thi xong';
@@ -1927,7 +2049,7 @@ END;",
                         'status' => $afterApp->status ?? null,
                         'notes' => $afterApp->notes ?? null,
                     ];
-                    $status = ($outVars->status_code ?? '') === 'SUCCESS' ? 'SUCCESS' : 'VERIFIED';
+                    $status = ($outVars->status_code ?? '') === 'SUCCESS' ? 'SUCCESS' : (($outVars->status_code ?? '') === 'ERROR' ? 'FAILED' : 'VERIFIED');
                     break;
 
                 // -------------------------------------------------------------
@@ -1935,21 +2057,23 @@ END;",
                 // -------------------------------------------------------------
                 case 'trg_demo_chong_trung_lich_bs':
                     $actionType = 'TRIGGER_AUTO';
-                    $doc = Employee::first();
-                    $docId = $doc ? $doc->id : 1;
+                    $docId = $defaultDoctor->id;
                     $existingApp = Appointment::where('employee_id', $docId)->whereIn('status', ['PENDING', 'CONFIRMED'])->first();
                     if (!$existingApp) {
                         $existingApp = Appointment::create([
                             'appointment_code' => 'APP_BASE_' . rand(100, 999),
-                            'patient_id' => 1,
+                            'patient_id' => $defaultPatient->id,
                             'employee_id' => $docId,
+                            'service_id' => $defaultServiceId,
                             'appointment_date' => now()->toDateString(),
                             'start_time' => '09:00:00',
                             'end_time' => '09:30:00',
                             'status' => 'CONFIRMED',
                         ]);
                     }
-                    $date = $existingApp->appointment_date;
+                    $date = $existingApp->appointment_date instanceof \DateTimeInterface
+                        ? $existingApp->appointment_date->format('Y-m-d')
+                        : (string) $existingApp->appointment_date;
                     $startTime = $existingApp->start_time;
                     $endTime = $existingApp->end_time;
 
@@ -1962,12 +2086,13 @@ END;",
                     // Thử insert trùng khung giờ để kích hoạt trigger ném lỗi an toàn
                     try {
                         DB::insert("
-                            INSERT INTO appointments (appointment_code, patient_id, employee_id, appointment_date, start_time, end_time, status, created_at, updated_at)
-                            VALUES (?, ?, ?, ?, ?, ?, 'CONFIRMED', NOW(), NOW())
+                            INSERT INTO appointments (appointment_code, patient_id, employee_id, service_id, appointment_date, start_time, end_time, status, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', NOW(), NOW())
                         ", [
                             'APP_COLLISION_TEST_' . rand(100, 999),
-                            1,
+                            $defaultPatient->id,
                             $docId,
+                            $defaultServiceId,
                             $date,
                             $startTime,
                             $endTime,
@@ -1993,13 +2118,15 @@ END;",
                     if (!$paidVisit || !$paidVisit->medicalRecord) {
                         $v = Visit::where('payment_status', 'PAID')->first();
                         if (!$v) {
-                            $p = Patient::first();
-                            $e = Employee::first();
                             $v = Visit::create([
                                 'visit_code' => 'VK_PAID_' . rand(100, 999),
-                                'patient_id' => $p ? $p->id : 1,
-                                'employee_id' => $e ? $e->id : 1,
+                                'patient_id' => $defaultPatient->id,
+                                'employee_id' => $defaultDoctor->id,
+                                'service_id' => $defaultServiceId,
                                 'visit_date' => now()->toDateString(),
+                                'quantity' => 1,
+                                'unit_price' => 150000,
+                                'discount_amount' => 0,
                                 'total_amount' => 150000,
                                 'payment_status' => 'PAID',
                                 'status' => 'COMPLETED',
@@ -2008,10 +2135,8 @@ END;",
                         $rec = \App\Models\MedicalRecord::firstOrCreate(
                             ['visit_id' => $v->id],
                             [
-                                'patient_id' => $v->patient_id,
-                                'employee_id' => $v->employee_id,
+                                'doctor_id' => $v->employee_id,
                                 'diagnosis' => 'Chẩn đoán ban đầu hợp lệ (Đã thanh toán)',
-                                'record_date' => now()->toDateString(),
                             ]
                         );
                         $paidVisit = $v;
@@ -2074,16 +2199,7 @@ END;",
                 // -------------------------------------------------------------
                 case 'trg_demo_cap_nhat_lan_kham_gan_nhat':
                     $actionType = 'TRIGGER_AUTO';
-                    $p = Patient::first();
-                    if (!$p) {
-                        $p = Patient::create([
-                            'patient_code' => 'BN_DEMO_01',
-                            'full_name' => 'Nguyễn Văn Mẫu',
-                            'phone' => '0912345678',
-                            'gender' => 'MALE',
-                            'status' => 'ACTIVE',
-                        ]);
-                    }
+                    $p = $defaultPatient;
                     $patientId = $p->id;
                     $beforeData = [
                         'patient_id' => $patientId,
@@ -2094,9 +2210,9 @@ END;",
                     $newDate = now()->toDateString();
                     $tempCode = 'VK_TRG_TEST_' . rand(100, 999);
                     DB::insert("
-                        INSERT INTO visits (visit_code, patient_id, employee_id, visit_date, total_amount, payment_status, status, created_at, updated_at)
-                        VALUES (?, ?, 1, ?, 120000, 'UNPAID', 'WAITING', NOW(), NOW())
-                    ", [$tempCode, $patientId, $newDate]);
+                        INSERT INTO visits (visit_code, patient_id, employee_id, service_id, visit_date, quantity, unit_price, discount_amount, total_amount, payment_status, status, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, 1, 120000, 0, 120000, 'UNPAID', 'WAITING', NOW(), NOW())
+                    ", [$tempCode, $patientId, $defaultDoctor->id, $defaultServiceId, $newDate]);
 
                     $afterPatient = Patient::find($patientId);
                     $afterData = [
@@ -2276,7 +2392,7 @@ END;",
             Log::error("Database demo error on {$objectName}: " . $e->getMessage());
         }
 
-        $durationMs = (int) round((microtime(true) - $startTime) * 1000);
+        $durationMs = (int) round((microtime(true) - $execStartTime) * 1000);
 
         // Lưu vào bảng Audit Logs
         try {
