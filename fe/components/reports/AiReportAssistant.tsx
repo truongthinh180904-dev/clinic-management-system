@@ -347,7 +347,7 @@ export function AiReportAssistant() {
           role: 'model',
           content:
             '### ⚠️ Không thể kết nối với dịch vụ AI\n\n' +
-            'Đã xảy ra sự cố trong quá trình giao tiếp với máy chủ. Sếp vui lòng kiểm tra xem Backend server đã chạy tại `http://localhost:8000` và kiểm tra cấu hình trong file `be/.env`.',
+            'Đã xảy ra sự cố trong quá trình giao tiếp với máy chủ. Sếp vui lòng kiểm tra kết nối tới máy chủ `https://apiqlpk.anninhanthienlong.com` và cấu hình trong file `be/.env`.',
           timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
           error: true,
         },
