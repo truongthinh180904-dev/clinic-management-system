@@ -61,6 +61,12 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
   const [visitError, setVisitError] = useState<string | null>(null);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
+  // Medical Record Data
+  const [medicalRecord, setMedicalRecord] = useState<MedicalRecord | null>(null);
+  const [isLoadingMedical, setIsLoadingMedical] = useState(false);
+  const [medicalError, setMedicalError] = useState<string | null>(null);
+  const [visitInvoice, setVisitInvoice] = useState<Invoice | null>(null);
+
   // Doctor Isolation & Clinical Permissions
   const isSuperUser = hasRole('ADMIN') || hasRole('MANAGER') || Boolean((user as any)?.is_super_admin);
   const isAssignedDoctor = !visit?.employee_id || !user?.employee?.id || (Number(user.employee.id) === Number(visit.employee_id));
@@ -80,12 +86,6 @@ function VisitDetailContent({ visitId }: { visitId: string }) {
     (hasPermission('medical_records.update') ||
     hasRole('ADMIN') ||
     hasRole('DOCTOR')) && canDoctorOperate;
-
-  // Medical Record Data
-  const [medicalRecord, setMedicalRecord] = useState<MedicalRecord | null>(null);
-  const [isLoadingMedical, setIsLoadingMedical] = useState(false);
-  const [medicalError, setMedicalError] = useState<string | null>(null);
-  const [visitInvoice, setVisitInvoice] = useState<Invoice | null>(null);
 
   // Status Change Modal
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
